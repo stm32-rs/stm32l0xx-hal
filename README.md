@@ -3,11 +3,11 @@ stm32l0xx-hal
 
 Work in Progress!
 
-[_stm32l0xx-hal_](https://github.com/stm32-rs/stm32l0xx-hal) contains a hardware abstraction layer on top of the peripheral access API for the STMicro STM32L0xx family of microcontrollers.
+[_stm32l0xx-hal_](https://github.com/stm32-rs/stm32l0xx-hal) contains a Hardware Abstraction Layer (HAL) and is based on the [stm32-rs](https://github.com/stm32-rs/stm32-rs) peripheral access API for the STMicro STM32L0xx family of microcontrollers.
 
-This crate relies on Adam Greig's [stm32l0](https://crates.io/crates/stm32l0) crate to provide appropriate register definitions, and implements a partial set of the [embedded-hal](https://github.com/rust-embedded/embedded-hal) traits. 
+This crate relies on Adam Greig's [stm32l0](https://crates.io/crates/stm32l0) crate to provide appropriate register definitions and implements a partial set of the [embedded-hal](https://github.com/rust-embedded/embedded-hal) traits.
 
-Based on [stm32l1xx-hal](https://github.com/stm32-rs/stm32l1xx-hal) crate by Vitaly Domnikov and [stm32f4xx-hal](https://github.com/stm32-rs/stm32f4xx-hal) crate by Daniel Egger.
+Based on the [stm32l1xx-hal](https://github.com/stm32-rs/stm32l1xx-hal) crate by Vitaly Domnikov and [stm32f4xx-hal](https://github.com/stm32-rs/stm32f4xx-hal) crate by Daniel Egger.
 
 
 Supported Configurations
@@ -16,17 +16,27 @@ Supported Configurations
 * __stm32l0x1__
 
 
-Check Instructions
+Check HAL Instructions
 ---------
 
-`export COMMAND=""`
-`rustup target add thumbv6m-none-eabi`
-`tools/check.py $COMMAND`
+`
+$ rustup default nightly
+$ export COMMAND=""
+$ rustup target add thumbv6m-none-eabi
+$ tools/check.py $COMMAND
+`
+
+Build Examples
+---------
+
+`
+$ cargo build --examples --features=stm32l011
+`
 
 Contibutor Notes
 ---------
 
-- Revert local dependencies to external cargo
+- Revert local dependencies to external cargo before committing
 
 License
 -------
