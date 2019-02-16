@@ -385,7 +385,7 @@ macro_rules! gpio {
     }
 }
 
-#[cfg(any(feature = "stm32l011"))]
+//#[cfg(any(feature = "stm32l011"))]
 gpio!(GPIOA, gpioa, iopaen, PA, [
     PA0: (pa0, 0, Input<Floating>),
     PA1: (pa1, 1, Input<Floating>),
@@ -405,7 +405,7 @@ gpio!(GPIOA, gpioa, iopaen, PA, [
     PA15: (pa15, 15, Input<Floating>),
 ]);
 
-#[cfg(any(feature = "stm32l011"))]
+//#[cfg(any(feature = "stm32l011"))]
 gpio!(GPIOB, gpiob, iopben, PB, [
     PB0: (pb0, 0, Input<Floating>),
     PB1: (pb1, 1, Input<Floating>),

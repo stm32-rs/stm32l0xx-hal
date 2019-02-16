@@ -1,10 +1,10 @@
 #![no_std]
 #![allow(non_camel_case_types)]
 
-#[cfg(not(any(
-    feature = "stm32l011"
-)))]
-compile_error!("This crate requires one of the following features enabled: stm32l011");
+//#[cfg(not(any(
+//    feature = "stm32l011"
+//)))]
+//compile_error!("This crate requires one of the following features enabled: stm32l011");
 
 
 extern crate bare_metal;
@@ -18,13 +18,18 @@ pub use stm32l0;
 
 pub use nb::block;
 
-#[cfg(feature = "stm32l011")]
+//#[cfg(feature = "stm32l011")]
 pub use stm32l0::stm32l0x1 as stm32;
 
-#[cfg(feature = "rt")]
+//#[cfg(feature = "rt")]
 pub use crate::stm32::interrupt;
 
+pub mod adc;
+pub mod delay;
 pub mod gpio;
 pub mod prelude;
+pub mod pwm;
 pub mod rcc;
 pub mod time;
+pub mod timer;
+pub mod watchdog;

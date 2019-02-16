@@ -55,6 +55,7 @@ stm32l011 = ["stm32l0/stm32l0x1", "device-selected"]
 
 [profile.dev]
 debug = true
+opt-level = 3
 
 [profile.release]
 debug = true
