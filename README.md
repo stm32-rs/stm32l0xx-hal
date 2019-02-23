@@ -13,11 +13,16 @@ Supported Configurations
 
 * __stm32l0x1__
 
+Prerequisites for building local stm32-rs
+---------
+
+Requires svd2rust 0.14.0 or greater:
+
+`$ cargo install svd2rust`
+
 
 Check HAL Instructions
 ---------
-
-`$ rustup default nightly`
 
 `$ export COMMAND=""`
 
@@ -28,7 +33,7 @@ Check HAL Instructions
 Build Examples
 ---------
 
-`$ cargo build --examples --features stm32l011`
+`$ cargo build --examples --features stm32l0x1`
 
 Contibutor Notes
 ---------

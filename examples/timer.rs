@@ -1,22 +1,22 @@
-//#![deny(warnings)]
+#![deny(warnings)]
 #![no_main]
 #![no_std]
-#![feature(custom_attribute)]
-#[allow(unused)]
 
 extern crate cortex_m;
 extern crate cortex_m_rt as rt;
+extern crate cortex_m_semihosting as sh;
+extern crate panic_semihosting;
 extern crate stm32l0xx_hal as hal;
 
-use core::panic::PanicInfo;
 use core::cell::RefCell;
 use core::ops::DerefMut;
 use cortex_m::interrupt::Mutex;
 use hal::prelude::*;
 use hal::rcc::Config;
-use hal::stm32::{self, Interrupt};
+use hal::stm32::{self, interrupt, Interrupt};
 use hal::timer::Timer;
-use cortex_m_rt::entry;
+use rt::entry;
+use sh::hprintln;
 
 static TIMER: Mutex<RefCell<Option<Timer<stm32::TIM2>>>> = Mutex::new(RefCell::new(None));
 
@@ -40,17 +40,13 @@ fn main() -> ! {
 
 #[interrupt]
 fn TIM2() {
-    //static mut COUNTER: u32 = 0;
-    //*COUNTER += 1;
+    static mut COUNTER: u32 = 0;
+    *COUNTER += 1;
+    hprintln!("{}", COUNTER).unwrap();
 
     cortex_m::interrupt::free(|cs| {
         if let Some(ref mut timer) = TIMER.borrow(cs).borrow_mut().deref_mut() {
             timer.clear_irq();
         }
     });
-}
-
-#[panic_handler]
-fn panic(_info: &PanicInfo) -> ! {
-    loop {}
 }

@@ -26,13 +26,14 @@ repository = "https://github.com/stm32-rs/stm32l0xx-hal"
 version = "0.0.1"
 
 [package.metadata.docs.rs]
-features = ["stm32l011", "rt"]
+features = ["stm32l0x1", "rt"]
 
 [dependencies]
 bare-metal = { version = "0.2.4", features = ["const-fn"] }
 cast = { version = "0.2.2", default-features = false }
 cortex-m = "0.5.8"
 cortex-m-rt = "0.6.7"
+cortex-m-semihosting = "0.3.1"
 embedded-hal = { version = "0.2.2", features = ["unproven"] }
 nb = "0.1.1"
 void = { version = "1.0.2", default-features = false }
@@ -46,17 +47,24 @@ features = ["stm32l0x1", "rt"]
 #features = ["stm32l0x1", "rt"]
 
 [dev-dependencies]
-panic-halt = "0.2.0"
+cortex-m-rt = "0.6.7"
+cortex-m-semihosting = "0.3.2"
+panic-semihosting = "0.5.1"
+cortex-m-rtfm = "0.4.0"
 
 [features]
-device-selected = []
+default = ["rt"]
 rt = ["stm32l0/rt"]
-stm32l011 = ["stm32l0/stm32l0x1", "device-selected"]
+stm32l0x1 = ["stm32l0/stm32l0x1"]
 
 [profile.dev]
+codegen-units = 1
+incremental = false
 debug = true
 opt-level = 3
 
 [profile.release]
+codegen-units = 1
+lto = true
 debug = true
 opt-level = "s"
