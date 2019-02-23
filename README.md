@@ -24,16 +24,14 @@ Requires svd2rust 0.14.0 or greater:
 Check HAL Instructions
 ---------
 
-`$ export COMMAND=""`
-
 `$ rustup target add thumbv6m-none-eabi`
 
-`$ tools/check.py $COMMAND`
+`$ cargo check --features=stm32l0x1,rt`
 
 Build Examples
 ---------
 
-`$ cargo build --examples --features stm32l0x1`
+`$ cargo build --examples --features stm32l0x1,rt`
 
 Contibutor Notes
 ---------
