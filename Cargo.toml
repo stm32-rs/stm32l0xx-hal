@@ -38,13 +38,13 @@ embedded-hal = { version = "0.2.2", features = ["unproven"] }
 nb = "0.1.1"
 void = { version = "1.0.2", default-features = false }
 
-[dependencies.stm32l0]
-version = "0.6.0"
-features = ["stm32l0x1", "rt"]
-
 #[dependencies.stm32l0]
-#path = "../stm32-rs-arko/stm32l0"
+#version = "0.6.0"
 #features = ["stm32l0x1", "rt"]
+
+[dependencies.stm32l0]
+path = "../stm32-rs-arko/stm32l0"
+features = ["stm32l0x1", "rt"]
 
 [dev-dependencies]
 cortex-m-rt = "0.6.7"

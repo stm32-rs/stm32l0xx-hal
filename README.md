@@ -20,6 +20,12 @@ Requires svd2rust 0.14.0 or greater:
 
 `$ cargo install svd2rust`
 
+Build local stm32-rs 
+---------
+
+At the root of the stm32-rs directory
+
+`$ make`
 
 Check HAL Instructions
 ---------
