@@ -2,7 +2,7 @@ stm32l0xx-hal
 =============
 
 
-WORK IN PROGRESS
+WORK IN PROGRESS [![Build Status](https://travis-ci.com/stm32-rs/stm32l0xx-hal.svg?branch=master)](https://travis-ci.com/stm32-rs/stm32l0xx-hal)
 
 
 [_stm32l0xx-hal_](https://github.com/stm32-rs/stm32l0xx-hal) is a Hardware Abstraction Layer (HAL) for the STMicro STM32L0xx family of microcontrollers.
