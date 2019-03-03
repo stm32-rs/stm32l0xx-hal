@@ -24,9 +24,13 @@ pub use stm32l0::stm32l0x1 as stm32;
 #[cfg(feature = "rt")]
 pub use crate::stm32::interrupt;
 
+mod bb;
+
 pub mod adc;
 pub mod delay;
+pub mod exti;
 pub mod gpio;
+pub mod i2c;
 pub mod prelude;
 pub mod pwm;
 pub mod rcc;
