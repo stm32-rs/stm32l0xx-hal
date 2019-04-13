@@ -1,13 +1,13 @@
 //! Timers
+use crate::hal::timer::{CountDown, Periodic};
 use cast::{u16, u32};
 use cortex_m::peripheral::syst::SystClkSource;
 use cortex_m::peripheral::SYST;
-use hal::timer::{CountDown, Periodic};
 use nb;
 use void::Void;
 
 use crate::rcc::{Clocks, Rcc};
-use crate::stm32::{TIM2, TIM3, TIM21, TIM22};
+use crate::stm32::{TIM2, TIM21, TIM22, TIM3};
 use crate::time::Hertz;
 
 pub trait TimerExt<TIM> {

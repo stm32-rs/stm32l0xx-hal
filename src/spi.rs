@@ -1,10 +1,10 @@
 use crate::gpio::gpioa::{PA5, PA6, PA7};
 use crate::gpio::{Floating, Input};
+use crate::hal;
 use crate::rcc::Rcc;
-use crate::stm32::{SPI1};
+use crate::stm32::SPI1;
 use crate::time::Hertz;
 use core::ptr;
-use hal;
 use nb;
 
 pub use hal::spi::{Mode, Phase, Polarity, MODE_0, MODE_1, MODE_2, MODE_3};
@@ -216,9 +216,9 @@ macro_rules! spi {
 
             }
 
-            impl<PINS> ::hal::blocking::spi::transfer::Default<u8> for Spi<$SPIX, PINS> {}
+            impl<PINS> crate::hal::blocking::spi::transfer::Default<u8> for Spi<$SPIX, PINS> {}
 
-            impl<PINS> ::hal::blocking::spi::write::Default<u8> for Spi<$SPIX, PINS> {}
+            impl<PINS> crate::hal::blocking::spi::write::Default<u8> for Spi<$SPIX, PINS> {}
         )+
     }
 }

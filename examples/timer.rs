@@ -1,22 +1,21 @@
 #![deny(warnings)]
+#![deny(unsafe_code)]
 #![no_main]
 #![no_std]
 
-extern crate cortex_m;
-extern crate cortex_m_rt as rt;
-extern crate cortex_m_semihosting as sh;
 extern crate panic_semihosting;
-extern crate stm32l0xx_hal as hal;
 
 use core::cell::RefCell;
 use core::ops::DerefMut;
 use cortex_m::interrupt::Mutex;
-use hal::prelude::*;
-use hal::rcc::Config;
-use hal::stm32::{self, interrupt, Interrupt};
-use hal::timer::Timer;
-use rt::entry;
-use sh::hprintln;
+use cortex_m_rt::entry;
+use cortex_m_semihosting::hprintln;
+use stm32l0xx_hal::{
+    prelude::*,
+    rcc::Config,
+    stm32::{self, interrupt, Interrupt},
+    timer::Timer,
+};
 
 static TIMER: Mutex<RefCell<Option<Timer<stm32::TIM2>>>> = Mutex::new(RefCell::new(None));
 

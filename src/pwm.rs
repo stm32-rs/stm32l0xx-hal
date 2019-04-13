@@ -3,11 +3,11 @@ use core::mem;
 
 use crate::gpio::gpioa::{PA0, PA1, PA2, PA3};
 use crate::gpio::{AltMode, Floating, Input};
+use crate::hal;
 use crate::rcc::Rcc;
-use crate::stm32::{TIM2};
+use crate::stm32::TIM2;
 use crate::time::Hertz;
 use cast::{u16, u32};
-use hal;
 
 pub struct C1;
 pub struct C2;

@@ -82,7 +82,7 @@ macro_rules! gpio {
         pub mod $gpiox {
             use core::marker::PhantomData;
 
-            use hal::digital::{toggleable, InputPin, OutputPin, StatefulOutputPin};
+            use crate::hal::digital::{toggleable, InputPin, OutputPin, StatefulOutputPin};
             use crate::stm32::$GPIOX;
             use crate::stm32::RCC;
             use super::{
@@ -433,4 +433,3 @@ gpio!(GPIOB, gpiob, iopben, PB, [
     PB14: (pb14, 14, Input<Floating>),
     PB15: (pb15, 15, Input<Floating>),
 ]);
-

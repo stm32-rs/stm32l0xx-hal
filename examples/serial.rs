@@ -3,20 +3,13 @@
 #![no_main]
 #![no_std]
 
-extern crate cortex_m;
-extern crate cortex_m_rt as rt;
-extern crate nb;
 extern crate panic_semihosting;
-extern crate stm32l0xx_hal as hal;
 
-use cortex_m::asm;
 use core::fmt::Write;
-use hal::prelude::*;
-use hal::rcc::Config;
-use hal::serial;
-use hal::stm32;
+use cortex_m::asm;
+use cortex_m_rt::entry;
 use nb::block;
-use rt::entry;
+use stm32l0xx_hal::{prelude::*, rcc::Config, serial, stm32};
 
 #[entry]
 fn main() -> ! {

@@ -2,12 +2,12 @@ use core::fmt;
 use core::marker::PhantomData;
 use core::ptr;
 
-use crate::gpio::gpioa::{PA2, PA3, PA9, PA10};
+use crate::gpio::gpioa::{PA10, PA2, PA3, PA9};
 use crate::gpio::{AltMode, Floating, Input};
+use crate::hal;
+use crate::hal::prelude::*;
 use crate::rcc::Rcc;
 use crate::stm32::{USART1, USART2};
-use hal;
-use hal::prelude::*;
 use nb::block;
 
 /// Serial error
@@ -380,7 +380,7 @@ where
             .last();
 
         self.flush();
-        
+
         Ok(())
     }
 }
@@ -395,7 +395,7 @@ where
             .into_iter()
             .map(|c| block!(self.write(*c)))
             .last();
-        
+
         self.flush();
 
         Ok(())

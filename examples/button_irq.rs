@@ -2,21 +2,19 @@
 #![no_main]
 #![no_std]
 
-extern crate cortex_m;
-extern crate cortex_m_rt as rt;
-extern crate cortex_m_semihosting as sh;
 extern crate panic_semihosting;
-extern crate stm32l0xx_hal as hal;
 
 use core::cell::RefCell;
 use core::ops::DerefMut;
 
 use cortex_m::interrupt::Mutex;
-use hal::exti::TriggerEdge;
-use hal::prelude::*;
-use hal::stm32::{self, interrupt, Interrupt, EXTI};
-use rt::entry;
-use sh::hprintln;
+use cortex_m_rt::entry;
+use cortex_m_semihosting::hprintln;
+use stm32l0xx_hal::{
+    exti::TriggerEdge,
+    prelude::*,
+    stm32::{self, interrupt, Interrupt, EXTI},
+};
 
 static INT: Mutex<RefCell<Option<EXTI>>> = Mutex::new(RefCell::new(None));
 

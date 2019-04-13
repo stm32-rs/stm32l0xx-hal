@@ -1,8 +1,8 @@
 pub use embedded_hal::prelude::*;
 
-pub use hal::adc::OneShot as _hal_adc_OneShot;
-pub use hal::watchdog::Watchdog as _hal_watchdog_Watchdog;
-pub use hal::watchdog::WatchdogEnable as _hal_watchdog_WatchdogEnable;
+pub use crate::hal::adc::OneShot as _hal_adc_OneShot;
+pub use crate::hal::watchdog::Watchdog as _hal_watchdog_Watchdog;
+pub use crate::hal::watchdog::WatchdogEnable as _hal_watchdog_WatchdogEnable;
 
 pub use crate::adc::AdcExt as _stm32l0xx_hal_analog_AdcExt;
 pub use crate::delay::DelayExt as _stm32l0xx_hal_delay_DelayExt;

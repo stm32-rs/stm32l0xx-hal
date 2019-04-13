@@ -3,15 +3,10 @@
 #![no_main]
 #![no_std]
 
-extern crate cortex_m;
-extern crate cortex_m_rt as rt;
 extern crate panic_semihosting;
-extern crate stm32l0xx_hal as hal;
 
-use hal::prelude::*;
-use hal::rcc::Config;
-use hal::{spi, stm32};
-use rt::entry;
+use cortex_m_rt::entry;
+use stm32l0xx_hal::{prelude::*, rcc::Config, spi, stm32};
 
 #[entry]
 fn main() -> ! {
@@ -25,7 +20,13 @@ fn main() -> ! {
     let miso = gpioa.pa6;
     let mosi = gpioa.pa7;
 
-    let mut spi = spi::Spi::spi1(dp.SPI1, (sck, miso, mosi), spi::MODE_0, 100_000.hz(), &mut rcc);
+    let mut spi = spi::Spi::spi1(
+        dp.SPI1,
+        (sck, miso, mosi),
+        spi::MODE_0,
+        100_000.hz(),
+        &mut rcc,
+    );
 
     loop {
         spi.write(&[0, 1]).unwrap();

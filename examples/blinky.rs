@@ -3,14 +3,9 @@
 #![no_main]
 #![no_std]
 
-extern crate cortex_m;
-extern crate cortex_m_rt as rt;
-extern crate stm32l0xx_hal as hal;
-
 use core::panic::PanicInfo;
-use hal::prelude::*;
-use hal::stm32;
-use rt::entry;
+use cortex_m_rt::entry;
+use stm32l0xx_hal::{prelude::*, stm32};
 
 #[entry]
 fn main() -> ! {
