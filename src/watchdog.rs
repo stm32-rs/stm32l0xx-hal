@@ -1,6 +1,6 @@
 use crate::hal::watchdog;
+use crate::pac::{IWDG, WWDG};
 use crate::rcc::Rcc;
-use crate::stm32::{IWDG, WWDG};
 use crate::time::Hertz;
 
 pub struct IndependedWatchdog {

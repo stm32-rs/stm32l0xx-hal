@@ -6,8 +6,8 @@ use crate::gpio::gpioa::{PA10, PA2, PA3, PA9};
 use crate::gpio::{AltMode, Floating, Input};
 use crate::hal;
 use crate::hal::prelude::*;
+use crate::pac::{USART1, USART2};
 use crate::rcc::Rcc;
-use crate::stm32::{USART1, USART2};
 use nb::block;
 
 /// Serial error

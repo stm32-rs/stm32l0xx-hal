@@ -83,8 +83,8 @@ macro_rules! gpio {
             use core::marker::PhantomData;
 
             use crate::hal::digital::{toggleable, InputPin, OutputPin, StatefulOutputPin};
-            use crate::stm32::$GPIOX;
-            use crate::stm32::RCC;
+            use crate::pac::$GPIOX;
+            use crate::pac::RCC;
             use super::{
                 Floating, GpioExt, Input, OpenDrain, Output, Speed,
                 PullDown, PullUp, PushPull, AltMode, Analog

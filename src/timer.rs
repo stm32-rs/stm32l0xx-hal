@@ -6,8 +6,8 @@ use cortex_m::peripheral::SYST;
 use nb;
 use void::Void;
 
+use crate::pac::{TIM2, TIM21, TIM22, TIM3};
 use crate::rcc::{Clocks, Rcc};
-use crate::stm32::{TIM2, TIM21, TIM22, TIM3};
 use crate::time::Hertz;
 
 pub trait TimerExt<TIM> {

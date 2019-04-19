@@ -3,9 +3,9 @@ use crate::hal::blocking::i2c::{Read, Write, WriteRead};
 
 use crate::gpio::gpiob::{PB6, PB7};
 use crate::gpio::{AltMode, OpenDrain, Output};
+use crate::pac::I2C1;
 use crate::prelude::*;
 use crate::rcc::Rcc;
-use crate::stm32::I2C1;
 use crate::time::Hertz;
 
 /// I2C abstraction

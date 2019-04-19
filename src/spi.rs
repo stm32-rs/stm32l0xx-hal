@@ -1,8 +1,8 @@
 use crate::gpio::gpioa::{PA5, PA6, PA7};
 use crate::gpio::{Floating, Input};
 use crate::hal;
+use crate::pac::SPI1;
 use crate::rcc::Rcc;
-use crate::stm32::SPI1;
 use crate::time::Hertz;
 use core::ptr;
 use nb;

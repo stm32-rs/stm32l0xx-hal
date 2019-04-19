@@ -1,8 +1,8 @@
 //! # Analog to Digital converter
 use crate::gpio::*;
 use crate::hal::adc::{Channel, OneShot};
+use crate::pac::ADC;
 use crate::rcc::Rcc;
-use crate::stm32::ADC;
 
 /// Analog to Digital converter interface
 pub struct Adc {
