@@ -3,49 +3,80 @@
 #![no_main]
 #![no_std]
 
-extern crate panic_semihosting;
+extern crate panic_halt;
 
 use core::cell::RefCell;
 use core::ops::DerefMut;
+
+use cortex_m::asm;
 use cortex_m::interrupt::Mutex;
 use cortex_m_rt::entry;
-use cortex_m_semihosting::hprintln;
 use stm32l0xx_hal::{
+    gpio::*,
+    pac::{self, interrupt, Interrupt},
     prelude::*,
     rcc::Config,
-    stm32::{self, interrupt, Interrupt},
     timer::Timer,
 };
 
-static TIMER: Mutex<RefCell<Option<Timer<stm32::TIM2>>>> = Mutex::new(RefCell::new(None));
+static LED: Mutex<RefCell<Option<gpioa::PA1<Output<PushPull>>>>> = Mutex::new(RefCell::new(None));
+static TIMER: Mutex<RefCell<Option<Timer<pac::TIM2>>>> = Mutex::new(RefCell::new(None));
 
 #[entry]
 fn main() -> ! {
-    let dp = stm32::Peripherals::take().unwrap();
-    let mut cp = cortex_m::Peripherals::take().unwrap();
+    let dp = pac::Peripherals::take().unwrap();
+    let cp = cortex_m::Peripherals::take().unwrap();
+
+    // Configure the clock.
     let mut rcc = dp.RCC.freeze(Config::hsi16());
 
+    // Acquire the GPIOA peripheral. This also enables the clock for GPIOA in
+    // the RCC register.
+    let gpioa = dp.GPIOA.split();
+
+    // Configure PA1 as output.
+    let led = gpioa.pa1.into_push_pull_output();
+
+    // Configure the timer.
     let mut timer = dp.TIM2.timer(1.hz(), &mut rcc);
     timer.listen();
 
-    cp.NVIC.enable(Interrupt::TIM2);
-
-    cortex_m::interrupt::free(move |cs| {
+    // Store the LED and timer in mutex refcells to make them available from the
+    // timer interrupt.
+    cortex_m::interrupt::free(|cs| {
+        *LED.borrow(cs).borrow_mut() = Some(led);
         *TIMER.borrow(cs).borrow_mut() = Some(timer);
     });
 
-    loop {}
+    // Enable the timer interrupt in the NVIC.
+    let mut nvic = cp.NVIC;
+    nvic.enable(Interrupt::TIM2);
+
+    loop {
+        asm::wfi();
+    }
 }
 
 #[interrupt]
 fn TIM2() {
-    static mut COUNTER: u32 = 0;
-    *COUNTER += 1;
-    hprintln!("{}", COUNTER).unwrap();
+    // Keep a state to blink the LED.
+    static mut STATE: bool = false;
 
     cortex_m::interrupt::free(|cs| {
         if let Some(ref mut timer) = TIMER.borrow(cs).borrow_mut().deref_mut() {
+            // Clear the interrupt flag.
             timer.clear_irq();
+
+            // Change the LED state on each interrupt.
+            if let Some(ref mut led) = LED.borrow(cs).borrow_mut().deref_mut() {
+                if *STATE {
+                    led.set_low();
+                    *STATE = false;
+                } else {
+                    led.set_high();
+                    *STATE = true;
+                }
+            }
         }
     });
 }

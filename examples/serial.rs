@@ -1,37 +1,44 @@
-//#![deny(warnings)]
+#![deny(warnings)]
 #![deny(unsafe_code)]
 #![no_main]
 #![no_std]
 
-extern crate panic_semihosting;
+extern crate panic_halt;
 
 use core::fmt::Write;
-use cortex_m::asm;
 use cortex_m_rt::entry;
+use stm32l0xx_hal::{pac, prelude::*, rcc::Config, serial};
+
 use nb::block;
-use stm32l0xx_hal::{prelude::*, rcc::Config, serial, stm32};
 
 #[entry]
 fn main() -> ! {
-    let dp = stm32::Peripherals::take().unwrap();
+    let dp = pac::Peripherals::take().unwrap();
 
+    // Configure the clock.
     let mut rcc = dp.RCC.freeze(Config::hsi16());
 
+    // Acquire the GPIOA peripheral. This also enables the clock for GPIOA in
+    // the RCC register.
     let gpioa = dp.GPIOA.split();
-    let tx = gpioa.pa9;
-    let rx = gpioa.pa10;
 
+    let tx_pin = gpioa.pa9;
+    let rx_pin = gpioa.pa10;
+
+    // Configure the serial peripheral.
     let serial = dp
         .USART2
-        .usart((tx, rx), serial::Config::default(), &mut rcc)
+        .usart((tx_pin, rx_pin), serial::Config::default(), &mut rcc)
         .unwrap();
 
     let (mut tx, mut rx) = serial.split();
 
+    // core::fmt::Write is implemented for tx.
+    writeln!(tx, "Hello, world!").unwrap();
+
     loop {
-        //tx.write_str("Hello World!\r\n").unwrap();
-        let received = block!(rx.read()).unwrap();
-        //tx.write_str("Got a byte!\r\n").unwrap();
-        tx.write(received);
+        // Echo what is received on the serial link.
+        let received = block!(rx.read()).unwrap_or(b'E');
+        block!(tx.write(received)).ok();
     }
 }

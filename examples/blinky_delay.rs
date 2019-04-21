@@ -16,26 +16,21 @@ fn main() -> ! {
     // Configure the clock.
     let rcc = dp.RCC.freeze(Config::hsi16());
 
-    // Acquire the GPI0A and GPIOB peripherals. This also enables the clock for
-    // GPIOA and GPIOB in the RCC register.
+    // Acquire the GPIOA peripheral. This also enables the clock for GPIOA in
+    // the RCC register.
     let gpioa = dp.GPIOA.split();
-    let gpiob = dp.GPIOB.split();
 
-    // Configure PA0 as input.
-    let button = gpioa.pa0.into_pull_up_input();
-
-    // Configure PB6 as output.
-    let mut led = gpiob.pb6.into_push_pull_output();
+    // Configure PA1 as output.
+    let mut led = gpioa.pa1.into_push_pull_output();
 
     // Get the delay provider.
     let mut delay = cp.SYST.delay(rcc.clocks);
 
     loop {
-        if button.is_high() {
-            led.set_high();
-            delay.delay(500.ms());
-        } else {
-            led.set_low();
-        }
+        led.set_high();
+        delay.delay_ms(500_u16);
+
+        led.set_low();
+        delay.delay_ms(500_u16);
     }
 }

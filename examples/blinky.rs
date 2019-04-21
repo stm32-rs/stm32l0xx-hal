@@ -3,27 +3,31 @@
 #![no_main]
 #![no_std]
 
-use core::panic::PanicInfo;
+extern crate panic_halt;
+
 use cortex_m_rt::entry;
-use stm32l0xx_hal::{prelude::*, stm32};
+use stm32l0xx_hal::{pac, prelude::*};
 
 #[entry]
 fn main() -> ! {
-    let dp = stm32::Peripherals::take().unwrap();
+    let dp = pac::Peripherals::take().unwrap();
+
+    // Acquire the GPIOA peripheral. This also enables the clock for GPIOA in
+    // the RCC register.
     let gpioa = dp.GPIOA.split();
+
+    // Configure PA1 as output.
     let mut led = gpioa.pa1.into_push_pull_output();
 
     loop {
-        for _ in 0..1_000 {
+        // Set the LED high one million times in a row.
+        for _ in 0..1_000_000 {
             led.set_high();
         }
-        for _ in 0..1_000 {
+
+        // Set the LED low one million times in a row.
+        for _ in 0..1_000_000 {
             led.set_low();
         }
     }
-}
-
-#[panic_handler]
-fn panic(_info: &PanicInfo) -> ! {
-    loop {}
 }
