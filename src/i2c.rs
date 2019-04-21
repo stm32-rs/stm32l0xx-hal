@@ -39,22 +39,22 @@ macro_rules! i2c {
                 PINS: Pins<$I2CX>,
             {
                 pins.setup();
-                let speed: Hertz = speed.into();
+                // let speed: Hertz = speed.into();
 
-                // Enable clock for I2C
-                rcc.rb.apb1enr.modify(|_, w| w.$i2cxen().set_bit());
+                // // Enable clock for I2C
+                // rcc.rb.apb1enr.modify(|_, w| w.$i2cxen().set_bit());
 
-                // Reset I2C
-                rcc.rb.apb1rstr.modify(|_, w| w.$i2crst().set_bit());
-                rcc.rb.apb1rstr.modify(|_, w| w.$i2crst().clear_bit());
+                // // Reset I2C
+                // rcc.rb.apb1rstr.modify(|_, w| w.$i2crst().set_bit());
+                // rcc.rb.apb1rstr.modify(|_, w| w.$i2crst().clear_bit());
 
-                // Make sure the I2C unit is disabled so we can configure it
-                i2c.cr1.modify(|_, w| w.pe().clear_bit());
+                // // Make sure the I2C unit is disabled so we can configure it
+                // i2c.cr1.modify(|_, w| w.pe().clear_bit());
 
-                // Calculate settings for I2C speed modes
-                let clock = rcc.clocks.apb1_clk().0;
-                let freq = clock / 1_000_000;
-                assert!(freq >= 2 && freq <= 50);
+                // // Calculate settings for I2C speed modes
+                // let clock = rcc.clocks.apb1_clk().0;
+                // let freq = clock / 1_000_000;
+                // assert!(freq >= 2 && freq <= 50);
 
                 // TODO: Replace with TIMINGR configuration
                 /*

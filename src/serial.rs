@@ -109,7 +109,7 @@ pub struct InvalidConfig;
 
 impl Default for Config {
     fn default() -> Config {
-        let baudrate = 19_200_u32.bps();
+        let baudrate = 9_600_u32.bps();
         Config {
             baudrate,
             wordlength: WordLength::DataBits8,
@@ -125,15 +125,15 @@ pub trait Pins<USART> {
 
 impl Pins<USART1> for (PA2<Input<Floating>>, PA3<Input<Floating>>) {
     fn setup(&self) {
-        self.0.set_alt_mode(AltMode::USART1_3);
-        self.1.set_alt_mode(AltMode::USART1_3);
+        self.0.set_alt_mode(AltMode::AF6); //AltMode::USART1_3);
+        self.1.set_alt_mode(AltMode::AF6); //AltMode::USART1_3);
     }
 }
 
 impl Pins<USART2> for (PA9<Input<Floating>>, PA10<Input<Floating>>) {
     fn setup(&self) {
-        self.0.set_alt_mode(AltMode::USART1_3);
-        self.1.set_alt_mode(AltMode::USART1_3);
+        self.0.set_alt_mode(AltMode::AF4); //AltMode::USART1_3);
+        self.1.set_alt_mode(AltMode::AF4); //AltMode::USART1_3);
     }
 }
 
@@ -270,10 +270,9 @@ macro_rules! usart {
 
                 /// Clears interrupt flag
                 pub fn clear_irq(&mut self, event: Event) {
-                    // TODO: Implement
-                    //if let Event::Rxne = event {
-                    //    self.usart.rqr.modify(|_, w| w.rxfrq().discard())
-                    //}
+                    if let Event::Rxne = event {
+                        self.usart.rqr.write(|w| unsafe { w.rxfrq().discard() })
+                    }
                 }
 
                 pub fn split(self) -> (Tx<$USARTX>, Rx<$USARTX>) {
@@ -312,29 +311,16 @@ macro_rules! usart {
                     // NOTE(unsafe) atomic read with no side effects
                     let isr = unsafe { (*$USARTX::ptr()).isr.read() };
 
-                    // Any error requires the dr to be read to clear
-                    if isr.pe().bit_is_set()
-                        || isr.fe().bit_is_set()
-                        || isr.nf().bit_is_set()
-                        || isr.ore().bit_is_set()
-                    {
-                        unsafe { (*$USARTX::ptr()).rdr.read() };
-                    }
-
-                    Err(if isr.pe().bit_is_set() {
-                        nb::Error::Other(Error::Parity)
-                    } else if isr.fe().bit_is_set() {
-                        nb::Error::Other(Error::Framing)
-                    } else if isr.nf().bit_is_set() {
-                        nb::Error::Other(Error::Noise)
-                    } else if isr.ore().bit_is_set() {
-                        nb::Error::Other(Error::Overrun)
-                    } else if isr.rxne().bit_is_set() {
+                    // Check if a byte is available
+                    if isr.rxne().bit_is_set() {
+                        // Read the received byte
                         // NOTE(read_volatile) see `write_volatile` below
-                        return Ok(unsafe { ptr::read_volatile(&(*$USARTX::ptr()).rdr as *const _ as *const _) });
+                        Ok(unsafe {
+                            ptr::read_volatile(&(*$USARTX::ptr()).rdr as *const _ as *const _)
+                        })
                     } else {
-                        nb::Error::WouldBlock
-                    })
+                        Err(nb::Error::WouldBlock)
+                    }
                 }
             }
 
@@ -345,6 +331,12 @@ macro_rules! usart {
                     // NOTE(unsafe) atomic read with no side effects
                     let isr = unsafe { (*$USARTX::ptr()).isr.read() };
 
+                    // Frame complete, set the TC Clear Flag
+                    unsafe {
+                        (*$USARTX::ptr()).icr.write(|w| {w.tccf().set_bit()});
+                    }
+
+                    // Check TC bit on ISR
                     if isr.tc().bit_is_set() {
                         Ok(())
                     } else {
@@ -360,6 +352,7 @@ macro_rules! usart {
                         // NOTE(unsafe) atomic write to stateless register
                         // NOTE(write_volatile) 8-bit write that's not possible through the svd2rust API
                         unsafe { ptr::write_volatile(&(*$USARTX::ptr()).tdr as *const _ as *mut _, byte) }
+
                         Ok(())
                     } else {
                         Err(nb::Error::WouldBlock)
@@ -385,6 +378,9 @@ where
             .into_iter()
             .map(|c| block!(self.write(*c)))
             .last();
+
+        self.flush();
+        
         Ok(())
     }
 }
@@ -399,6 +395,9 @@ where
             .into_iter()
             .map(|c| block!(self.write(*c)))
             .last();
+        
+        self.flush();
+
         Ok(())
     }
 }

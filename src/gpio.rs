@@ -49,20 +49,29 @@ pub enum Speed {
 
 #[allow(dead_code)]
 pub(crate) enum AltMode {
-    SYSTEM = 0,
-    TIM2 = 1,
-    TIM3_5 = 2,
-    TIM9_11 = 3,
-    I2C = 4,
-    SPI1_2 = 5,
-    SPI3 = 6,
-    USART1_3 = 7,
-    UART4_5 = 8,
-    USB = 10,
-    LCD = 11,
-    FSMC = 12,
-    RI = 14,
-    EVENTOUT = 15,
+    AF0 = 0,
+    AF1 = 1,
+    AF2 = 2,
+    AF3 = 3,
+    AF4 = 4,
+    AF5 = 5,
+    AF6 = 6,
+    AF7 = 7,
+    // TODO: Following Alt Modes are incorrect
+    SYSTEM = 8,
+    TIM2 = 9,
+    TIM3_5 = 10,
+    TIM9_11 = 11,
+    I2C = 12,
+    SPI1_2 = 13,
+    SPI3 = 14,
+    USART1_3 = 15,
+    UART4_5 = 16,
+    USB = 17,
+    LCD = 18,
+    FSMC = 19,
+    RI = 20,
+    EVENTOUT = 21,
 }
 
 macro_rules! gpio {

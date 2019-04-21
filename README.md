@@ -2,7 +2,8 @@ stm32l0xx-hal
 =============
 
 
-WORK IN PROGRESS [![Build Status](https://travis-ci.com/stm32-rs/stm32l0xx-hal.svg?branch=master)](https://travis-ci.com/stm32-rs/stm32l0xx-hal)
+WORK IN PROGRESS 
+[![Build Status](https://travis-ci.com/stm32-rs/stm32l0xx-hal.svg?branch=master)](https://travis-ci.com/stm32-rs/stm32l0xx-hal)
 
 
 [_stm32l0xx-hal_](https://github.com/stm32-rs/stm32l0xx-hal) is a Hardware Abstraction Layer (HAL) for the STMicro STM32L0xx family of microcontrollers.
@@ -42,6 +43,22 @@ Build Examples
 ---------
 
 `$ cargo build --release --examples --features stm32l0x1,rt`
+
+
+Flash
+---------
+
+The following is a how-to on flashing the 'serial' example code. This can be extended to any other example code.
+
+1. Generate Hex File
+``` 
+$ arm-none-eabi-objcopy -O ihex target/thumbv6m-none-eabi/release/examples/serial serial.hex
+```
+
+2. Flash command
+``` 
+$ st-flash --format ihex write serial.hex
+```
 
 Contibutor Notes
 ---------

@@ -1,4 +1,4 @@
-#![deny(warnings)]
+//#![deny(warnings)]
 #![deny(unsafe_code)]
 #![no_main]
 #![no_std]
@@ -9,6 +9,7 @@ extern crate nb;
 extern crate panic_semihosting;
 extern crate stm32l0xx_hal as hal;
 
+use cortex_m::asm;
 use core::fmt::Write;
 use hal::prelude::*;
 use hal::rcc::Config;
@@ -35,8 +36,9 @@ fn main() -> ! {
     let (mut tx, mut rx) = serial.split();
 
     loop {
+        //tx.write_str("Hello World!\r\n").unwrap();
         let received = block!(rx.read()).unwrap();
-        tx.write_str("\r\n").unwrap();
-        block!(tx.write(received)).ok();
+        //tx.write_str("Got a byte!\r\n").unwrap();
+        tx.write(received);
     }
 }

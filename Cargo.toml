@@ -42,6 +42,8 @@ void = { version = "1.0.2", default-features = false }
 #version = "0.6.0"
 #features = ["stm32l0x1", "rt"]
 
+# Dev fork of stm32-rs: https://github.com/arkorobotics/stm32-rs
+# -- Note: Rename "stm32-rs" to "stm32-rs-arko" or path below
 [dependencies.stm32l0]
 path = "../stm32-rs-arko/stm32l0"
 features = ["stm32l0x1", "rt"]
