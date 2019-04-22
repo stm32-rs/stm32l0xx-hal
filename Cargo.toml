@@ -29,18 +29,11 @@ version = "0.0.1"
 features = ["stm32l0x1", "rt"]
 
 [dependencies]
-bare-metal = { version = "0.2.4", features = ["const-fn"] }
-cast = { version = "0.2.2", default-features = false }
-cortex-m = "0.5.8"
-cortex-m-rt = "0.6.7"
-cortex-m-semihosting = "0.3.1"
 embedded-hal = { version = "0.2.2", features = ["unproven"] }
-nb = "0.1.1"
+cortex-m = {version = "0.5.8", features = ["const-fn"] }
 void = { version = "1.0.2", default-features = false }
-
-#[dependencies.stm32l0]
-#version = "0.6.0"
-#features = ["stm32l0x1", "rt"]
+cast = { version = "0.2.2", default-features = false }
+nb = "0.1.2"
 
 # Dev fork of stm32-rs: https://github.com/arkorobotics/stm32-rs
 # -- Note: Rename "stm32-rs" to "stm32-rs-arko" or path below
@@ -49,11 +42,11 @@ path = "../stm32-rs-arko/stm32l0"
 features = ["stm32l0x1", "rt"]
 
 [dev-dependencies]
-cortex-m-rt = "0.6.7"
+cortex-m-rt = "0.6.8"
 cortex-m-semihosting = "0.3.2"
 panic-halt = "0.2.0"
 panic-semihosting = "0.5.1"
-cortex-m-rtfm = "0.4.0"
+cortex-m-rtfm = "0.4.3"
 
 [features]
 default = ["rt"]
