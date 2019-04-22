@@ -16,6 +16,7 @@ use stm32l0xx_hal::{
     gpio::*,
     pac::{self, interrupt, Interrupt, EXTI},
     prelude::*,
+    rcc::Config,
 };
 
 static INT: Mutex<RefCell<Option<EXTI>>> = Mutex::new(RefCell::new(None));
@@ -26,9 +27,12 @@ fn main() -> ! {
     let dp = pac::Peripherals::take().unwrap();
     let cp = cortex_m::Peripherals::take().unwrap();
 
+    // Configure the clock.
+    let mut rcc = dp.RCC.freeze(Config::hsi16());
+
     // Acquire the GPIOB peripheral. This also enables the clock for GPIOB in
     // the RCC register.
-    let gpiob = dp.GPIOB.split();
+    let gpiob = dp.GPIOB.split(&mut rcc);
 
     // Configure PB6 as output.
     let led = gpiob.pb6.into_push_pull_output();

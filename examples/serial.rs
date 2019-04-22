@@ -20,7 +20,7 @@ fn main() -> ! {
 
     // Acquire the GPIOA peripheral. This also enables the clock for GPIOA in
     // the RCC register.
-    let gpioa = dp.GPIOA.split();
+    let gpioa = dp.GPIOA.split(&mut rcc);
 
     let tx_pin = gpioa.pa9;
     let rx_pin = gpioa.pa10;

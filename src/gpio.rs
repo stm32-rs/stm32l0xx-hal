@@ -2,13 +2,15 @@
 
 use core::marker::PhantomData;
 
+use crate::rcc::Rcc;
+
 /// Extension trait to split a GPIO peripheral in independent pins and registers
 pub trait GpioExt {
     /// The parts to split the GPIO into
     type Parts;
 
     /// Splits the GPIO block into independent pins and registers
-    fn split(self) -> Self::Parts;
+    fn split(self, rcc: &mut Rcc) -> Self::Parts;
 }
 
 /// Input mode (type state)
@@ -84,7 +86,7 @@ macro_rules! gpio {
 
             use crate::hal::digital::{toggleable, InputPin, OutputPin, StatefulOutputPin};
             use crate::pac::$GPIOX;
-            use crate::pac::RCC;
+            use crate::rcc::Rcc;
             use super::{
                 Floating, GpioExt, Input, OpenDrain, Output, Speed,
                 PullDown, PullUp, PushPull, AltMode, Analog
@@ -101,10 +103,8 @@ macro_rules! gpio {
             impl GpioExt for $GPIOX {
                 type Parts = Parts;
 
-                fn split(self) -> Parts {
-                    // NOTE(unsafe) This executes only during initialisation
-                    let rcc = unsafe { &(*RCC::ptr()) };
-                    rcc.iopenr.modify(|_, w| w.$iopxenr().set_bit());
+                fn split(self, rcc: &mut Rcc) -> Parts {
+                    rcc.rb.iopenr.modify(|_, w| w.$iopxenr().set_bit());
 
                     Parts {
                         $(

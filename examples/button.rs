@@ -14,12 +14,12 @@ fn main() -> ! {
     let cp = cortex_m::Peripherals::take().unwrap();
 
     // Configure the clock.
-    let rcc = dp.RCC.freeze(Config::hsi16());
+    let mut rcc = dp.RCC.freeze(Config::hsi16());
 
     // Acquire the GPI0A and GPIOB peripherals. This also enables the clock for
     // GPIOA and GPIOB in the RCC register.
-    let gpioa = dp.GPIOA.split();
-    let gpiob = dp.GPIOB.split();
+    let gpioa = dp.GPIOA.split(&mut rcc);
+    let gpiob = dp.GPIOB.split(&mut rcc);
 
     // Configure PA0 as input.
     let button = gpioa.pa0.into_pull_up_input();

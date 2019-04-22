@@ -6,7 +6,7 @@
 extern crate panic_halt;
 
 use rtfm::app;
-use stm32l0xx_hal::{exti::TriggerEdge, gpio::*, pac, prelude::*};
+use stm32l0xx_hal::{exti::TriggerEdge, gpio::*, pac, prelude::*, rcc::Config};
 
 #[app(device = stm32l0xx_hal::pac)]
 const APP: () = {
@@ -15,9 +15,12 @@ const APP: () = {
 
     #[init]
     fn init() -> init::LateResources {
+        // Configure the clock.
+        let mut rcc = device.RCC.freeze(Config::hsi16());
+
         // Acquire the GPIOB peripheral. This also enables the clock for GPIOB in
         // the RCC register.
-        let gpiob = device.GPIOB.split();
+        let gpiob = device.GPIOB.split(&mut rcc);
 
         // Configure PB6 as output.
         let led = gpiob.pb6.into_push_pull_output();

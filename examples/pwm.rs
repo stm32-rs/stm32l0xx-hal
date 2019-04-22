@@ -22,7 +22,7 @@ fn main() -> ! {
 
     // Acquire the GPIOA peripheral. This also enables the clock for GPIOA in
     // the RCC register.
-    let gpioa = dp.GPIOA.split();
+    let gpioa = dp.GPIOA.split(&mut rcc);
 
     // Configure TIM2 as PWM on PA0.
     let c1 = gpioa.pa0;

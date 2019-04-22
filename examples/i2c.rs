@@ -18,7 +18,7 @@ fn main() -> ! {
 
     // Acquire the GPIOB peripheral. This also enables the clock for GPIOB in
     // the RCC register.
-    let gpiob = dp.GPIOB.split();
+    let gpiob = dp.GPIOB.split(&mut rcc);
 
     // Configure the pins for I2C1.
     let scl = gpiob.pb6.into_open_drain_output();
