@@ -39,7 +39,6 @@ nb = "0.1.2"
 # -- Note: Rename "stm32-rs" to "stm32-rs-arko" or path below
 [dependencies.stm32l0]
 path = "../stm32-rs-arko/stm32l0"
-features = ["stm32l0x1", "rt"]
 
 [dev-dependencies]
 cortex-m-rt = "0.6.8"
@@ -49,7 +48,6 @@ panic-semihosting = "0.5.1"
 cortex-m-rtfm = "0.4.3"
 
 [features]
-default = ["rt"]
 rt = ["stm32l0/rt"]
 stm32l0x1 = ["stm32l0/stm32l0x1"]
 
@@ -64,3 +62,11 @@ codegen-units = 1
 lto = true
 debug = true
 opt-level = "s"
+
+[[example]]
+name = "button_irq_rtfm"
+required-features = ["rt"]
+
+[[example]]
+name = "timer_interrupt_rtfm"
+required-features = ["rt"]
