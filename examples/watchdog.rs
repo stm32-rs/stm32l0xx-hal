@@ -3,37 +3,43 @@
 #![no_main]
 #![no_std]
 
-extern crate cortex_m;
-extern crate cortex_m_rt as rt;
-extern crate stm32l0xx_hal as hal;
+extern crate panic_halt;
 
-use core::panic::PanicInfo;
-use hal::prelude::*;
-use hal::rcc::Config;
-use hal::stm32;
-use rt::entry;
+use cortex_m::asm;
+use cortex_m_rt::entry;
+use stm32l0xx_hal::{pac, prelude::*, rcc::Config};
 
 #[entry]
 fn main() -> ! {
-    let dp = stm32::Peripherals::take().unwrap();
+    let dp = pac::Peripherals::take().unwrap();
     let cp = cortex_m::Peripherals::take().unwrap();
 
+    // Configure the clock.
     let rcc = dp.RCC.freeze(Config::hsi16());
+
+    // Configure a delay to feed the watchdog.
     let mut delay = cp.SYST.delay(rcc.clocks);
 
-    //let mut watchdog = dp.WWDG.watchdog(&mut rcc);
+    // Configure the independent watchdog.
     let mut watchdog = dp.IWDG.watchdog();
+
+    // Start a watchdog with a 100ms period.
     watchdog.start(100.ms());
 
-    delay.delay(60.ms());
-    //delay.delay(120.ms());
+    let mut counter = 50;
+    loop {
+        // Perform some “work”.
+        delay.delay_ms(90_u16);
 
-    cortex_m::asm::bkpt();
+        // Feed the wathdog on time.
+        watchdog.feed();
 
-    loop {}
-}
-
-#[panic_handler]
-fn panic(_info: &PanicInfo) -> ! {
-    loop {}
+        counter -= 1;
+        if counter == 0 {
+            // Block at some point to raise a reset.
+            loop {
+                asm::nop();
+            }
+        }
+    }
 }

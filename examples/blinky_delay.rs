@@ -6,11 +6,12 @@
 extern crate panic_halt;
 
 use cortex_m_rt::entry;
-use stm32l0xx_hal::{pac, prelude::*, rcc::Config, spi};
+use stm32l0xx_hal::{pac, prelude::*, rcc::Config};
 
 #[entry]
 fn main() -> ! {
     let dp = pac::Peripherals::take().unwrap();
+    let cp = cortex_m::Peripherals::take().unwrap();
 
     // Configure the clock.
     let mut rcc = dp.RCC.freeze(Config::hsi16());
@@ -19,16 +20,17 @@ fn main() -> ! {
     // the RCC register.
     let gpioa = dp.GPIOA.split(&mut rcc);
 
-    let sck = gpioa.pa5;
-    let miso = gpioa.pa6;
-    let mosi = gpioa.pa7;
+    // Configure PA1 as output.
+    let mut led = gpioa.pa1.into_push_pull_output();
 
-    // Initialise the SPI peripheral.
-    let mut spi = dp
-        .SPI1
-        .spi((sck, miso, mosi), spi::MODE_0, 100_000.hz(), &mut rcc);
+    // Get the delay provider.
+    let mut delay = cp.SYST.delay(rcc.clocks);
 
     loop {
-        spi.write(&[0, 1]).unwrap();
+        led.set_high();
+        delay.delay_ms(500_u16);
+
+        led.set_low();
+        delay.delay_ms(500_u16);
     }
 }

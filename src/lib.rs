@@ -1,28 +1,15 @@
 #![no_std]
-#![allow(non_camel_case_types)]
 
-#[cfg(not(any(
-    feature = "stm32l0x1"
-)))]
+#[cfg(not(any(feature = "stm32l0x1")))]
 compile_error!("This crate requires one of the following features enabled: stm32l0x1");
 
-
-extern crate bare_metal;
-extern crate cast;
-extern crate cortex_m;
-extern crate void;
-
-extern crate embedded_hal as hal;
-pub extern crate nb;
-pub use stm32l0;
-
-pub use nb::block;
+use embedded_hal as hal;
 
 #[cfg(feature = "stm32l0x1")]
-pub use stm32l0::stm32l0x1 as stm32;
+pub use stm32l0::stm32l0x1 as pac;
 
-#[cfg(feature = "rt")]
-pub use crate::stm32::interrupt;
+pub use crate::pac as device;
+pub use crate::pac as stm32;
 
 mod bb;
 
