@@ -1,6 +1,6 @@
 //! External interrupt controller
 use crate::bb;
-use crate::stm32::EXTI;
+use crate::pac::EXTI;
 
 pub enum TriggerEdge {
     Rising,

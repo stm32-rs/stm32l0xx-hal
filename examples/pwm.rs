@@ -3,25 +3,28 @@
 #![no_main]
 #![no_std]
 
-extern crate cortex_m;
-extern crate cortex_m_rt as rt;
-extern crate stm32l0xx_hal as hal;
+extern crate panic_halt;
 
-use core::panic::PanicInfo;
 use cortex_m::asm;
-use hal::prelude::*;
-use hal::rcc::Config;
-use hal::stm32;
-use rt::entry;
+use cortex_m_rt::entry;
+use stm32l0xx_hal::{pac, prelude::*, rcc::Config};
 
 #[entry]
 fn main() -> ! {
-    let dp = stm32::Peripherals::take().unwrap();
+    let dp = pac::Peripherals::take().unwrap();
+    let cp = cortex_m::Peripherals::take().unwrap();
 
+    // Configure the clock.
     let mut rcc = dp.RCC.freeze(Config::hsi16());
 
-    let gpioa = dp.GPIOA.split();
+    // Get the delay provider.
+    let mut delay = cp.SYST.delay(rcc.clocks);
 
+    // Acquire the GPIOA peripheral. This also enables the clock for GPIOA in
+    // the RCC register.
+    let gpioa = dp.GPIOA.split(&mut rcc);
+
+    // Configure TIM2 as PWM on PA0.
     let c1 = gpioa.pa0;
     let mut pwm = dp.TIM2.pwm(c1, 10.khz(), &mut rcc);
 
@@ -30,21 +33,17 @@ fn main() -> ! {
     pwm.enable();
 
     pwm.set_duty(max);
-    asm::bkpt();
+    delay.delay_ms(1000_u16);
 
     pwm.set_duty(max / 2);
-    asm::bkpt();
+    delay.delay_ms(1000_u16);
 
     pwm.set_duty(max / 4);
-    asm::bkpt();
+    delay.delay_ms(1000_u16);
 
     pwm.set_duty(max / 8);
-    asm::bkpt();
 
-    loop {}
-}
-
-#[panic_handler]
-fn panic(_info: &PanicInfo) -> ! {
-    loop {}
+    loop {
+        asm::nop();
+    }
 }

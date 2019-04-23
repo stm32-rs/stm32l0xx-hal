@@ -1,8 +1,8 @@
 //! # Analog to Digital converter
 use crate::gpio::*;
+use crate::hal::adc::{Channel, OneShot};
+use crate::pac::ADC;
 use crate::rcc::Rcc;
-use crate::stm32::ADC;
-use hal::adc::{Channel, OneShot};
 
 /// Analog to Digital converter interface
 pub struct Adc {
@@ -36,6 +36,7 @@ pub enum Align {
 
 /// ADC Sampling Precision
 #[derive(Copy, Clone, PartialEq)]
+#[allow(non_camel_case_types)]
 pub enum Precision {
     /// 12 bit precision
     B_12 = 0b00,
@@ -49,6 +50,7 @@ pub enum Precision {
 
 /// ADC Sampling time
 #[derive(Copy, Clone, PartialEq)]
+#[allow(non_camel_case_types)]
 pub enum SampleTime {
     T_4 = 0b000,
     T_9 = 0b001,

@@ -1,4 +1,4 @@
-use crate::stm32::RCC;
+use crate::pac::RCC;
 use crate::time::{Hertz, U32Ext};
 
 /// System clock mux source
