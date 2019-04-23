@@ -333,7 +333,6 @@ macro_rules! usart {
                             (*$USARTX::ptr()).icr.write(|w| {w.fecf().set_bit()});
                             (*$USARTX::ptr()).icr.write(|w| {w.ncf().set_bit()});
                             (*$USARTX::ptr()).icr.write(|w| {w.orecf().set_bit()});
-                            ptr::read_volatile(&(*$USARTX::ptr()).rdr as *const _ as *const _);
                         }
                         Err(nb::Error::Other(err))
                     } else {
