@@ -55,7 +55,7 @@ stm32l0x1 = ["stm32l0/stm32l0x1"]
 codegen-units = 1
 incremental = false
 debug = true
-opt-level = 3
+opt-level = "s"
 
 [profile.release]
 codegen-units = 1
