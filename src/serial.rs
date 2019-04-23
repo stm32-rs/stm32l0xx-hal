@@ -311,15 +311,42 @@ macro_rules! usart {
                     // NOTE(unsafe) atomic read with no side effects
                     let isr = unsafe { (*$USARTX::ptr()).isr.read() };
 
-                    // Check if a byte is available
-                    if isr.rxne().bit_is_set() {
-                        // Read the received byte
-                        // NOTE(read_volatile) see `write_volatile` below
-                        Ok(unsafe {
-                            ptr::read_volatile(&(*$USARTX::ptr()).rdr as *const _ as *const _)
-                        })
+                    // Check for any errors
+                    let err = if isr.pe().bit_is_set() {
+                        Some(Error::Parity)
+                    } else if isr.fe().bit_is_set() {
+                        Some(Error::Framing)
+                    } else if isr.nf().bit_is_set() {
+                        Some(Error::Noise)
+                    } else if isr.ore().bit_is_set() {
+                        Some(Error::Overrun)
                     } else {
-                        Err(nb::Error::WouldBlock)
+                        None
+                    };
+
+                    if let Some(err) = err {
+                        // Some error occured. Clear the error flags by writing to ICR
+                        // followed by a read from the rdr register
+                        // NOTE(read_volatile) see `write_volatile` below
+                        unsafe {
+                            (*$USARTX::ptr()).icr.write(|w| {w.pecf().set_bit()});
+                            (*$USARTX::ptr()).icr.write(|w| {w.fecf().set_bit()});
+                            (*$USARTX::ptr()).icr.write(|w| {w.ncf().set_bit()});
+                            (*$USARTX::ptr()).icr.write(|w| {w.orecf().set_bit()});
+                            ptr::read_volatile(&(*$USARTX::ptr()).rdr as *const _ as *const _);
+                        }
+                        Err(nb::Error::Other(err))
+                    } else {
+                        // Check if a byte is available
+                        if isr.rxne().bit_is_set() {
+                            // Read the received byte
+                            // NOTE(read_volatile) see `write_volatile` below
+                            Ok(unsafe {
+                                ptr::read_volatile(&(*$USARTX::ptr()).rdr as *const _ as *const _)
+                            })
+                        } else {
+                            Err(nb::Error::WouldBlock)
+                        }
                     }
                 }
             }

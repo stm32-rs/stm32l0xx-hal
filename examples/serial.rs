@@ -36,9 +36,7 @@ fn main() -> ! {
     let (mut tx, mut rx) = serial.split();
 
     loop {
-        //tx.write_str("Hello World!\r\n").unwrap();
         let received = block!(rx.read()).unwrap();
-        //tx.write_str("Got a byte!\r\n").unwrap();
         tx.write(received);
     }
 }
