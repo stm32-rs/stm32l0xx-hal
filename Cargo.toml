@@ -30,7 +30,10 @@ features = ["stm32l0x1", "rt"]
 
 [dependencies]
 embedded-hal = { version = "0.2.2", features = ["unproven"] }
-cortex-m = {version = "0.6.0", features = ["const-fn"] }
+cortex-m = {version = ">=0.5.8,<0.7.0", features = ["const-fn"] }
+cortex-m-rt = "0.6.8"
+cortex-m-semihosting = "0.3.2"
+cortex-m-rtfm = "0.4.3"
 void = { version = "1.0.2", default-features = false }
 cast = { version = "0.2.2", default-features = false }
 nb = "0.1.2"
@@ -39,17 +42,9 @@ nb = "0.1.2"
 version = "0.7.0"
 features = ["stm32l0x1", "rt"]
 
-# Dev fork of stm32-rs: https://github.com/arkorobotics/stm32-rs
-# For development only
-# [dependencies.stm32l0]
-# path = "../stm32-rs-arko/stm32l0"
-
 [dev-dependencies]
-cortex-m-rt = "0.6.8"
-cortex-m-semihosting = "0.3.2"
 panic-halt = "0.2.0"
 panic-semihosting = "0.5.1"
-cortex-m-rtfm = "0.4.3"
 
 [features]
 rt = ["stm32l0/rt"]

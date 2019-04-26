@@ -14,7 +14,6 @@ pub use crate::rcc::RccExt as _stm32l0xx_hal_rcc_RccExt;
 pub use crate::serial::Serial1Ext as _stm32l0xx_hal_serial_Serial1Ext;
 pub use crate::serial::Serial2Ext as _stm32l0xx_hal_serial_Serial2Ext;
 pub use crate::spi::SpiExt as _stm32l0xx_hal_spi_SpiExt;
-pub use crate::time::MonoTimerExt as _stm32l0xx_hal_time_MonoTimerExt;
 pub use crate::time::U32Ext as _stm32l0xx_hal_time_U32Ext;
 pub use crate::timer::TimerExt as _stm32l0xx_hal_timer_TimerExt;
 pub use crate::watchdog::IndependedWatchdogExt as _stm32l0xx_hal_watchdog_IndependedWatchdogExt;
