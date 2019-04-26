@@ -30,7 +30,7 @@ features = ["stm32l0x1", "rt"]
 
 [dependencies]
 embedded-hal = { version = "0.2.2", features = ["unproven"] }
-cortex-m = {version = "0.5.8", features = ["const-fn"] }
+cortex-m = {version = "0.6.0", features = ["const-fn"] }
 void = { version = "1.0.2", default-features = false }
 cast = { version = "0.2.2", default-features = false }
 nb = "0.1.2"

@@ -3,10 +3,10 @@ rust:
   - stable
 cache: cargo
 env:
-- FEAT=stm32l0x1,rt
+- MCU=stm32l0x1
 matrix:
   fast_finish: true
 script:
   - rustup target add thumbv6m-none-eabi
-  - cargo build --release --examples --features $FEAT
+  - cargo build --release --examples --features $MCU
   
