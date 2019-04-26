@@ -35,10 +35,14 @@ void = { version = "1.0.2", default-features = false }
 cast = { version = "0.2.2", default-features = false }
 nb = "0.1.2"
 
-# Dev fork of stm32-rs: https://github.com/arkorobotics/stm32-rs
-# -- Note: Rename "stm32-rs" to "stm32-rs-arko" or path below
 [dependencies.stm32l0]
-path = "../stm32-rs-arko/stm32l0"
+version = "0.7.0"
+features = ["stm32l0x1", "rt"]
+
+# Dev fork of stm32-rs: https://github.com/arkorobotics/stm32-rs
+# For development only
+# [dependencies.stm32l0]
+# path = "../stm32-rs-arko/stm32l0"
 
 [dev-dependencies]
 cortex-m-rt = "0.6.8"
