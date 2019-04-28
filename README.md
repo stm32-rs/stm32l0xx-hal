@@ -17,20 +17,46 @@ Supported Configurations
 
 * __stm32l0x1__
 
-Configure and Check
+Dependencies
+---------
+
+1. Rustup toolchain installer
+
+https://rustup.rs
+
+
+Configure Toolchain
 ---------
 
 `$ rustup target add thumbv6m-none-eabi`
-
-`$ cargo check --features=stm32l0x1,rt`
 
 Build Examples
 ---------
 
 `$ cargo build --release --examples --features stm32l0x1,rt`
 
+Dependecies for Flashing
+---------
 
-Flash
+1. Download and install the arm-none-eabi gcc toolchain
+
+	https://developer.arm.com/open-source/gnu-toolchain/gnu-rm/downloads
+	We recommend installing the precompiled binaries to '/usr/local'. 
+	Add the bin folders (/bin & /arm-none-eabi/bin) to your environments variable 'PATH'.
+
+2. Install STLink Tool
+
+	https://github.com/texane/stlink
+
+3. Install OpenOCD
+
+    http://openocd.org/getting-openocd/ 
+
+4. Instal GDB Dashboard
+
+	https://github.com/cyrus-and/gdb-dashboard
+
+Flashing
 ---------
 
 The following is a how-to on flashing the 'serial' example code. This can be extended to any other example code.
