@@ -22,7 +22,7 @@ Dependencies
 
 1. Rustup toolchain installer
 
-https://rustup.rs
+    https://rustup.rs
 
 
 Configure Toolchain
@@ -52,7 +52,7 @@ Dependecies for Flashing
 
     http://openocd.org/getting-openocd/ 
 
-4. Instal GDB Dashboard
+4. Install GDB Dashboard (OPTIONAL)
 
 	https://github.com/cyrus-and/gdb-dashboard
 
@@ -61,12 +61,12 @@ Flashing
 
 The following is a how-to on flashing the 'serial' example code. This can be extended to any other example code.
 
-1. Generate Hex File
+1. Generate the hex file
 ``` 
 $ arm-none-eabi-objcopy -O ihex target/thumbv6m-none-eabi/release/examples/serial serial.hex
 ```
 
-2. Flash command
+2. Flash the microcontroller
 ``` 
 $ st-flash --format ihex write serial.hex
 ```
