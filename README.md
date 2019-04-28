@@ -28,12 +28,12 @@ Dependencies
 Configure Toolchain
 ---------
 
-`$ rustup target add thumbv6m-none-eabi`
+    `$ rustup target add thumbv6m-none-eabi`
 
 Build Examples
 ---------
 
-`$ cargo build --release --examples --features stm32l0x1,rt`
+    `$ cargo build --release --examples --features stm32l0x1,rt`
 
 Dependecies for Flashing
 ---------
@@ -62,14 +62,14 @@ Flashing
 The following is a how-to on flashing the 'serial' example code. This can be extended to any other example code.
 
 1. Generate the hex file
-``` 
-$ arm-none-eabi-objcopy -O ihex target/thumbv6m-none-eabi/release/examples/serial serial.hex
-```
+    ``` 
+    $ arm-none-eabi-objcopy -O ihex target/thumbv6m-none-eabi/release/examples/serial serial.hex
+    ```
 
 2. Flash the microcontroller
-``` 
-$ st-flash --format ihex write serial.hex
-```
+    ``` 
+    $ st-flash --format ihex write serial.hex
+    ```
 
 Contibutor Notes
 ---------
