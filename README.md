@@ -42,6 +42,8 @@ Check HAL Instructions
 Build Examples
 ---------
 
+`$ rustup target add thumbv6m-none-eabi`
+
 `$ cargo build --release --examples --features stm32l0x1,rt`
 
 
