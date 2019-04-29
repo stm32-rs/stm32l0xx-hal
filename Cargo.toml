@@ -15,8 +15,6 @@ keywords = [
     "arm",
     "cortex-m",
     "stm32l0xx",
-    "stm32",
-    "stm32l0",
     "hal",
 ]
 license = "0BSD"
