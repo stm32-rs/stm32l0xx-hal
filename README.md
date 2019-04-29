@@ -28,12 +28,12 @@ Dependencies
 Configure Toolchain
 ---------
 
-    `$ rustup target add thumbv6m-none-eabi`
+`$ rustup target add thumbv6m-none-eabi`
 
 Build Examples
 ---------
 
-    `$ cargo build --release --examples --features stm32l0x1,rt`
+`$ cargo build --release --examples --features stm32l0x1,rt`
 
 Dependecies for Flashing
 ---------
