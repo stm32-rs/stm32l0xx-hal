@@ -44,11 +44,11 @@ Dependecies for Flashing
 	We recommend installing the precompiled binaries to '/usr/local'. 
 	Add the bin folders (/bin & /arm-none-eabi/bin) to your environments variable 'PATH'.
 
-2. Install STLink Tool
+2. Install STLink Tool (>=v1.5.1)
 
 	https://github.com/texane/stlink
 
-3. Install OpenOCD
+3. Install OpenOCD (OPTIONAL)
 
     http://openocd.org/getting-openocd/ 
 
