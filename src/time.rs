@@ -1,5 +1,3 @@
-use cortex_m::peripheral::DWT;
-
 #[derive(PartialEq, PartialOrd, Clone, Copy)]
 pub struct Bps(pub u32);
 

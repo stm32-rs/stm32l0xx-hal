@@ -1,5 +1,7 @@
-use crate::gpio::gpioa::{PA5, PA6, PA7};
-use crate::gpio::{Floating, Input};
+use crate::gpio::gpioa::*;
+use crate::gpio::gpiob::*;
+
+use crate::gpio::{AltMode, Floating, Input};
 use crate::hal;
 use crate::pac::SPI1;
 use crate::rcc::Rcc;
@@ -12,6 +14,8 @@ pub use hal::spi::{Mode, Phase, Polarity, MODE_0, MODE_1, MODE_2, MODE_3};
 /// SPI error
 #[derive(Debug)]
 pub enum Error {
+    Busy,
+    FrameError,
     /// Overrun occurred
     Overrun,
     /// Mode fault occurred
@@ -22,10 +26,18 @@ pub enum Error {
     _Extensible,
 }
 
-pub trait Pins<SPI> {}
-pub trait PinSck<SPI> {}
-pub trait PinMiso<SPI> {}
-pub trait PinMosi<SPI> {}
+pub trait Pins<SPI> {
+    fn setup(&self);
+}
+pub trait PinSck<SPI> {
+    fn setup(&self);
+}
+pub trait PinMiso<SPI> {
+    fn setup(&self);
+}
+pub trait PinMosi<SPI> {
+    fn setup(&self);
+}
 
 impl<SPI, SCK, MISO, MOSI> Pins<SPI> for (SCK, MISO, MOSI)
 where
@@ -33,44 +45,96 @@ where
     MISO: PinMiso<SPI>,
     MOSI: PinMosi<SPI>,
 {
+    fn setup(&self) {
+        self.0.setup();
+        self.1.setup();
+        self.2.setup();
+    }
 }
 
 /// A filler type for when the SCK pin is unnecessary
 pub struct NoSck;
+impl NoSck {
+    fn set_alt_mode(&self, some: Option<u32>) {}
+}
 /// A filler type for when the Miso pin is unnecessary
 pub struct NoMiso;
+impl NoMiso {
+    fn set_alt_mode(&self, some: Option<u32>) {}
+}
 /// A filler type for when the Mosi pin is unnecessary
 pub struct NoMosi;
+impl NoMosi {
+    fn set_alt_mode(&self, some: Option<u32>) {}
+}
 
 macro_rules! pins {
-    ($($SPIX:ty: SCK: [$($SCK:ty),*] MISO: [$($MISO:ty),*] MOSI: [$($MOSI:ty),*])+) => {
+    ($($SPIX:ty:
+        SCK: [$([$SCK:ty, $ALTMODESCK:path]),*]
+        MISO: [$([$MISO:ty, $ALTMODEMISO:path]),*]
+        MOSI: [$([$MOSI:ty, $ALTMODEMOSI:path]),*])+) => {
         $(
             $(
-                impl PinSck<$SPIX> for $SCK {}
+                impl PinSck<$SPIX> for $SCK {
+                    fn setup(&self) {
+                        self.set_alt_mode($ALTMODESCK);
+                    }
+                }
             )*
             $(
-                impl PinMiso<$SPIX> for $MISO {}
+                impl PinMiso<$SPIX> for $MISO {
+                    fn setup(&self) {
+                        self.set_alt_mode($ALTMODEMISO);
+                    }
+                }
             )*
             $(
-                impl PinMosi<$SPIX> for $MOSI {}
+                impl PinMosi<$SPIX> for $MOSI {
+                    fn setup(&self) {
+                        self.set_alt_mode($ALTMODEMOSI);
+                    }
+                }
             )*
         )+
     }
 }
 
+#[cfg(feature = "stm32l0x2")]
 pins! {
     SPI1:
         SCK: [
-            NoSck,
-            PA5<Input<Floating>>
+            [NoSck, None],
+            [PB3<Input<Floating>>, AltMode::AF0],
+            [PA5<Input<Floating>>, AltMode::AF0]
         ]
         MISO: [
-            NoMiso,
-            PA6<Input<Floating>>
+            [NoMiso, None],
+            [PA6<Input<Floating>>, AltMode::AF0],
+            [PA11<Input<Floating>>, AltMode::AF0],
+            [PB4<Input<Floating>>, AltMode::AF0]
         ]
         MOSI: [
-            NoMosi,
-            PA7<Input<Floating>>
+            [NoMosi, None],
+            [PA7<Input<Floating>>, AltMode::AF0],
+            [PA12<Input<Floating>>, AltMode::AF0],
+            [PB5<Input<Floating>>, AltMode::AF0]
+        ]
+}
+
+#[cfg(feature = "stm32l0x1")]
+pins! {
+    SPI1:
+        SCK: [
+            [NoSck, None],
+            [PA5<Input<Floating>>, AltMode::AF0]
+        ]
+        MISO: [
+            [NoMiso, None],
+            [PA6<Input<Floating>>, AltMode::AF0]
+        ]
+        MOSI: [
+            [NoMosi, None],
+            [PA7<Input<Floating>>, AltMode::AF0]
         ]
 }
 
@@ -102,6 +166,8 @@ macro_rules! spi {
                 PINS: Pins<$SPIX>,
                 T: Into<Hertz>
                 {
+                    pins.setup();
+
                     // Enable clock for SPI
                     rcc.rb.$apbXenr.modify(|_, w| w.$spiXen().set_bit());
 

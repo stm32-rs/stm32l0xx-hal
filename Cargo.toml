@@ -21,10 +21,10 @@ license = "0BSD"
 name = "stm32l0xx-hal"
 readme = "README.md"
 repository = "https://github.com/stm32-rs/stm32l0xx-hal"
-version = "0.1.0"
+version = "0.1.1"
 
 [package.metadata.docs.rs]
-features = ["stm32l0x1", "rt"]
+features = ["stm32l0x1", "stm32l0x2", "rt"]
 
 [dependencies]
 embedded-hal = { version = "0.2.2", features = ["unproven"] }
@@ -38,7 +38,6 @@ nb = "0.1.2"
 
 [dependencies.stm32l0]
 version = "0.7.0"
-features = ["stm32l0x1", "rt"]
 
 [dev-dependencies]
 panic-halt = "0.2.0"
@@ -47,6 +46,7 @@ panic-semihosting = "0.5.1"
 [features]
 rt = ["stm32l0/rt"]
 stm32l0x1 = ["stm32l0/stm32l0x1"]
+stm32l0x2 = ["stm32l0/stm32l0x2"]
 
 [profile.dev]
 codegen-units = 1
@@ -67,3 +67,11 @@ required-features = ["rt"]
 [[example]]
 name = "timer_interrupt_rtfm"
 required-features = ["rt"]
+
+[[example]]
+name = "adc_pwm"
+required-features = ["stm32l0x1"]
+
+[[example]]
+name = "pwm"
+required-features = ["stm32l0x1"]

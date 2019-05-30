@@ -26,8 +26,16 @@ fn main() -> ! {
     let rx_pin = gpioa.pa10;
 
     // Configure the serial peripheral.
+    #[cfg(feature = "stm32l0x1")]
     let serial = dp
         .USART2
+        .usart((tx_pin, rx_pin), serial::Config::default(), &mut rcc)
+        .unwrap();
+
+    // Configure the serial peripheral.
+    #[cfg(feature = "stm32l0x2")]
+    let serial = dp
+        .USART1
         .usart((tx_pin, rx_pin), serial::Config::default(), &mut rcc)
         .unwrap();
 
@@ -35,7 +43,7 @@ fn main() -> ! {
 
     // core::fmt::Write is implemented for tx.
     //writeln!(tx, "Hello, world!").unwrap();
-    
+
     loop {
         // Echo what is received on the serial link.
         let received = block!(rx.read()).unwrap();
