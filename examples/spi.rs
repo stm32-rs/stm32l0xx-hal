@@ -19,6 +19,7 @@ fn main() -> ! {
     // the RCC register.
     let gpioa = dp.GPIOA.split(&mut rcc);
 
+    let mut nss = gpioa.pa4.into_push_pull_output();
     let sck = gpioa.pa5;
     let miso = gpioa.pa6;
     let mosi = gpioa.pa7;
@@ -29,6 +30,8 @@ fn main() -> ! {
         .spi((sck, miso, mosi), spi::MODE_0, 100_000.hz(), &mut rcc);
 
     loop {
+        nss.set_low();
         spi.write(&[0, 1]).unwrap();
+        nss.set_high();
     }
 }

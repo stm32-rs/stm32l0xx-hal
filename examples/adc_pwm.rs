@@ -19,16 +19,15 @@ fn main() -> ! {
     // the RCC register.
     let gpioa = dp.GPIOA.split(&mut rcc);
 
-    // Configure PA1 as analog.
-    let mut adc_pin = gpioa.pa1.into_analog();
-
-    // Initialise the ADC.
-    let mut adc = dp.ADC.adc(&mut rcc);
-
-    // Configure the timer as PWM on PA0.
-    let mut pwm = dp.TIM2.pwm(gpioa.pa0, 1.khz(), &mut rcc);
+    // Configure the timer as PWM on PA1.
+    let mut pwm = dp.TIM2.pwm(gpioa.pa1, 1.khz(), &mut rcc);
     let max_duty = pwm.get_max_duty() / 4095;
     pwm.enable();
+
+    let mut adc = dp.ADC.constrain(&mut rcc);
+
+    // Configure PA0 as analog.
+    let mut adc_pin = gpioa.pa0.into_analog();
 
     loop {
         // Set the PWM duty cycle from the value read on the ADC pin.

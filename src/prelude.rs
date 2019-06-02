@@ -10,7 +10,6 @@ pub use crate::delay::DelayExt as _stm32l0xx_hal_delay_DelayExt;
 pub use crate::exti::ExtiExt as _stm32l0xx_hal_exti_ExtiExt;
 pub use crate::gpio::GpioExt as _stm32l0xx_hal_gpio_GpioExt;
 pub use crate::i2c::I2c1Ext as _stm32l0xx_hal_i2c_I2c1Ext;
-#[cfg(feature = "stm32l0x1")]
 pub use crate::pwm::PwmExt as _stm32l0xx_hal_pwm_PwmExt;
 pub use crate::rcc::RccExt as _stm32l0xx_hal_rcc_RccExt;
 pub use crate::serial::Serial1Ext as _stm32l0xx_hal_serial_Serial1Ext;

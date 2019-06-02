@@ -268,7 +268,7 @@ macro_rules! timers {
 
 channels!(
     TIM2,
-    AltMode::TIM2,
+    AltMode::AF2,
     PA0<Input<Floating>>,
     PA1<Input<Floating>>,
     PA2<Input<Floating>>,

@@ -24,9 +24,9 @@ fn main() -> ! {
     // the RCC register.
     let gpioa = dp.GPIOA.split(&mut rcc);
 
-    // Configure TIM2 as PWM on PA0.
-    let c1 = gpioa.pa0;
-    let mut pwm = dp.TIM2.pwm(c1, 10.khz(), &mut rcc);
+    // Configure TIM2 as PWM on PA1.
+    let c2 = gpioa.pa1;
+    let mut pwm = dp.TIM2.pwm(c2, 10.khz(), &mut rcc);
 
     let max = pwm.get_max_duty();
 

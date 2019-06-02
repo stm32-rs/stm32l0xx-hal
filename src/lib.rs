@@ -22,7 +22,6 @@ pub mod exti;
 pub mod gpio;
 pub mod i2c;
 pub mod prelude;
-#[cfg(feature = "stm32l0x1")]
 pub mod pwm;
 pub mod rcc;
 pub mod serial;
