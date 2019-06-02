@@ -30,11 +30,12 @@ fn main() -> ! {
     let mut delay = cp.SYST.delay(rcc.clocks);
 
     loop {
-        if button.is_high() {
-            led.set_high();
-            delay.delay(500.ms());
-        } else {
-            led.set_low();
-        }
+        let wait =  match button.is_high() {
+            Ok(true) => 300.ms(),
+            Ok(false) => 100.ms(),
+            _ => unreachable!(),
+        };
+        delay.delay(wait);
+        led.toggle().unwrap();
     }
 }
