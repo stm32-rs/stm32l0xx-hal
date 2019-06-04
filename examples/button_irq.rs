@@ -35,9 +35,23 @@ fn main() -> ! {
     // Configure PB6 as output.
     let led = gpiob.pb6.into_push_pull_output();
 
+    // Configure PB2 as input.
+    let button = gpiob.pb2.into_pull_up_input();
+
+    #[cfg(feature = "stm32l0x1")]
+    let mut syscfg = dp.SYSCFG;
+    #[cfg(feature = "stm32l0x2")]
+    let mut syscfg = dp.SYSCFG_COMP;
+
     // Configure the external interrupt on the falling edge for the pin 0.
     let exti = dp.EXTI;
-    exti.listen(0, TriggerEdge::Falling);
+    exti.listen(
+        &mut rcc,
+        &mut syscfg,
+        button.port,
+        button.i,
+        TriggerEdge::Falling,
+    );
 
     // Store the external interrupt and LED in mutex reffcells to make them
     // available from the interrupt.

@@ -1,4 +1,5 @@
 use crate::gpio::gpioa::*;
+#[cfg(feature = "stm32l0x2")]
 use crate::gpio::gpiob::*;
 
 use crate::gpio::{AltMode, Floating, Input};
@@ -55,17 +56,17 @@ where
 /// A filler type for when the SCK pin is unnecessary
 pub struct NoSck;
 impl NoSck {
-    fn set_alt_mode(&self, some: Option<u32>) {}
+    fn set_alt_mode(&self, _some: Option<u32>) {}
 }
 /// A filler type for when the Miso pin is unnecessary
 pub struct NoMiso;
 impl NoMiso {
-    fn set_alt_mode(&self, some: Option<u32>) {}
+    fn set_alt_mode(&self, _some: Option<u32>) {}
 }
 /// A filler type for when the Mosi pin is unnecessary
 pub struct NoMosi;
 impl NoMosi {
-    fn set_alt_mode(&self, some: Option<u32>) {}
+    fn set_alt_mode(&self, _some: Option<u32>) {}
 }
 
 macro_rules! pins {

@@ -2,12 +2,10 @@
 use crate::hal::blocking::i2c::{Read, Write, WriteRead};
 
 use cast::u8;
-use core::cmp;
 use crate::gpio::gpioa::{PA4, PA9, PA10, PA13};
 use crate::gpio::gpiob::{PB6, PB7};
 use crate::gpio::{AltMode, OpenDrain, Output};
 use crate::pac::I2C1;
-use crate::prelude::*;
 use crate::rcc::Rcc;
 use crate::time::Hertz;
 
