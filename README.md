@@ -35,6 +35,16 @@ Build Examples
 
 `$ cargo build --release --examples --features stm32l0x1,rt`
 
+Using as a Dependency
+---------
+To use this crate as a dependency, add the following definition to your `Cargo.toml`:
+
+``` 
+[dependencies.stm32l0xx-hal]
+version = "0.1.4"
+features = ["stm32l0x1", "rt"]
+```
+
 Dependecies for Flashing
 ---------
 
