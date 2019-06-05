@@ -6,7 +6,7 @@
 
 extern crate panic_halt;
 
-//use core::fmt::Write;
+use core::fmt::Write;
 use cortex_m_rt::entry;
 use stm32l0xx_hal::{pac, prelude::*, rcc::Config, serial};
 
@@ -29,9 +29,9 @@ fn main() -> ! {
     let rx_pin = gpioa.pa10;
 
     #[cfg(feature = "stm32l0x2")]
-    let tx_pin = gpioa.pa14;
+    let tx_pin = gpioa.pa2;
     #[cfg(feature = "stm32l0x2")]
-    let rx_pin = gpioa.pa15;
+    let rx_pin = gpioa.pa3;
 
     // Configure the serial peripheral.
     let serial = dp
@@ -42,7 +42,7 @@ fn main() -> ! {
     let (mut tx, mut rx) = serial.split();
 
     // core::fmt::Write is implemented for tx.
-    //writeln!(tx, "Hello, world!").unwrap();
+    write!(tx, "Start typing: \r\n").unwrap();
 
     loop {
         // Echo what is received on the serial link.

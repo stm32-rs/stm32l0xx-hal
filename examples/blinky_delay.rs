@@ -14,12 +14,23 @@ fn main() -> ! {
     // Configure the clock.
     let mut rcc = dp.RCC.freeze(Config::hsi16());
 
+    #[cfg(feature = "stm32l0x1")]
     // Acquire the GPIOA peripheral. This also enables the clock for GPIOA in
     // the RCC register.
     let gpioa = dp.GPIOA.split(&mut rcc);
-
+    #[cfg(feature = "stm32l0x1")]
     // Configure PA1 as output.
     let mut led = gpioa.pa1.into_push_pull_output();
+
+
+
+    #[cfg(feature = "stm32l0x2")]
+    // Acquire the GPIOB peripheral. This also enables the clock for GPIOB in
+    // the RCC register.
+    let gpiob = dp.GPIOB.split(&mut rcc);
+    #[cfg(feature = "stm32l0x2")]
+    // Configure PB6 as output.
+    let mut led = gpiob.pb6.into_push_pull_output();
 
     // Get the delay provider.
     let mut delay = cp.SYST.delay(rcc.clocks);

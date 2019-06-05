@@ -1,20 +1,21 @@
 // #![deny(warnings)]
-#![deny(unsafe_code)]
 #![no_main]
 #![no_std]
 
 extern crate panic_halt;
+use stm32l0xx_hal as hal;
+use hal::{exti::TriggerEdge, gpio::*, pac, prelude::*, rcc::Config};
+use embedded_hal::digital::v2::OutputPin;
 
-use rtfm::app;
-use stm32l0xx_hal::{exti::TriggerEdge, gpio::*, pac, prelude::*, rcc::Config};
-
-#[app(device = stm32l0xx_hal::pac)]
+#[rtfm::app(device = stm32l0xx_hal::pac)]
 const APP: () = {
     static mut LED: gpiob::PB6<Output<PushPull>> = ();
     static mut INT: pac::EXTI = ();
+    static mut BUTTON: gpiob::PB2<Input<PullUp>> = ();
 
     #[init]
     fn init() -> init::LateResources {
+
         // Configure the clock.
         let mut rcc = device.RCC.freeze(Config::hsi16());
 
@@ -22,12 +23,11 @@ const APP: () = {
         // the RCC register.
         let gpiob = device.GPIOB.split(&mut rcc);
 
-        // Configure PB6 as output.
+        // Configure PB5 as output.
         let led = gpiob.pb6.into_push_pull_output();
 
         // Configure PB2 as input.
         let button = gpiob.pb2.into_pull_up_input();
-    
         #[cfg(feature = "stm32l0x1")]
         let mut syscfg = device.SYSCFG;
         #[cfg(feature = "stm32l0x2")]
@@ -47,23 +47,25 @@ const APP: () = {
         init::LateResources {
             LED: led,
             INT: exti,
+            BUTTON: button,
         }
+
     }
 
-    #[interrupt(resources = [LED, INT])]
-    fn EXTI0_1() {
+    #[interrupt(resources = [LED, INT, BUTTON])]
+    fn EXTI2_3() {
         static mut STATE: bool = false;
 
         // Clear the interrupt flag.
-        resources.INT.clear_irq(0);
-
-        // Change the LED state on each interrupt.
+        resources.INT.clear_irq(resources.BUTTON.i);
         if *STATE {
-            resources.LED.set_low();
-            *STATE = false;
+           resources.LED.set_low().unwrap();
+           *STATE = false;
         } else {
-            resources.LED.set_high();
-            *STATE = true;
+            resources.LED.set_high().unwrap();
+           *STATE = true;
         }
+        
     }
+
 };

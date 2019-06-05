@@ -17,11 +17,15 @@ fn main() -> ! {
 
     // Acquire the GPI0A and GPIOB peripherals. This also enables the clock for
     // GPIOA and GPIOB in the RCC register.
+    #[cfg(feature = "stm32l0x1")]
     let gpioa = dp.GPIOA.split(&mut rcc);
     let gpiob = dp.GPIOB.split(&mut rcc);
 
     // Configure PA0 as input.
-    let button = gpioa.pa0.into_pull_up_input();
+    #[cfg(feature = "stm32l0x1")]
+    let button = gpiob.pa0.into_pull_up_input();
+    #[cfg(feature = "stm32l0x2")]
+    let button = gpiob.pb2.into_pull_up_input();
 
     // Configure PB6 as output.
     let mut led = gpiob.pb6.into_push_pull_output();
