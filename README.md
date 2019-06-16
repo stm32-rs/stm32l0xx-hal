@@ -41,7 +41,7 @@ To use this crate as a dependency, add the following definition to your `Cargo.t
 
 ``` 
 [dependencies.stm32l0xx-hal]
-version = "0.1.4"
+version = "0.1.5"
 features = ["stm32l0x1", "rt"]
 ```
 

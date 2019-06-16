@@ -6,7 +6,7 @@ use crate::gpio::gpioa::*;
 use crate::gpio::{AltMode, Floating, Input};
 use crate::hal;
 use crate::hal::prelude::*;
-use crate::pac::{USART1, USART2};
+use crate::pac::{LPUART1, USART1, USART2};
 use crate::rcc::Rcc;
 use nb::block;
 
@@ -124,7 +124,7 @@ pub trait Pins<USART> {
 }
 
 #[cfg(feature = "stm32l0x1")]
-impl Pins<USART1> for (PA2<Input<Floating>>, PA3<Input<Floating>>) {
+impl Pins<LPUART1> for (PA2<Input<Floating>>, PA3<Input<Floating>>) {
     fn setup(&self) {
         self.0.set_alt_mode(AltMode::AF6);
         self.1.set_alt_mode(AltMode::AF6);
@@ -209,9 +209,15 @@ macro_rules! usart {
                     let div = (rcc.clocks.$pclkX().0 * 25) / (4 * config.baudrate.0);
                     let mantissa = div / 100;
                     let fraction = ((div - mantissa * 100) * 16 + 50) / 100;
+                    let mut brr = mantissa << 4 | fraction;
+
+                    if stringify!($usartX) == "lpuart1" {
+                        brr = brr*256
+                    }
+
                     usart
                         .brr
-                        .write(|w| unsafe { w.bits(mantissa << 4 | fraction) });
+                        .write(|w| unsafe { w.bits(brr) });
 
                     // Reset other registers to disable advanced USART features
                     usart.cr2.reset();
@@ -407,8 +413,15 @@ macro_rules! usart {
     }
 }
 
+#[cfg(feature = "stm32l0x1")]
 usart! {
-    USART1: (usart1, apb2enr, usart1en, apb2_clk, Serial1Ext),
+    LPUART1: (lpuart1, apb1enr, lpuart1en, apb1_clk, Serial1Ext),
+    USART2: (usart2, apb1enr, usart2en, apb1_clk, Serial2Ext),
+}
+
+#[cfg(feature = "stm32l0x2")]
+usart! {
+    USART1: (usart1, apb1enr, usart1en, apb1_clk, Serial1Ext),
     USART2: (usart2, apb1enr, usart2en, apb1_clk, Serial2Ext),
 }
 
