@@ -60,15 +60,18 @@ macro_rules! channels {
             }
 
             fn get_duty(&self) -> u16 {
-                unsafe { (*$TIMX::ptr()).ccr1.read().ccr().bits() }
+                unsafe { (*$TIMX::ptr()).ccr1.read().ccr().bits() as u16 }
             }
 
             fn get_max_duty(&self) -> u16 {
-                unsafe { (*$TIMX::ptr()).arr.read().arr().bits() }
+                unsafe { (*$TIMX::ptr()).arr.read().arr().bits() as u16}
             }
 
             fn set_duty(&mut self, duty: u16) {
+                #[cfg(feature = "stm32l0x1")]
                 unsafe { (*$TIMX::ptr()).ccr1.write(|w| w.ccr().bits(duty)) }
+                #[cfg(feature = "stm32l0x2")]
+                unsafe { (*$TIMX::ptr()).ccr1.write(|w| w.ccr().bits(duty as u32)) }
             }
         }
     };
@@ -143,15 +146,24 @@ macro_rules! channels {
             }
 
             fn get_duty(&self) -> u16 {
+                #[cfg(feature = "stm32l0x1")]
                 unsafe { (*$TIMX::ptr()).ccr2.read().ccr().bits() }
+                #[cfg(feature = "stm32l0x2")]
+                unsafe { (*$TIMX::ptr()).ccr2.read().ccr().bits() as u16 }
             }
 
             fn get_max_duty(&self) -> u16 {
+                #[cfg(feature = "stm32l0x1")]
                 unsafe { (*$TIMX::ptr()).arr.read().arr().bits() }
+                #[cfg(feature = "stm32l0x2")]
+                unsafe { (*$TIMX::ptr()).arr.read().arr().bits() as u16 }
             }
 
             fn set_duty(&mut self, duty: u16) {
+                #[cfg(feature = "stm32l0x1")]
                 unsafe { (*$TIMX::ptr()).ccr2.write(|w| w.ccr().bits(duty)) }
+                #[cfg(feature = "stm32l0x2")]
+                unsafe { (*$TIMX::ptr()).ccr2.write(|w| w.ccr().bits(duty as u32))}
             }
         }
 
@@ -174,15 +186,18 @@ macro_rules! channels {
             }
 
             fn get_duty(&self) -> u16 {
-                unsafe { (*$TIMX::ptr()).ccr3.read().ccr().bits() }
+                unsafe { (*$TIMX::ptr()).ccr3.read().ccr().bits() as u16 }
             }
 
             fn get_max_duty(&self) -> u16 {
-                unsafe { (*$TIMX::ptr()).arr.read().arr().bits() }
+                unsafe { (*$TIMX::ptr()).arr.read().arr().bits() as u16}
             }
 
             fn set_duty(&mut self, duty: u16) {
+                #[cfg(feature = "stm32l0x1")]
                 unsafe { (*$TIMX::ptr()).ccr3.write(|w| w.ccr().bits(duty)) }
+                #[cfg(feature = "stm32l0x2")]
+                unsafe { (*$TIMX::ptr()).ccr3.write(|w| w.ccr().bits(duty as u32)) }
             }
         }
 
@@ -205,15 +220,24 @@ macro_rules! channels {
             }
 
             fn get_duty(&self) -> u16 {
+                #[cfg(feature = "stm32l0x1")]
                 unsafe { (*$TIMX::ptr()).ccr4.read().ccr().bits() }
+                #[cfg(feature = "stm32l0x2")]
+                unsafe { (*$TIMX::ptr()).ccr4.read().ccr().bits() as u16 }
             }
 
             fn get_max_duty(&self) -> u16 {
+                #[cfg(feature = "stm32l0x1")]
                 unsafe { (*$TIMX::ptr()).arr.read().arr().bits() }
+                #[cfg(feature = "stm32l0x2")]
+                unsafe { (*$TIMX::ptr()).arr.read().arr().bits() as u16 }
             }
 
             fn set_duty(&mut self, duty: u16) {
+                #[cfg(feature = "stm32l0x1")]
                 unsafe { (*$TIMX::ptr()).ccr4.write(|w| w.ccr().bits(duty)) }
+                #[cfg(feature = "stm32l0x2")]
+                unsafe { (*$TIMX::ptr()).ccr4.write(|w| w.ccr().bits(duty as u32)) }
             }
         }
     };
@@ -258,7 +282,10 @@ macro_rules! timers {
                 let arr = u16(ticks / u32(psc + 1)).unwrap();
                 tim.psc.write(|w| unsafe { w.psc().bits(psc) });
                 #[allow(unused_unsafe)]
+                #[cfg(feature = "stm32l0x1")]
                 tim.arr.write(|w| unsafe { w.arr().bits(arr) });
+                #[cfg(feature = "stm32l0x2")]
+                tim.arr.write(|w| unsafe { w.arr().bits(arr as u32) });
                 tim.cr1.write(|w| w.cen().set_bit());
                 unsafe { mem::uninitialized() }
             }
