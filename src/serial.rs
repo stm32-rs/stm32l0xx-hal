@@ -421,7 +421,7 @@ usart! {
 
 #[cfg(feature = "stm32l0x2")]
 usart! {
-    USART1: (usart1, apb1enr, usart1en, apb1_clk, Serial1Ext),
+    USART1: (usart1, apb2enr, usart1en, apb1_clk, Serial1Ext),
     USART2: (usart2, apb1enr, usart2en, apb1_clk, Serial2Ext),
 }
 
