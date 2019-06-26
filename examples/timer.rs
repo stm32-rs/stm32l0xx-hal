@@ -68,10 +68,10 @@ fn TIM2() {
             if let Some(ref mut led) = LED.borrow(cs).borrow_mut().deref_mut() {
                 unsafe {
                     if STATE {
-                        led.set_low();
+                        led.set_low().unwrap();
                         STATE = false;
                     } else {
-                        led.set_high();
+                        led.set_high().unwrap();
                         STATE = true;
                     }
                 }
