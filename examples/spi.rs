@@ -29,8 +29,8 @@ fn main() -> ! {
         .spi((sck, miso, mosi), spi::MODE_0, 100_000.hz(), &mut rcc);
 
     loop {
-        nss.set_low();
+        nss.set_low().unwrap();
         spi.write(&[0, 1]).unwrap();
-        nss.set_high();
+        nss.set_high().unwrap();
     }
 }

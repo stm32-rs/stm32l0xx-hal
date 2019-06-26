@@ -59,10 +59,10 @@ const APP: () = {
 
         // Change the LED state on each interrupt.
         if *STATE {
-            resources.LED.set_low();
+            resources.LED.set_low().unwrap();
             *STATE = false;
         } else {
-            resources.LED.set_high();
+            resources.LED.set_high().unwrap();
             *STATE = true;
         }
     }

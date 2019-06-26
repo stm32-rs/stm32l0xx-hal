@@ -187,7 +187,7 @@ macro_rules! i2c {
                 while self.i2c.isr.read().txe().bit_is_clear() {}
 
                 // Push out a byte of data
-                self.i2c.txdr.write(|w| unsafe { w.txdata().bits(byte) });
+                self.i2c.txdr.write(|w| w.txdata().bits(byte));
 
                 // While until byte is transferred
                 loop {
@@ -234,7 +234,7 @@ macro_rules! i2c {
             type Error = Error;
 
             fn write(&mut self, addr: u8, bytes: &[u8]) -> Result<(), Self::Error> {
-                self.i2c.cr2.modify(|_, w| unsafe {
+                self.i2c.cr2.modify(|_, w|
                     w.start()
                         .set_bit()
                         .nbytes()
@@ -245,7 +245,7 @@ macro_rules! i2c {
                         .clear_bit()
                         .autoend()
                         .set_bit()
-                });
+                );
 
                 while self.i2c.isr.read().busy().bit_is_clear() {}
 
@@ -262,7 +262,7 @@ macro_rules! i2c {
             type Error = Error;
 
             fn read(&mut self, addr: u8, buffer: &mut [u8]) -> Result<(), Self::Error> {
-                self.i2c.cr2.modify(|_, w| unsafe {
+                self.i2c.cr2.modify(|_, w|
                     w.start()
                         .set_bit()
                         .nbytes()
@@ -271,7 +271,7 @@ macro_rules! i2c {
                         .bits((addr << 1) as u16)
                         .autoend()
                         .set_bit()
-                });
+                );
 
                 // Wait until address was sent
                 while self.i2c.isr.read().busy().bit_is_clear() {}

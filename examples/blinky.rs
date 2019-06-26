@@ -24,12 +24,12 @@ fn main() -> ! {
     loop {
         // Set the LED high one million times in a row.
         for _ in 0..1_000_000 {
-            led.set_high();
+            led.set_high().unwrap();
         }
 
         // Set the LED low one million times in a row.
         for _ in 0..1_000_000 {
-            led.set_low();
+            led.set_low().unwrap();
         }
     }
 }

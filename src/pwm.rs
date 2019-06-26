@@ -285,7 +285,7 @@ macro_rules! timers {
                 #[cfg(feature = "stm32l0x1")]
                 tim.arr.write(|w| unsafe { w.arr().bits(arr) });
                 #[cfg(feature = "stm32l0x2")]
-                tim.arr.write(|w| unsafe { w.arr().bits(arr as u32) });
+                tim.arr.write(|w| w.arr().bits(arr as u32));
                 tim.cr1.write(|w| w.cen().set_bit());
                 unsafe { mem::uninitialized() }
             }
