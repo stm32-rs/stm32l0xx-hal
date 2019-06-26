@@ -219,6 +219,9 @@ impl RccExt for RCC {
             ClockSrc::MSI(range) => {
                 let range = range as u8;
                 // Set MSI range
+                #[cfg(feature = "stm32l0x1")]
+                self.icscr.write(|w| w.msirange().bits(range));
+                #[cfg(feature = "stm32l0x2")]
                 self.icscr.write(|w| unsafe { w.msirange().bits(range) });
 
                 // Enable MSI
