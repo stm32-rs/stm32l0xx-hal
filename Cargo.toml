@@ -60,8 +60,17 @@ lto = true
 debug = true
 opt-level = "s"
 
+
+[[example]]
+name = "button_irq"
+required-features = ["rt"]
+
 [[example]]
 name = "button_irq_rtfm"
+required-features = ["rt"]
+
+[[example]]
+name = "timer"
 required-features = ["rt"]
 
 [[example]]

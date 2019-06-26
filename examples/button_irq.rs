@@ -12,7 +12,7 @@ use cortex_m_rt::entry;
 use stm32l0xx_hal::{
     exti::TriggerEdge,
     gpio::*,
-    pac::{self, Interrupt, EXTI},
+    pac::{self, interrupt, Interrupt, EXTI},
     prelude::*,
     rcc::Config,
 };
@@ -69,6 +69,7 @@ fn main() -> ! {
     }
 }
 
+#[interrupt]
 fn EXTI0_1() {
     // Keep the LED state.
     static mut STATE: bool = false;
@@ -80,16 +81,13 @@ fn EXTI0_1() {
 
             // Change the LED state on each interrupt.
             if let Some(ref mut led) = LED.borrow(cs).borrow_mut().deref_mut() {
-                unsafe {
-                    if STATE {
-                        led.set_low().unwrap();
-                        STATE = false;
-                    } else {
-                        led.set_high().unwrap();
-                        STATE = true;
-                    }
+                if *STATE {
+                    led.set_low().unwrap();
+                    *STATE = false;
+                } else {
+                    led.set_high().unwrap();
+                    *STATE = true;
                 }
-                
             }
         }
     });
