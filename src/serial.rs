@@ -6,9 +6,16 @@ use crate::gpio::gpioa::*;
 use crate::gpio::{AltMode, Floating, Input};
 use crate::hal;
 use crate::hal::prelude::*;
-use crate::pac::{LPUART1, USART1, USART2};
+use crate::pac::USART2;
 use crate::rcc::Rcc;
 use nb::block;
+
+#[cfg(feature = "stm32l0x1")]
+use crate::pac::LPUART1;
+
+#[cfg(feature = "stm32l0x2")]
+use crate::pac::USART1;
+
 
 /// Serial error
 #[derive(Debug)]
