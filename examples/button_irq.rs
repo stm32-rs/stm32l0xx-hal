@@ -62,7 +62,7 @@ fn main() -> ! {
 
     // Enable the external interrupt in the NVIC.
     let mut nvic = cp.NVIC;
-    nvic.enable(Interrupt::EXTI0_1);
+    nvic.enable(Interrupt::EXTI2_3);
 
     loop {
         asm::wfi();
@@ -70,14 +70,14 @@ fn main() -> ! {
 }
 
 #[interrupt]
-fn EXTI0_1() {
+fn EXTI2_3() {
     // Keep the LED state.
     static mut STATE: bool = false;
 
     cortex_m::interrupt::free(|cs| {
         if let Some(ref mut exti) = INT.borrow(cs).borrow_mut().deref_mut() {
             // Clear the interrupt flag.
-            exti.clear_irq(0);
+            exti.clear_irq(2);
 
             // Change the LED state on each interrupt.
             if let Some(ref mut led) = LED.borrow(cs).borrow_mut().deref_mut() {
