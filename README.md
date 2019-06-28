@@ -41,9 +41,11 @@ To use this crate as a dependency, add the following definition to your `Cargo.t
 
 ``` 
 [dependencies.stm32l0xx-hal]
-version = "0.1.5"
+version = "0.1.6"
 features = ["stm32l0x1", "rt"]
 ```
+
+Example Projects: [HABEXpico](https://github.com/arkorobotics/HABEXpico/tree/master/Firmware)
 
 Dependecies for Flashing
 ---------
