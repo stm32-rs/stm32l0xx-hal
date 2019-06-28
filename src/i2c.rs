@@ -160,16 +160,12 @@ macro_rules! i2c {
 
                 // Configure for "fast mode" (400 KHz)
                 i2c.timingr.write(|w| {
-                    w.presc()
-                        .bits(presc)
-                        .scll()
-                        .bits(scll)
-                        .sclh()
-                        .bits(sclh)
-                        .sdadel()
-                        .bits(sdadel)
-                        .scldel()
-                        .bits(scldel)
+                    w
+                        .presc().bits(presc)
+                        .scll().bits(scll)
+                        .sclh().bits(sclh)
+                        .sdadel().bits(sdadel)
+                        .scldel().bits(scldel)
                 });
 
                 // Enable the peripheral
@@ -235,16 +231,12 @@ macro_rules! i2c {
 
             fn write(&mut self, addr: u8, bytes: &[u8]) -> Result<(), Self::Error> {
                 self.i2c.cr2.modify(|_, w|
-                    w.start()
-                        .set_bit()
-                        .nbytes()
-                        .bits(bytes.len() as u8)
-                        .sadd()
-                        .bits((addr << 1) as u16)
-                        .rd_wrn()
-                        .clear_bit()
-                        .autoend()
-                        .set_bit()
+                    w
+                        .start().set_bit()
+                        .nbytes().bits(bytes.len() as u8)
+                        .sadd().bits((addr << 1) as u16)
+                        .rd_wrn().clear_bit()
+                        .autoend().set_bit()
                 );
 
                 while self.i2c.isr.read().busy().bit_is_clear() {}
@@ -263,14 +255,11 @@ macro_rules! i2c {
 
             fn read(&mut self, addr: u8, buffer: &mut [u8]) -> Result<(), Self::Error> {
                 self.i2c.cr2.modify(|_, w|
-                    w.start()
-                        .set_bit()
-                        .nbytes()
-                        .bits(buffer.len() as u8)
-                        .sadd()
-                        .bits((addr << 1) as u16)
-                        .autoend()
-                        .set_bit()
+                    w
+                        .start().set_bit()
+                        .nbytes().bits(buffer.len() as u8)
+                        .sadd().bits((addr << 1) as u16)
+                        .autoend().set_bit()
                 );
 
                 // Wait until address was sent
