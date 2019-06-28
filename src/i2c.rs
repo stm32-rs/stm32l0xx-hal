@@ -233,6 +233,8 @@ impl<I, SDA, SCL> Read for I2c<I, SDA, SCL>
                 .start().set_bit()
                 .nbytes().bits(buffer.len() as u8)
                 .sadd().bits((addr << 1) as u16)
+                // Request read transfer
+                .rd_wrn().read()
                 .autoend().set_bit()
         );
 
