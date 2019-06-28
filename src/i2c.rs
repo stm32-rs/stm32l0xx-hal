@@ -209,8 +209,6 @@ impl<I, SDA, SCL> Write for I2c<I, SDA, SCL>
                 .autoend().set_bit()
         );
 
-        while self.i2c.isr.read().busy().bit_is_clear() {}
-
         // Send bytes
         for c in bytes {
             self.send_byte(*c)?;
@@ -233,9 +231,6 @@ impl<I, SDA, SCL> Read for I2c<I, SDA, SCL>
                 .sadd().bits((addr << 1) as u16)
                 .autoend().set_bit()
         );
-
-        // Wait until address was sent
-        while self.i2c.isr.read().busy().bit_is_clear() {}
 
         // Receive bytes into buffer
         for c in buffer {
