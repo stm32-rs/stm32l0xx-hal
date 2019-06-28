@@ -200,7 +200,7 @@ impl<I, SDA, SCL> Write for I2c<I, SDA, SCL>
     type Error = Error;
 
     fn write(&mut self, addr: u8, bytes: &[u8]) -> Result<(), Self::Error> {
-        self.i2c.cr2.modify(|_, w|
+        self.i2c.cr2.write(|w|
             w
                 .start().set_bit()
                 .nbytes().bits(bytes.len() as u8)
@@ -226,7 +226,7 @@ impl<I, SDA, SCL> Read for I2c<I, SDA, SCL>
     type Error = Error;
 
     fn read(&mut self, addr: u8, buffer: &mut [u8]) -> Result<(), Self::Error> {
-        self.i2c.cr2.modify(|_, w|
+        self.i2c.cr2.write(|w|
             w
                 .start().set_bit()
                 .nbytes().bits(buffer.len() as u8)
