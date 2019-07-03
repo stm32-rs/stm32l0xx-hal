@@ -199,12 +199,9 @@ impl Rcc {
     pub fn enable(&self, p: Peripheral) {
         match p {
             Peripheral::SYSCFG => {
-                self.rb.apb2enr.modify(|_, w| {
-                    w.syscfgen().bit(true)
-                });
+                self.rb.apb2enr.modify(|_, w| w.syscfgen().bit(true));
             }
         }
-        
     }
 }
 

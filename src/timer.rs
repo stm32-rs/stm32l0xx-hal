@@ -1,17 +1,16 @@
-
 //! Timers
 use crate::hal::timer::{CountDown, Periodic};
-use cast::{u16, u32};
-use cortex_m::peripheral::syst::SystClkSource;
-use cortex_m::peripheral::SYST;
-use nb;
-use void::Void;
 #[cfg(feature = "stm32l0x1")]
 use crate::pac::{TIM2, TIM21, TIM22, TIM3};
 #[cfg(feature = "stm32l0x2")]
 use crate::pac::{TIM2, TIM21, TIM3};
 use crate::rcc::{Clocks, Rcc};
 use crate::time::Hertz;
+use cast::{u16, u32};
+use cortex_m::peripheral::syst::SystClkSource;
+use cortex_m::peripheral::SYST;
+use nb;
+use void::Void;
 
 pub trait TimerExt<TIM> {
     fn timer<T>(self, timeout: T, rcc: &mut Rcc) -> Timer<TIM>
@@ -153,7 +152,7 @@ macro_rules! timers {
                     let freq = timeout.into().0;
                     let ticks = self.clocks.$timclk().0 / freq;
                     let psc = u16((ticks - 1) / (1 << 16)).unwrap();
-                    unsafe { 
+                    unsafe {
                         self.tim.psc.write(|w| w.psc().bits(psc));
                         #[cfg(feature = "stm32l0x1")]
                         self.tim.arr.write(|w| w.arr().bits( u16(ticks / u32(psc + 1)).unwrap()));

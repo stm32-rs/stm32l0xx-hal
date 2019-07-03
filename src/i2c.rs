@@ -4,16 +4,13 @@ use core::ops::Deref;
 
 use crate::hal::blocking::i2c::{Read, Write, WriteRead};
 
-use cast::u8;
-use crate::gpio::gpioa::{PA9, PA10, PA13};
+use crate::gpio::gpioa::{PA10, PA13, PA9};
 use crate::gpio::gpiob::{PB6, PB7};
 use crate::gpio::{AltMode, OpenDrain, Output};
-use crate::pac::{
-    i2c1::RegisterBlock,
-    I2C1,
-};
+use crate::pac::{i2c1::RegisterBlock, I2C1};
 use crate::rcc::Rcc;
 use crate::time::Hertz;
+use cast::u8;
 
 #[cfg(feature = "stm32l0x1")]
 use crate::gpio::gpioa::PA4;
@@ -22,24 +19,11 @@ use crate::gpio::gpioa::PA4;
 use crate::{
     gpio::{
         gpioa::PA8,
-        gpiob::{
-            PB4,
-            PB8,
-            PB9,
-            PB11,
-            PB14,
-        },
-        gpioc::{
-            PC0,
-            PC1,
-        },
+        gpiob::{PB11, PB14, PB4, PB8, PB9},
+        gpioc::{PC0, PC1},
     },
-    pac::{
-        I2C2,
-        I2C3,
-    },
+    pac::{I2C2, I2C3},
 };
-
 
 /// I2C abstraction
 pub struct I2c<I2C, SDA, SCL> {
@@ -49,16 +33,15 @@ pub struct I2c<I2C, SDA, SCL> {
 }
 
 impl<I, SDA, SCL> I2c<I, SDA, SCL>
-    where I: Instance
+where
+    I: Instance,
 {
-    pub fn new(i2c: I, sda: SDA, scl: SCL, freq: Hertz, rcc: &mut Rcc)
-        -> Self
+    pub fn new(i2c: I, sda: SDA, scl: SCL, freq: Hertz, rcc: &mut Rcc) -> Self
     where
-        I:   Instance,
+        I: Instance,
         SDA: SDAPin<I>,
         SCL: SCLPin<I>,
     {
-
         sda.setup();
         scl.setup();
 
@@ -126,12 +109,16 @@ impl<I, SDA, SCL> I2c<I, SDA, SCL>
 
         // Configure for "fast mode" (400 KHz)
         i2c.timingr.write(|w| {
-            w
-                .presc().bits(presc)
-                .scll().bits(scll)
-                .sclh().bits(sclh)
-                .sdadel().bits(sdadel)
-                .scldel().bits(scldel)
+            w.presc()
+                .bits(presc)
+                .scll()
+                .bits(scll)
+                .sclh()
+                .bits(sclh)
+                .sdadel()
+                .bits(sdadel)
+                .scldel()
+                .bits(scldel)
         });
 
         // Enable the peripheral
@@ -164,7 +151,7 @@ impl<I, SDA, SCL> I2c<I, SDA, SCL>
                 self.i2c.icr.write(|w| w.nackcf().set_bit());
                 return Err(Error::Nack);
             }
-            return Ok(())
+            return Ok(());
         }
     }
 
@@ -177,16 +164,12 @@ impl<I, SDA, SCL> I2c<I, SDA, SCL>
 }
 
 impl<I, SDA, SCL> WriteRead for I2c<I, SDA, SCL>
-    where I: Instance
+where
+    I: Instance,
 {
     type Error = Error;
 
-    fn write_read(
-        &mut self,
-        addr: u8,
-        bytes: &[u8],
-        buffer: &mut [u8],
-    ) -> Result<(), Self::Error> {
+    fn write_read(&mut self, addr: u8, bytes: &[u8], buffer: &mut [u8]) -> Result<(), Self::Error> {
         self.write(addr, bytes)?;
         self.read(addr, buffer)?;
 
@@ -195,21 +178,26 @@ impl<I, SDA, SCL> WriteRead for I2c<I, SDA, SCL>
 }
 
 impl<I, SDA, SCL> Write for I2c<I, SDA, SCL>
-    where I: Instance
+where
+    I: Instance,
 {
     type Error = Error;
 
     fn write(&mut self, addr: u8, bytes: &[u8]) -> Result<(), Self::Error> {
         while self.i2c.isr.read().busy().is_busy() {}
 
-        self.i2c.cr2.write(|w|
-            w
-                .start().set_bit()
-                .nbytes().bits(bytes.len() as u8)
-                .sadd().bits((addr << 1) as u16)
-                .rd_wrn().clear_bit()
-                .autoend().set_bit()
-        );
+        self.i2c.cr2.write(|w| {
+            w.start()
+                .set_bit()
+                .nbytes()
+                .bits(bytes.len() as u8)
+                .sadd()
+                .bits((addr << 1) as u16)
+                .rd_wrn()
+                .clear_bit()
+                .autoend()
+                .set_bit()
+        });
 
         // Send bytes
         for c in bytes {
@@ -221,22 +209,27 @@ impl<I, SDA, SCL> Write for I2c<I, SDA, SCL>
 }
 
 impl<I, SDA, SCL> Read for I2c<I, SDA, SCL>
-    where I: Instance
+where
+    I: Instance,
 {
     type Error = Error;
 
     fn read(&mut self, addr: u8, buffer: &mut [u8]) -> Result<(), Self::Error> {
         while self.i2c.isr.read().busy().is_busy() {}
 
-        self.i2c.cr2.write(|w|
-            w
-                .start().set_bit()
-                .nbytes().bits(buffer.len() as u8)
-                .sadd().bits((addr << 1) as u16)
+        self.i2c.cr2.write(|w| {
+            w.start()
+                .set_bit()
+                .nbytes()
+                .bits(buffer.len() as u8)
+                .sadd()
+                .bits((addr << 1) as u16)
                 // Request read transfer
-                .rd_wrn().read()
-                .autoend().set_bit()
-        );
+                .rd_wrn()
+                .read()
+                .autoend()
+                .set_bit()
+        });
 
         // Receive bytes into buffer
         for c in buffer {
@@ -246,11 +239,9 @@ impl<I, SDA, SCL> Read for I2c<I, SDA, SCL>
     }
 }
 
-
-pub trait Instance: Deref<Target=RegisterBlock> {
+pub trait Instance: Deref<Target = RegisterBlock> {
     fn initialize(&self, rcc: &mut Rcc);
 }
-
 
 // I2C SDA pin
 pub trait SDAPin<I2C> {

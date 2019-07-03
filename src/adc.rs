@@ -4,7 +4,6 @@ use crate::hal::adc::{Channel, OneShot};
 use crate::pac::ADC;
 use crate::rcc::Rcc;
 
-
 /// ADC Result Alignment
 #[derive(PartialEq)]
 pub enum Align {
@@ -129,21 +128,21 @@ where
 
         self.rb
             .smpr
-            .modify(|_, w| { w.smp().bits(self.sample_time as u8) });
-        
+            .modify(|_, w| w.smp().bits(self.sample_time as u8));
+
         match PIN::channel() {
-            0 => self.rb.chselr.modify(|_, w| { w.chsel0().set_bit() }),
-            1 => self.rb.chselr.modify(|_, w| { w.chsel1().set_bit() }),
-            2 => self.rb.chselr.modify(|_, w| { w.chsel2().set_bit() }),
-            3 => self.rb.chselr.modify(|_, w| { w.chsel3().set_bit() }),
-            4 => self.rb.chselr.modify(|_, w| { w.chsel4().set_bit() }),
-            5 => self.rb.chselr.modify(|_, w| { w.chsel5().set_bit() }),
-            6 => self.rb.chselr.modify(|_, w| { w.chsel6().set_bit() }),
-            7 => self.rb.chselr.modify(|_, w| { w.chsel7().set_bit() }),
-            8 => self.rb.chselr.modify(|_, w| { w.chsel8().set_bit() }),
-            9 => self.rb.chselr.modify(|_, w| { w.chsel9().set_bit() }),
-            17 => self.rb.chselr.modify(|_, w| { w.chsel17().set_bit() }),
-            18 => self.rb.chselr.modify(|_, w| { w.chsel18().set_bit() }),
+            0 => self.rb.chselr.modify(|_, w| w.chsel0().set_bit()),
+            1 => self.rb.chselr.modify(|_, w| w.chsel1().set_bit()),
+            2 => self.rb.chselr.modify(|_, w| w.chsel2().set_bit()),
+            3 => self.rb.chselr.modify(|_, w| w.chsel3().set_bit()),
+            4 => self.rb.chselr.modify(|_, w| w.chsel4().set_bit()),
+            5 => self.rb.chselr.modify(|_, w| w.chsel5().set_bit()),
+            6 => self.rb.chselr.modify(|_, w| w.chsel6().set_bit()),
+            7 => self.rb.chselr.modify(|_, w| w.chsel7().set_bit()),
+            8 => self.rb.chselr.modify(|_, w| w.chsel8().set_bit()),
+            9 => self.rb.chselr.modify(|_, w| w.chsel9().set_bit()),
+            17 => self.rb.chselr.modify(|_, w| w.chsel17().set_bit()),
+            18 => self.rb.chselr.modify(|_, w| w.chsel18().set_bit()),
             _ => unreachable!(),
         }
 
