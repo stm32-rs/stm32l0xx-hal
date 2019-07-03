@@ -6,7 +6,7 @@ use crate::gpio::gpioa::*;
 use crate::gpio::{AltMode, Floating, Input};
 use crate::hal;
 use crate::hal::prelude::*;
-use crate::pac::USART2;
+pub use crate::pac::{UART1, USART2};
 use crate::rcc::Rcc;
 use nb::block;
 
