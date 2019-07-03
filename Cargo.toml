@@ -43,10 +43,14 @@ version = "0.7.0"
 panic-halt = "0.2.0"
 panic-semihosting = "0.5.1"
 
+
 [features]
 rt = ["stm32l0/rt"]
 stm32l0x1 = ["stm32l0/stm32l0x1"]
 stm32l0x2 = ["stm32l0/stm32l0x2"]
+stm32l062 = ["stm32l0x2"]
+stm32l082 = ["stm32l0x2"]
+
 
 [profile.dev]
 codegen-units = 1
