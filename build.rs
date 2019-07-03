@@ -11,12 +11,8 @@ fn main() {
         (false, false) | (true, true) => {
             panic!("\n\nMust select exactly one package for linker script generation!\nChoices: 'stm32l0x1' or 'stm32l0x2'\n\n");
         }
-        (true, false) => {
-            include_bytes!("memory_l0x1.x").as_ref()
-        }
-        (false, true) => {
-            include_bytes!("memory_l0x2.x").as_ref()
-        }
+        (true, false) => include_bytes!("memory_l0x1.x").as_ref(),
+        (false, true) => include_bytes!("memory_l0x2.x").as_ref(),
     };
 
     File::create(out.join("memory.x"))

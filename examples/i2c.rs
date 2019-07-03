@@ -22,9 +22,7 @@ fn main() -> ! {
     let sda = gpioa.pa10.into_open_drain_output();
     let scl = gpioa.pa9.into_open_drain_output();
 
-    let mut i2c = dp
-        .I2C1
-        .i2c(sda, scl, 100.khz(), &mut rcc);
+    let mut i2c = dp.I2C1.i2c(sda, scl, 100.khz(), &mut rcc);
 
     let mut buffer = [0u8; 2];
     const MAX17048_ADDR: u8 = 0xFF;

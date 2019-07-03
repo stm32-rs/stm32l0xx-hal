@@ -1,5 +1,5 @@
-pub use embedded_hal::prelude::*;
 pub use embedded_hal::digital::v2::*;
+pub use embedded_hal::prelude::*;
 
 pub use crate::hal::adc::OneShot as _hal_adc_OneShot;
 pub use crate::hal::watchdog::Watchdog as _hal_watchdog_Watchdog;

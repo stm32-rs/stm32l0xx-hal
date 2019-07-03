@@ -30,7 +30,7 @@ fn main() -> ! {
     let mut delay = cp.SYST.delay(rcc.clocks);
 
     loop {
-        let wait =  match button.is_high() {
+        let wait = match button.is_high() {
             Ok(true) => 300.ms(),
             Ok(false) => 100.ms(),
             _ => unreachable!(),

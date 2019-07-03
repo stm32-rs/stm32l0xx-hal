@@ -66,7 +66,8 @@ pub enum Port {
     PA,
     PB,
     PC,
-    PD
+    PD,
+    PH,
 }
 
 #[derive(Debug)]
@@ -109,7 +110,7 @@ macro_rules! gpio {
                             $pxi: $PXi {
                                  i: $i,
                                 port: Port::$PXx,
-                                _mode: PhantomData 
+                                _mode: PhantomData
                             },
                         )+
                     }
@@ -209,7 +210,7 @@ macro_rules! gpio {
                         $PXi {
                              i: $i,
                             port: Port::$PXx,
-                            _mode: PhantomData 
+                            _mode: PhantomData
                         }
                     }
 
@@ -229,7 +230,7 @@ macro_rules! gpio {
                         $PXi {
                              i: $i,
                             port: Port::$PXx,
-                            _mode: PhantomData 
+                            _mode: PhantomData
                         }
                     }
 
@@ -249,7 +250,7 @@ macro_rules! gpio {
                         $PXi {
                              i: $i,
                             port: Port::$PXx,
-                            _mode: PhantomData 
+                            _mode: PhantomData
                         }
                     }
 
@@ -269,7 +270,7 @@ macro_rules! gpio {
                         $PXi {
                              i: $i,
                             port: Port::$PXx,
-                            _mode: PhantomData 
+                            _mode: PhantomData
                         }
                     }
 
@@ -292,7 +293,7 @@ macro_rules! gpio {
                         $PXi {
                              i: $i,
                             port: Port::$PXx,
-                            _mode: PhantomData 
+                            _mode: PhantomData
                         }
                     }
 
@@ -315,7 +316,7 @@ macro_rules! gpio {
                         $PXi {
                              i: $i,
                             port: Port::$PXx,
-                            _mode: PhantomData 
+                            _mode: PhantomData
                         }
                     }
 
@@ -448,7 +449,6 @@ macro_rules! gpio {
     }
 }
 
-//#[cfg(any(feature = "stm32l011"))]
 gpio!(GPIOA, gpioa, iopaen, PA, [
     PA0: (pa0, 0, Input<Floating>),
     PA1: (pa1, 1, Input<Floating>),
@@ -468,7 +468,6 @@ gpio!(GPIOA, gpioa, iopaen, PA, [
     PA15: (pa15, 15, Input<Floating>),
 ]);
 
-//#[cfg(any(feature = "stm32l011"))]
 gpio!(GPIOB, gpiob, iopben, PB, [
     PB0: (pb0, 0, Input<Floating>),
     PB1: (pb1, 1, Input<Floating>),
@@ -489,7 +488,7 @@ gpio!(GPIOB, gpiob, iopben, PB, [
 ]);
 
 #[cfg(any(feature = "stm32l0x2"))]
-gpio!(GPIOC, gpioc, iopben, PC, [
+gpio!(GPIOC, gpioc, iopcen, PC, [
     PC0: (pc0, 0, Input<Floating>),
     PC1: (pc1, 1, Input<Floating>),
     PC2: (pc2, 2, Input<Floating>),
@@ -508,3 +507,9 @@ gpio!(GPIOC, gpioc, iopben, PC, [
     PC15: (pc15, 15, Input<Floating>),
 ]);
 
+#[cfg(any(feature = "stm32l0x2"))]
+gpio!(GPIOH, gpioh, iophen, PH, [
+    PH0: (ph0, 0, Input<Floating>),
+    PH1: (ph1, 1, Input<Floating>),
+    PH2: (ph2, 2, Input<Floating>),
+]);

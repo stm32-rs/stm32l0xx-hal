@@ -16,7 +16,6 @@ use crate::pac::LPUART1;
 #[cfg(feature = "stm32l0x2")]
 use crate::pac::USART1;
 
-
 /// Serial error
 #[derive(Debug)]
 pub enum Error {
@@ -254,7 +253,7 @@ macro_rules! usart {
                             })
                     });
 
-                    usart.cr2.write(|w| 
+                    usart.cr2.write(|w|
                         w.stop().bits(match config.stopbits {
                             StopBits::STOP1 => 0b00,
                             StopBits::STOP0P5 => 0b01,
@@ -443,8 +442,7 @@ where
             .map(|c| block!(self.write(*c)))
             .last();
 
-        self.flush()
-            .map_err(|_| fmt::Error)?;
+        self.flush().map_err(|_| fmt::Error)?;
 
         Ok(())
     }
@@ -461,8 +459,7 @@ where
             .map(|c| block!(self.write(*c)))
             .last();
 
-        self.flush()
-            .map_err(|_| fmt::Error)?;
+        self.flush().map_err(|_| fmt::Error)?;
 
         Ok(())
     }

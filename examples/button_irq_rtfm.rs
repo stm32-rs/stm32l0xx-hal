@@ -27,7 +27,7 @@ const APP: () = {
 
         // Configure PB2 as input.
         let button = gpiob.pb2.into_pull_up_input();
-    
+
         #[cfg(feature = "stm32l0x1")]
         let mut syscfg = device.SYSCFG;
         #[cfg(feature = "stm32l0x2")]
