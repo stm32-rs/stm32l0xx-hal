@@ -61,6 +61,14 @@ pub(crate) enum AltMode {
     AF7 = 7,
 }
 
+#[cfg(feature = "stm32l0x1")]
+#[derive(Copy, Clone)]
+pub enum Port {
+    PA,
+    PB,
+}
+
+#[cfg(feature = "stm32l0x2")]
 #[derive(Copy, Clone)]
 pub enum Port {
     PA,
