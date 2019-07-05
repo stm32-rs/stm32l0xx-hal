@@ -2,18 +2,13 @@
 //!
 //! See STM32L0x2 reference manual, chapter 18.
 
-
 use core::convert::TryInto;
 
-use crate::{
-    pac,
-    rcc::Rcc,
-};
-
+use crate::{pac, rcc::Rcc};
 
 /// Entry point to the AES API
 pub struct AES<State> {
-    aes:    pac::AES,
+    aes: pac::AES,
     _state: State,
 }
 
@@ -31,17 +26,18 @@ impl AES<Ready> {
         aes.cr.write(|w| {
             w
                 // Disable DMA
-                .dmaouten().clear_bit()
-                .dmainen().clear_bit()
+                .dmaouten()
+                .clear_bit()
+                .dmainen()
+                .clear_bit()
                 // Disable interrupts
-                .errie().clear_bit()
-                .ccfie().clear_bit()
+                .errie()
+                .clear_bit()
+                .ccfie()
+                .clear_bit()
         });
 
-        Self {
-            aes,
-            _state: Ready,
-        }
+        Self { aes, _state: Ready }
     }
 
     /// Start a CTR stream
@@ -49,9 +45,7 @@ impl AES<Ready> {
     /// Will consume this AES instance and return another instance which is
     /// switched to CTR mode. While in CTR mode, you can use other methods to
     /// encrypt/decrypt data.
-    pub fn start_ctr_stream(self, key: [u32; 4], init_vector: [u32; 3])
-        -> AES<CTR>
-    {
+    pub fn start_ctr_stream(self, key: [u32; 4], init_vector: [u32; 3]) -> AES<CTR> {
         // Initialize key
         self.aes.keyr0.write(|w| unsafe { w.bits(key[0]) });
         self.aes.keyr1.write(|w| unsafe { w.bits(key[1]) });
@@ -70,20 +64,23 @@ impl AES<Ready> {
             let w = unsafe {
                 w
                     // Select Counter Mode (CTR) mode
-                    .chmod().bits(0b10)
+                    .chmod()
+                    .bits(0b10)
                     // These bits mean encryption mode, but in CTR mode,
                     // encryption and descryption are technically identical, so
                     // this is fine for either mode.
-                    .mode().bits(0b00)
+                    .mode()
+                    .bits(0b00)
                     // Configure for stream of bytes
-                    .datatype().bits(0b10)
+                    .datatype()
+                    .bits(0b10)
             };
             // Enable peripheral
             w.en().set_bit()
         });
 
         AES {
-            aes:    self.aes,
+            aes: self.aes,
             _state: CTR,
         }
     }
@@ -100,11 +97,11 @@ impl AES<CTR> {
         // Write input data to DINR
         //
         // See STM32L0x2 reference manual, section 18.4.10.
-        for i in (0 .. 4).rev() {
+        for i in (0..4).rev() {
             self.aes.dinr.write(|w| {
                 let i = i * 4;
 
-                let word = &input[i .. i+4];
+                let word = &input[i..i + 4];
                 // Can't panic, because `word` is 4 bytes long.
                 let word = word.try_into().unwrap();
                 let word = u32::from_le_bytes(word);
@@ -120,13 +117,13 @@ impl AES<CTR> {
         //
         // See STM32L0x2 reference manual, section 18.4.10.
         let mut output = [0; 16];
-        for i in (0 .. 4).rev() {
+        for i in (0..4).rev() {
             let i = i * 4;
 
             let word = self.aes.doutr.read().bits();
             let word = word.to_le_bytes();
 
-            (&mut output[i .. i+4]).copy_from_slice(&word);
+            (&mut output[i..i + 4]).copy_from_slice(&word);
         }
 
         // Clear CCF flag
@@ -144,19 +141,17 @@ impl AES<CTR> {
         self.aes.cr.modify(|_, w| w.en().clear_bit());
 
         AES {
-            aes:    self.aes,
+            aes: self.aes,
             _state: Ready,
         }
     }
 }
-
 
 /// A 128-bit block
 ///
 /// The AES peripheral processes 128 bits at a time, so this represents one unit
 /// of processing.
 pub type Block = [u8; 16];
-
 
 /// Indicates that the AES peripheral is ready to be used
 pub struct Ready;
