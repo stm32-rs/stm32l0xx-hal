@@ -6,6 +6,8 @@ cache: cargo
 env:
 - MCU=stm32l0x1
 - MCU=stm32l0x2
+# STM32L062 is not being run, as it's currently identical to STM32L082
+- MCU=stm32l082
 matrix:
   allow_failures:
     - rust: nightly
