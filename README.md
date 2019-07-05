@@ -12,48 +12,44 @@ This crate relies on Adam Greig's [stm32l0](https://crates.io/crates/stm32l0) cr
 Based on the [stm32l1xx-hal](https://github.com/stm32-rs/stm32l1xx-hal) crate by Vitaly Domnikov and the [stm32f4xx-hal](https://github.com/stm32-rs/stm32f4xx-hal) crate by Daniel Egger.
 
 
-Supported Configurations
-------------------------
+# Supported Configurations
 
 * __stm32l0x1__
+* __stm32l0x2__
 
-Dependencies
----------
+# Build Dependencies
 
 1. Rustup toolchain installer
 
     https://rustup.rs
 
 
-Configure Toolchain
----------
+# Toolchain Configuration
 
 `$ rustup target add thumbv6m-none-eabi`
 
-Build Examples
----------
+# Build Examples
 
 `$ cargo build --release --examples --features stm32l0x1,rt`
 
-Using as a Dependency
----------
+# Using as a Dependency
+
 To use this crate as a dependency, add the following definition to your `Cargo.toml`:
 
 ``` 
 [dependencies.stm32l0xx-hal]
-version = "0.1.6"
+version = "0.1.7"
 features = ["stm32l0x1", "rt"]
 ```
 
 Example Projects: [HABEXpico](https://github.com/arkorobotics/HABEXpico/tree/master/Firmware)
 
-Dependecies for Flashing
----------
+# Dependecies for Flashing
 
-1. Download and install the arm-none-eabi gcc toolchain
+1. Download and install the arm-none-eabi toolchain
 
 	https://developer.arm.com/open-source/gnu-toolchain/gnu-rm/downloads
-	We recommend installing the precompiled binaries to '/usr/local'. 
+	We recommend installing the precompiled binaries to '/usr/local/opt'. 
 	Add the bin folders (/bin & /arm-none-eabi/bin) to your environments variable 'PATH'.
 
 2. Install STLink Tool (>=v1.5.1)
@@ -62,25 +58,65 @@ Dependecies for Flashing
 
 3. Install OpenOCD (OPTIONAL)
 
-    http://openocd.org/getting-openocd/ 
+    NOTE: OpenOCD v0.10.0 does not fully support the stm32l0 family MCU. We recommend using `gnu-mcu-eclipse/openocd` instead:
+
+    https://gnu-mcu-eclipse.github.io/openocd/install/
+    We recommend installing the precompiled binaries to '/usr/local/opt'. 
+	Add the bin folders (i.e. - /usr/local/opt/gnu-mcu-eclipse/openocd/0.10.0-12-20190422-2015/bin) to your environments variable 'PATH'.
 
 4. Install GDB Dashboard (OPTIONAL)
 
 	https://github.com/cyrus-and/gdb-dashboard
 
-Flashing
----------
+# Flashing
 
-The following is a how-to on flashing the 'serial' example code. This can be extended to any other example code.
+The following instructions outline how-to on flashing the 'serial' example code. This can be extended to any other example code.
 
-1. Generate the hex file
+## Flashing with ST-Flash:
+
+1. Flash the microcontroller using the flash script
     ``` 
-    $ arm-none-eabi-objcopy -O ihex target/thumbv6m-none-eabi/release/examples/serial serial.hex
+    $ ./flash.sh target/thumbv6m-none-eabi/release/examples/serial
     ```
 
-2. Flash the microcontroller
+## Flashing with OpenOCD
+
+1. Flash the microcontroller using the openocd flash script
     ``` 
-    $ st-flash --format ihex write serial.hex
+    $ ./openocd_flash.sh target/thumbv6m-none-eabi/release/examples/serial
+    ```
+
+# Debugging
+
+## Debugging with GDB
+
+Terminal 1 - OpenOCD Session:
+    ``` 
+    $ ./openocd_session.sh
+    ```
+    
+Terminal 2 - GDB Session:
+    ``` 
+    $ ./gdb_session.sh target/thumbv6m-none-eabi/release/examples/serial
+    ```
+
+## Debugging with GDB Py and GDB Dashboard
+
+Terminal 1 - OpenOCD Session:
+    ``` 
+    $ ./openocd_session.sh
+    ```
+
+Terminal 2 - Dashboard:
+    ``` 
+    $ tty
+    ```
+    Note the tty session. We will use this in the following steps. (i.e. "/dev/ttys001")
+
+Terminal 3 - GDB Py Session:
+    ``` 
+    $ ./gdb_session.sh target/thumbv6m-none-eabi/release/examples/serial -d
+    >>> dashboard -output /dev/ttys001
     ```
 
 Contibutor Notes

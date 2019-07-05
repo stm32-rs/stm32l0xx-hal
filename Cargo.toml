@@ -21,7 +21,7 @@ license = "0BSD"
 name = "stm32l0xx-hal"
 readme = "README.md"
 repository = "https://github.com/stm32-rs/stm32l0xx-hal"
-version = "0.1.6"
+version = "0.1.7"
 
 [package.metadata.docs.rs]
 features = ["stm32l0x1", "stm32l0x2", "rt"]
