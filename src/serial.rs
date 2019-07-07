@@ -350,7 +350,7 @@ macro_rules! usart {
                     let isr = unsafe { (*$USARTX::ptr()).isr.read() };
 
                     // Check for any errors
-                    let err = if isr.pe().bit_is_set() {
+                    let _err = if isr.pe().bit_is_set() {
                         Some(Error::Parity)
                     } else if isr.fe().bit_is_set() {
                         Some(Error::Framing)
@@ -362,7 +362,7 @@ macro_rules! usart {
                         None
                     };
 
-                    if let Some(err) = err {
+                    if let Some(_err) = _err {
                         // Some error occured. Clear the error flags by writing to ICR
                         // followed by a read from the rdr register
                         // NOTE(read_volatile) see `write_volatile` below
@@ -372,7 +372,7 @@ macro_rules! usart {
                             (*$USARTX::ptr()).icr.write(|w| {w.ncf().set_bit()});
                             (*$USARTX::ptr()).icr.write(|w| {w.orecf().set_bit()});
                         }
-                        Err(nb::Error::Other(err))
+                        Err(nb::Error::WouldBlock)
                     } else {
                         // Check if a byte is available
                         if isr.rxne().bit_is_set() {

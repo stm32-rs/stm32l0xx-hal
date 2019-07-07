@@ -107,15 +107,13 @@ The following instructions outline how-to on flashing the 'serial' example code.
     $ ./openocd_session.sh
     ```
 
-2. Terminal 2 - Dashboard:
-    ``` 
-    $ tty
-    ```
-    Note the tty session. We will use this in the following steps. (i.e. "/dev/ttys001")
-
-3. Terminal 3 - GDB Py Session:
+2. Terminal 2 - GDB Py Session:
     ``` 
     $ ./gdb_session.sh target/thumbv6m-none-eabi/release/examples/serial -d
+    ```
+
+    Note: Users can redirect the dashboard output to separate terminal (i.e. - ttys001) using:
+    ```
     >>> dashboard -output /dev/ttys001
     ```
 
