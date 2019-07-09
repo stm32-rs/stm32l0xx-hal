@@ -38,10 +38,10 @@ fn main() -> ! {
         let mut ctr_stream = aes.start_ctr_stream(key, ivr);
 
         let mut encrypted = [[0; 16]; 4];
-        encrypted[0] = ctr_stream.process(&data);
-        encrypted[1] = ctr_stream.process(&data);
-        encrypted[2] = ctr_stream.process(&data);
-        encrypted[3] = ctr_stream.process(&data);
+        encrypted[0] = ctr_stream.process(&data).unwrap();
+        encrypted[1] = ctr_stream.process(&data).unwrap();
+        encrypted[2] = ctr_stream.process(&data).unwrap();
+        encrypted[3] = ctr_stream.process(&data).unwrap();
 
         assert_ne!(encrypted[0], data);
         assert_ne!(encrypted[1], data);
@@ -52,10 +52,10 @@ fn main() -> ! {
         let mut ctr_stream = aes.start_ctr_stream(key, ivr);
 
         let mut decrypted = [[0; 16]; 4];
-        decrypted[0] = ctr_stream.process(&encrypted[0]);
-        decrypted[1] = ctr_stream.process(&encrypted[1]);
-        decrypted[2] = ctr_stream.process(&encrypted[2]);
-        decrypted[3] = ctr_stream.process(&encrypted[3]);
+        decrypted[0] = ctr_stream.process(&encrypted[0]).unwrap();
+        decrypted[1] = ctr_stream.process(&encrypted[1]).unwrap();
+        decrypted[2] = ctr_stream.process(&encrypted[2]).unwrap();
+        decrypted[3] = ctr_stream.process(&encrypted[3]).unwrap();
 
         assert_eq!(decrypted[0], data);
         assert_eq!(decrypted[1], data);

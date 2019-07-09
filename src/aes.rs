@@ -5,6 +5,9 @@
 
 use core::convert::TryInto;
 
+use nb::block;
+use void::Void;
+
 use crate::{
     pac,
     rcc::Rcc,
@@ -82,13 +85,21 @@ impl AES {
 
         CtrStream {
             aes: self,
+            rx:  Rx(()),
+            tx:  Tx(()),
         }
     }
 }
 
 
+/// An active encryption/decryption stream using CTR mode
+///
+/// You can get an instance of this struct by calling [`AES::start_ctr_stream`].
 pub struct CtrStream {
     aes: AES,
+
+    pub tx: Tx,
+    pub rx: Rx,
 }
 
 impl CtrStream {
@@ -98,49 +109,17 @@ impl CtrStream {
     /// block of clear data to this function, an encrypted block is returned. If
     /// you pass a block of encrypted data, it is decrypted and a clear block
     /// is returned.
-    pub fn process(&mut self, input: &Block) -> Block {
-        // Write input data to DINR
-        //
-        // See STM32L0x2 reference manual, section 18.4.10.
-        for i in (0 .. 4).rev() {
-            self.aes.aes.dinr.write(|w| {
-                let i = i * 4;
-
-                let word = &input[i .. i+4];
-                // Can't panic, because `word` is 4 bytes long.
-                let word = word.try_into().unwrap();
-                let word = u32::from_le_bytes(word);
-
-                unsafe { w.bits(word) }
-            });
-        }
-
-        // Wait while computation is not complete
-        while self.aes.aes.sr.read().ccf().bit_is_clear() {}
-
-        // Read output data from DOUTR
-        //
-        // See STM32L0x2 reference manual, section 18.4.10.
-        let mut output = [0; 16];
-        for i in (0 .. 4).rev() {
-            let i = i * 4;
-
-            let word = self.aes.aes.doutr.read().bits();
-            let word = word.to_le_bytes();
-
-            (&mut output[i .. i+4]).copy_from_slice(&word);
-        }
-
-        // Clear CCF flag
-        self.aes.aes.cr.modify(|_, w| w.ccfc().set_bit());
-
-        output
+    pub fn process(&mut self, input: &Block) -> Result<Block, Error> {
+        self.tx.write(input)?;
+        // Can't panic. Error value of `Rx::read` is `Void`.
+        let output = block!(self.rx.read()).unwrap();
+        Ok(output)
     }
 
     /// Finish the CTR stream
     ///
-    /// Consumes this AES instance and returns another one that is back to the
-    /// original state.
+    /// Consumes the stream and returns the AES peripheral that was used to
+    /// start it.
     pub fn finish(self) -> AES {
         // Disable AES
         self.aes.aes.cr.modify(|_, w| w.en().clear_bit());
@@ -150,8 +129,107 @@ impl CtrStream {
 }
 
 
+/// Can be used to write data to the AES peripheral
+///
+/// You can access this struct via [`CtrStream`].
+pub struct Tx(());
+
+impl Tx {
+    /// Write a block to the AES peripheral
+    ///
+    /// Please note that only one block can be written before you need to read
+    /// the processed block back using [`Read::read`]. Calling this method
+    /// multiple times without calling [`Read::read`] in between will result in
+    /// an error to be returned.
+    pub fn write(&mut self, block: &Block) -> Result<(), Error> {
+        // Get access to the registers. This is safe, because:
+        // - `Tx` has exclusive access to DINR.
+        // - We only use SR for an atomic read.
+        let (dinr, sr) = unsafe {
+            let aes = &*pac::AES::ptr();
+            (&aes.dinr, &aes.sr)
+        };
+
+        // Write input data to DINR
+        //
+        // See STM32L0x2 reference manual, section 18.4.10.
+        for i in (0 .. 4).rev() {
+            dinr.write(|w| {
+                let i = i * 4;
+
+                let word = &block[i .. i+4];
+                // Can't panic, because `word` is 4 bytes long.
+                let word = word.try_into().unwrap();
+                let word = u32::from_le_bytes(word);
+
+                unsafe { w.bits(word) }
+            });
+        }
+
+        // Was there an unexpected write? If so, a computation is already
+        // ongoing and the user needs to call `Rx::read` next. If I understand
+        // the documentation correctly, our writes to the register above
+        // shouldn't have affected the ongoing computation.
+        if sr.read().wrerr().bit_is_set() {
+            return Err(Error::Busy);
+        }
+
+        Ok(())
+    }
+}
+
+
+/// Can be used to read data from the AES peripheral
+///
+/// You can access this struct via [`CtrStream`].
+pub struct Rx(());
+
+impl Rx {
+    pub fn read(&mut self) -> nb::Result<Block, Void> {
+        // Get access to the registers. This is safe, because:
+        // - We only use SR for an atomic read.
+        // - `Rx` has exclusive access to DOUTR.
+        // - While it exists, `Rx` has exlusive access to CR.
+        let (sr, doutr, cr) = unsafe {
+            let aes = &*pac::AES::ptr();
+            (&aes.sr, &aes.doutr, &aes.cr)
+        };
+
+        // Is a computation complete?
+        if sr.read().ccf().bit_is_clear() {
+            return Err(nb::Error::WouldBlock);
+        }
+
+        // Read output data from DOUTR
+        //
+        // See STM32L0x2 reference manual, section 18.4.10.
+        let mut block = [0; 16];
+        for i in (0 .. 4).rev() {
+            let i = i * 4;
+
+            let word = doutr.read().bits();
+            let word = word.to_le_bytes();
+
+            (&mut block[i .. i+4]).copy_from_slice(&word);
+        }
+
+        // Clear CCF flag
+        cr.modify(|_, w| w.ccfc().set_bit());
+
+        Ok(block)
+    }
+}
+
+
 /// A 128-bit block
 ///
 /// The AES peripheral processes 128 bits at a time, so this represents one unit
 /// of processing.
 pub type Block = [u8; 16];
+
+
+#[derive(Debug)]
+pub enum Error {
+    /// AES peripheral is busy
+    Busy,
+}
