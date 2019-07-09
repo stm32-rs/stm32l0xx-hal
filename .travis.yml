@@ -13,8 +13,6 @@ matrix:
     - rust: nightly
   fast_finish: true
 before_script:
-  - rustup component add rustfmt
   - rustup target add thumbv6m-none-eabi
 script:
-  - cargo fmt -- --check
   - RUSTFLAGS="-D warnings" cargo build --release --examples --features rt,$MCU
