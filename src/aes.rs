@@ -12,12 +12,11 @@ use crate::{
 
 
 /// Entry point to the AES API
-pub struct AES<State> {
-    aes:    pac::AES,
-    _state: State,
+pub struct AES {
+    aes: pac::AES,
 }
 
-impl AES<Ready> {
+impl AES {
     /// Initialize the AES peripheral
     pub fn new(aes: pac::AES, rcc: &mut Rcc) -> Self {
         // Reset peripheral
@@ -40,7 +39,6 @@ impl AES<Ready> {
 
         Self {
             aes,
-            _state: Ready,
         }
     }
 
@@ -50,7 +48,7 @@ impl AES<Ready> {
     /// switched to CTR mode. While in CTR mode, you can use other methods to
     /// encrypt/decrypt data.
     pub fn start_ctr_stream(self, key: [u32; 4], init_vector: [u32; 3])
-        -> AES<CTR>
+        -> CtrStream
     {
         // Initialize key
         self.aes.keyr0.write(|w| unsafe { w.bits(key[0]) });
@@ -82,14 +80,18 @@ impl AES<Ready> {
             w.en().set_bit()
         });
 
-        AES {
-            aes:    self.aes,
-            _state: CTR,
+        CtrStream {
+            aes: self,
         }
     }
 }
 
-impl AES<CTR> {
+
+pub struct CtrStream {
+    aes: AES,
+}
+
+impl CtrStream {
     /// Processes one block of data
     ///
     /// In CTR mode, encrypting and decrypting work the same. If you pass a
@@ -101,7 +103,7 @@ impl AES<CTR> {
         //
         // See STM32L0x2 reference manual, section 18.4.10.
         for i in (0 .. 4).rev() {
-            self.aes.dinr.write(|w| {
+            self.aes.aes.dinr.write(|w| {
                 let i = i * 4;
 
                 let word = &input[i .. i+4];
@@ -114,7 +116,7 @@ impl AES<CTR> {
         }
 
         // Wait while computation is not complete
-        while self.aes.sr.read().ccf().bit_is_clear() {}
+        while self.aes.aes.sr.read().ccf().bit_is_clear() {}
 
         // Read output data from DOUTR
         //
@@ -123,14 +125,14 @@ impl AES<CTR> {
         for i in (0 .. 4).rev() {
             let i = i * 4;
 
-            let word = self.aes.doutr.read().bits();
+            let word = self.aes.aes.doutr.read().bits();
             let word = word.to_le_bytes();
 
             (&mut output[i .. i+4]).copy_from_slice(&word);
         }
 
         // Clear CCF flag
-        self.aes.cr.modify(|_, w| w.ccfc().set_bit());
+        self.aes.aes.cr.modify(|_, w| w.ccfc().set_bit());
 
         output
     }
@@ -139,14 +141,11 @@ impl AES<CTR> {
     ///
     /// Consumes this AES instance and returns another one that is back to the
     /// original state.
-    pub fn finish(self) -> AES<Ready> {
+    pub fn finish(self) -> AES {
         // Disable AES
-        self.aes.cr.modify(|_, w| w.en().clear_bit());
+        self.aes.aes.cr.modify(|_, w| w.en().clear_bit());
 
-        AES {
-            aes:    self.aes,
-            _state: Ready,
-        }
+        self.aes
     }
 }
 
@@ -156,10 +155,3 @@ impl AES<CTR> {
 /// The AES peripheral processes 128 bits at a time, so this represents one unit
 /// of processing.
 pub type Block = [u8; 16];
-
-
-/// Indicates that the AES peripheral is ready to be used
-pub struct Ready;
-
-/// Indicates that the AES peripheral is currently using CTR mode
-pub struct CTR;
