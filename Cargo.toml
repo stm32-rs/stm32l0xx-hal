@@ -87,6 +87,10 @@ name = "aes"
 required-features = ["stm32l082"]
 
 [[example]]
+name = "aes-dma"
+required-features = ["stm32l082"]
+
+[[example]]
 name = "button_irq"
 required-features = ["rt"]
 
