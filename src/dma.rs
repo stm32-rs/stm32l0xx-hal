@@ -3,6 +3,16 @@
 //! See STM32L0x2 Reference Manual, chapter 11.
 
 
+// Currently the only module using DMA is STM32L082-only, which leads to unused
+// warnings when compiling for STM32L0x2. Rather than making the whole DMA
+// module STM32L082-only, which wouldn't reflect the reality, I've added this
+// stopgap measure to silence the warnings.
+//
+// This should be removed once there are any STM32L0x2 modules making use of
+// DMA.
+#![cfg_attr(not(feature = "stm32l082"), allow(unused, unused_macros))]
+
+
 use core::{
     fmt,
     ops::{
@@ -28,6 +38,9 @@ use crate::{
     },
     rcc::Rcc,
 };
+
+#[cfg(feature = "stm32l082")]
+use crate::aes;
 
 
 /// Entry point to the DMA API
@@ -437,7 +450,13 @@ macro_rules! impl_target {
 }
 
 // See STM32L0x2 Reference Manual, table 51 (page 267).
-impl_target!();
+#[cfg(feature = "stm32l082")]
+impl_target!(
+    aes::Tx, Channel1, 11;
+    aes::Tx, Channel5, 11;
+    aes::Rx, Channel2, 11;
+    aes::Rx, Channel3, 11;
+);
 
 
 /// Indicates that a DMA transfer is ready
