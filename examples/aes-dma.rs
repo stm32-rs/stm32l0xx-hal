@@ -10,19 +10,30 @@ extern crate panic_semihosting;
 
 use core::pin::Pin;
 
+use cortex_m::{
+    asm,
+    interrupt,
+};
 use cortex_m_rt::entry;
 use stm32l0xx_hal::{
     prelude::*,
     aes::AES,
-    dma::DMA,
-    pac,
+    dma::{
+        self,
+        DMA,
+    },
+    pac::{
+        self,
+        Interrupt,
+    },
     rcc::Config,
 };
 
 
 #[entry]
 fn main() -> ! {
-    let dp = pac::Peripherals::take().unwrap();
+    let mut cp = pac::CorePeripherals::take().unwrap();
+    let     dp = pac::Peripherals::take().unwrap();
 
     let mut rcc = dp.RCC.freeze(Config::hsi16());
     let mut aes = AES::new(dp.AES, &mut rcc);
@@ -54,23 +65,45 @@ fn main() -> ! {
 
     loop {
         let mut ctr_stream = aes.start_ctr_stream(key, ivr);
-        let tx_transfer = ctr_stream.tx
+        let mut tx_transfer = ctr_stream.tx
             .write_all(
                 &mut dma.handle,
                 data,
                 dma.channels.channel1,
-            )
-            .start();
-        let rx_transfer = ctr_stream.rx
+            );
+        let mut rx_transfer = ctr_stream.rx
             .read_all(
                 &mut dma.handle,
                 encrypted,
                 dma.channels.channel2,
-            )
-            .start();
+            );
 
-        let tx_res = tx_transfer.wait().unwrap();
-        let rx_res = rx_transfer.wait().unwrap();
+        let (tx_res, rx_res) = interrupt::free(|_| {
+            cp.NVIC.enable(Interrupt::DMA1_CHANNEL1);
+            cp.NVIC.enable(Interrupt::DMA1_CHANNEL2_3);
+
+            let interrupts = dma::Interrupts {
+                transfer_error: true,
+                transfer_complete: true,
+                .. Default::default()
+            };
+
+            tx_transfer.enable_interrupts(interrupts);
+            rx_transfer.enable_interrupts(interrupts);
+
+            let tx_transfer = tx_transfer.start();
+            let rx_transfer = rx_transfer.start();
+
+            asm::wfi();
+
+            let tx_res = tx_transfer.wait().unwrap();
+            let rx_res = rx_transfer.wait().unwrap();
+
+            cp.NVIC.disable(Interrupt::DMA1_CHANNEL1);
+            cp.NVIC.disable(Interrupt::DMA1_CHANNEL2_3);
+
+            (tx_res, rx_res)
+        });
 
         ctr_stream.tx         = tx_res.target;
         ctr_stream.rx         = rx_res.target;
@@ -83,23 +116,45 @@ fn main() -> ! {
         assert_ne!(encrypted, data);
 
         let mut ctr_stream = aes.start_ctr_stream(key, ivr);
-        let tx_transfer = ctr_stream.tx
+        let mut tx_transfer = ctr_stream.tx
             .write_all(
                 &mut dma.handle,
                 encrypted,
                 dma.channels.channel1,
-            )
-            .start();
-        let rx_transfer = ctr_stream.rx
+            );
+        let mut rx_transfer = ctr_stream.rx
             .read_all(
                 &mut dma.handle,
                 decrypted,
                 dma.channels.channel2,
-            )
-            .start();
+            );
 
-        let tx_res = tx_transfer.wait().unwrap();
-        let rx_res = rx_transfer.wait().unwrap();
+        let (tx_res, rx_res) = interrupt::free(|_| {
+            cp.NVIC.enable(Interrupt::DMA1_CHANNEL1);
+            cp.NVIC.enable(Interrupt::DMA1_CHANNEL2_3);
+
+            let interrupts = dma::Interrupts {
+                transfer_error: true,
+                transfer_complete: true,
+                .. Default::default()
+            };
+
+            tx_transfer.enable_interrupts(interrupts);
+            rx_transfer.enable_interrupts(interrupts);
+
+            let tx_transfer = tx_transfer.start();
+            let rx_transfer = rx_transfer.start();
+
+            asm::wfi();
+
+            let tx_res = tx_transfer.wait().unwrap();
+            let rx_res = rx_transfer.wait().unwrap();
+
+            cp.NVIC.disable(Interrupt::DMA1_CHANNEL1);
+            cp.NVIC.disable(Interrupt::DMA1_CHANNEL2_3);
+
+            (tx_res, rx_res)
+        });
 
         ctr_stream.tx         = tx_res.target;
         ctr_stream.rx         = rx_res.target;
