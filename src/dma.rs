@@ -73,7 +73,7 @@ impl<T, C, B> Transfer<T, C, B, Ready>
         T: Target<C>,
         C: Channel,
 {
-    pub(crate) fn memory_to_peripheral(
+    pub(crate) fn memory_to_peripheral<Word>(
         handle:  &mut Handle,
         target:  T,
         channel: C,
@@ -83,7 +83,8 @@ impl<T, C, B> Transfer<T, C, B, Ready>
         -> Self
         where
             B:         Deref,
-            B::Target: AsSlice<Element=u8>,
+            B::Target: AsSlice<Element=Word>,
+            Word:      SupportedWordSize,
     {
         // Safe, because the traits bounds of this method guarantee that
         // `buffer` can be read from.
@@ -99,7 +100,7 @@ impl<T, C, B> Transfer<T, C, B, Ready>
         }
     }
 
-    pub(crate) fn peripheral_to_memory(
+    pub(crate) fn peripheral_to_memory<Word>(
         handle:  &mut Handle,
         target:  T,
         channel: C,
@@ -109,7 +110,8 @@ impl<T, C, B> Transfer<T, C, B, Ready>
         -> Self
         where
             B:         DerefMut,
-            B::Target: AsMutSlice<Element=u8>,
+            B::Target: AsMutSlice<Element=Word>,
+            Word:      SupportedWordSize,
     {
         // Safe, because the traits bounds of this method guarantee that
         // `buffer` can be written to.
@@ -138,7 +140,7 @@ impl<T, C, B> Transfer<T, C, B, Ready>
     /// # Panics
     ///
     /// Panics, if the length of the buffer is larger than `u16::max_value()`.
-    unsafe fn new(
+    unsafe fn new<Word>(
         handle:  &mut Handle,
         target:  T,
         channel: C,
@@ -149,7 +151,8 @@ impl<T, C, B> Transfer<T, C, B, Ready>
         -> Self
         where
             B:         Deref,
-            B::Target: AsSlice<Element=u8>,
+            B::Target: AsSlice<Element=Word>,
+            Word:      SupportedWordSize,
     {
         assert!(buffer.as_slice().len() <= u16::max_value() as usize);
 
@@ -157,7 +160,7 @@ impl<T, C, B> Transfer<T, C, B, Ready>
         channel.set_peripheral_address(handle, address);
         channel.set_memory_address(handle, buffer.as_slice().as_ptr() as u32);
         channel.set_transfer_len(handle, buffer.as_slice().len() as u16);
-        channel.configure(handle, dir);
+        channel.configure::<Word>(handle, dir);
 
         Transfer {
             res: TransferResources {
@@ -246,7 +249,8 @@ pub trait Channel: Sized {
     fn set_peripheral_address(&self, _: &mut Handle, address: u32);
     fn set_memory_address(&self, _: &mut Handle, address: u32);
     fn set_transfer_len(&self, _: &mut Handle, len: u16);
-    fn configure(&self, _: &mut Handle, dir: ccr1::DIRW);
+    fn configure<Word>(&self, _: &mut Handle, dir: ccr1::DIRW)
+        where Word: SupportedWordSize;
     fn start(&self);
     fn is_active(&self) -> bool;
     fn error_occured(&self) -> bool;
@@ -309,21 +313,28 @@ macro_rules! impl_channel {
                     handle.dma.$cndtr.write(|w| w.ndt().bits(len));
                 }
 
-                fn configure(&self,
+                fn configure<Word>(&self,
                     handle: &mut Handle,
                     dir:    ccr1::DIRW,
-                ) {
-                    // TASK: MSIZE and PSIZE are incorrect. Should be 32 bits.
-                    handle.dma.$ccr.write(|w|
+                )
+                    where Word: SupportedWordSize
+                {
+                    handle.dma.$ccr.write(|w| {
+                        // Safe, as the enum we use should only provide valid
+                        // bit patterns.
+                        let w = unsafe {
+                            w
+                                // Word size in memory
+                                .msize().bits(Word::size()._bits())
+                                // Word size in peripheral
+                                .psize().bits(Word::size()._bits())
+                        };
+
                         w
                             // Memory-to-memory mode disabled
                             .mem2mem().disabled()
                             // Low priority
                             .pl().low()
-                            // Word size in memory
-                            .msize().bit8()
-                            // Word size in peripheral
-                            .psize().bit8()
                             // Increment memory pointer
                             .minc().enabled()
                             // Don't increment peripheral pointer
@@ -336,7 +347,7 @@ macro_rules! impl_channel {
                             .teie().disabled()
                             .htie().disabled()
                             .tcie().disabled()
-                    );
+                    });
                 }
 
                 fn start(&self) {
@@ -434,3 +445,26 @@ pub struct Ready;
 
 /// Indicates that a DMA transfer has been started
 pub struct Started;
+
+
+pub trait SupportedWordSize {
+    fn size() -> ccr1::MSIZEW;
+}
+
+impl SupportedWordSize for u8 {
+    fn size() -> ccr1::MSIZEW {
+        ccr1::MSIZEW::BIT8
+    }
+}
+
+impl SupportedWordSize for u16 {
+    fn size() -> ccr1::MSIZEW {
+        ccr1::MSIZEW::BIT16
+    }
+}
+
+impl SupportedWordSize for u32 {
+    fn size() -> ccr1::MSIZEW {
+        ccr1::MSIZEW::BIT32
+    }
+}
