@@ -75,6 +75,7 @@ pub enum Port {
     PB,
     PC,
     PD,
+    PE,
     PH,
 }
 
