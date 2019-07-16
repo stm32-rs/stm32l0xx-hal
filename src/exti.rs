@@ -71,9 +71,9 @@ impl ExtiExt for EXTI {
             gpio::Port::PE => 4,
             #[cfg(any(feature = "stm32l0x2"))]
             gpio::Port::PH => {
-                assert!( (line < 2) | (line == 9) | (line == 10) );
+                assert!((line < 2) | (line == 9) | (line == 10));
                 5
-            },
+            }
         };
         //self.imr.modify(|r, w| w.bits(r.bits() | bm));
         unsafe {
@@ -88,7 +88,7 @@ impl ExtiExt for EXTI {
                     });
                 }
                 4 | 5 | 6 | 7 => {
-                    // no need to assert that PH is not port, 
+                    // no need to assert that PH is not port,
                     // since line is assert on port above
                     syscfg.exticr2.modify(|_, w| match line {
                         4 => w.exti4().bits(port_bm),
