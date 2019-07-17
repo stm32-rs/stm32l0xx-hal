@@ -5,7 +5,6 @@ pub use crate::hal::adc::OneShot as _hal_adc_OneShot;
 pub use crate::hal::watchdog::Watchdog as _hal_watchdog_Watchdog;
 pub use crate::hal::watchdog::WatchdogEnable as _hal_watchdog_WatchdogEnable;
 
-#[cfg(feature = "stm32l0x1")]
 pub use crate::adc::AdcExt as _stm32l0xx_hal_analog_AdcExt;
 pub use crate::delay::DelayExt as _stm32l0xx_hal_delay_DelayExt;
 pub use crate::exti::ExtiExt as _stm32l0xx_hal_exti_ExtiExt;

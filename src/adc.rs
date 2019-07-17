@@ -95,6 +95,22 @@ impl Adc {
         while self.rb.cr.read().aden().bit_is_set() {}
     }
 
+    #[cfg(feature = "stm32l0x1")]
+    fn write_smpr(&mut self) {
+        self.rb
+            .smpr
+            .modify(|_, w| w.smp().bits(self.sample_time as u8));
+    }
+
+    #[cfg(feature = "stm32l0x2")]
+    fn write_smpr(&mut self) {
+        self.rb
+            .smpr
+            // Safe, because `self.sample_time` is of type `SampleTime`, which
+            // defines only valid values.
+            .modify(|_, w| unsafe { w.smpr().bits(self.sample_time as u8) });
+    }
+
     pub fn release(self) -> ADC {
         self.rb
     }
@@ -120,15 +136,18 @@ where
     fn read(&mut self, _pin: &mut PIN) -> nb::Result<WORD, Self::Error> {
         self.power_up();
         self.rb.cfgr1.modify(|_, w| {
-            w.res()
-                .bits(self.precision as u8)
-                .align()
-                .bit(self.align == Align::Left)
+            // Safe, as `self.precision` is of type `Precision`, which defines
+            // only valid values.
+            //
+            // The `bits` method is not unsafe on STM32L0x1, so we need to
+            // suppress the warning there.
+            #[cfg_attr(feature = "stm32l0x1", allow(unused_unsafe))]
+            let w = unsafe { w.res().bits(self.precision as u8) };
+            w
+                .align().bit(self.align == Align::Left)
         });
 
-        self.rb
-            .smpr
-            .modify(|_, w| w.smp().bits(self.sample_time as u8));
+        self.write_smpr();
 
         match PIN::channel() {
             0 => self.rb.chselr.modify(|_, w| w.chsel0().set_bit()),
