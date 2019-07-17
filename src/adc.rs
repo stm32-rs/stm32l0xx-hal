@@ -245,3 +245,94 @@ adc_pins! {
     Channel8: (gpiob::PB0<Analog>, 8u8),
     Channel9: (gpiob::PB1<Analog>, 9u8),
 }
+
+#[cfg(
+    all(
+        feature = "stm32l052",
+        any(
+            feature = "lqfp64",
+            feature = "tfbga64",
+        ),
+    )
+)]
+adc_pins! {
+    Channel10: (gpioc::PC0<Analog>, 10u8),
+    Channel11: (gpioc::PC1<Analog>, 11u8),
+    Channel12: (gpioc::PC2<Analog>, 12u8),
+}
+
+#[cfg(
+    all(
+        feature = "stm32l072",
+        any(
+            feature = "lqfp64",
+            feature = "lqfp100",
+            feature = "tfbga64",
+            feature = "ufbga64",
+            feature = "ufbg100",
+            feature = "wlcsp49",
+        ),
+    )
+)]
+adc_pins! {
+    Channel10: (gpioc::PC0<Analog>, 10u8),
+    Channel11: (gpioc::PC1<Analog>, 11u8),
+    Channel12: (gpioc::PC2<Analog>, 12u8),
+}
+
+#[cfg(all(feature = "stm32l082", feature = "wlcsp49"))]
+adc_pins! {
+    Channel10: (gpioc::PC0<Analog>, 10u8),
+    Channel11: (gpioc::PC1<Analog>, 11u8),
+    Channel12: (gpioc::PC2<Analog>, 12u8),
+}
+
+#[cfg(all(feature = "stm32l052", feature = "lqfp64"))]
+adc_pins! {
+    Channel13: (gpioc::PC3<Analog>, 13u8),
+}
+
+#[cfg(
+    all(
+        feature = "stm32l072",
+        any(
+            feature = "lqfp64",
+            feature = "lqfp100",
+            feature = "ufbg100",
+        ),
+    )
+)]
+adc_pins! {
+    Channel13: (gpioc::PC3<Analog>, 13u8),
+}
+
+#[cfg(
+    all(
+        feature = "stm32l052",
+        any(
+            feature = "lqfp64",
+            feature = "tfbga64",
+        ),
+    )
+)]
+adc_pins! {
+    Channel14: (gpioc::PC4<Analog>, 14u8),
+    Channel15: (gpioc::PC5<Analog>, 15u8),
+}
+
+#[cfg(
+    all(
+        feature = "stm32l072",
+        any(
+            feature = "lqfp64",
+            feature = "lqfp100",
+            feature = "tfbga64",
+            feature = "ufbga64",
+            feature = "ufbg100",
+        ),
+    )
+)]
+adc_pins! {
+    Channel14: (gpioc::PC4<Analog>, 14u8),
+    Channel15: (gpioc::PC5<Analog>, 15u8),
+}
