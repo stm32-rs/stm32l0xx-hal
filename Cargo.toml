@@ -50,7 +50,9 @@ rt = ["stm32l0/rt"]
 # MCUs
 stm32l0x1 = ["stm32l0/stm32l0x1"]
 stm32l0x2 = ["stm32l0/stm32l0x2"]
+stm32l052 = ["stm32l0x2"]
 stm32l062 = ["stm32l0x2"]
+stm32l072 = ["stm32l0x2"]
 stm32l082 = ["stm32l0x2"]
 # Chip packages
 lqfp32   = []
