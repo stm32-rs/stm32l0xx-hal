@@ -36,14 +36,29 @@ pub enum Precision {
 /// ADC Sampling time
 #[derive(Copy, Clone, PartialEq)]
 pub enum SampleTime {
-    T_2 = 0b000,
-    T_4 = 0b001,
-    T_8 = 0b010,
-    T_12 = 0b011,
-    T_20 = 0b100,
-    T_40 = 0b101,
-    T_80 = 0b110,
-    T_160 = 0b111,
+    /// 1.5 ADC clock cycles
+    T_1_5 = 0b000,
+
+    /// 3.5 ADC clock cycles
+    T_3_5 = 0b001,
+
+    /// 7.5 ADC clock cycles
+    T_7_5 = 0b010,
+
+    /// 12.5 ADC clock cycles
+    T_12_5 = 0b011,
+
+    /// 19.5 ADC clock cycles
+    T_19_5 = 0b100,
+
+    /// 39.5 ADC clock cycles
+    T_39_5 = 0b101,
+
+    /// 79.5 ADC clock cycles
+    T_79_5 = 0b110,
+
+    /// 160.5 ADC clock cycles
+    T_160_5 = 0b111,
 }
 
 /// Analog to Digital converter interface
@@ -62,7 +77,7 @@ impl Adc {
 
         Self {
             rb: adc,
-            sample_time: SampleTime::T_2,
+            sample_time: SampleTime::T_1_5,
             align: Align::Right,
             precision: Precision::B_12,
         }
