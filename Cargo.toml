@@ -45,11 +45,27 @@ panic-semihosting = "0.5.1"
 
 
 [features]
+# Miscellaneaous features
 rt = ["stm32l0/rt"]
+# MCUs
 stm32l0x1 = ["stm32l0/stm32l0x1"]
 stm32l0x2 = ["stm32l0/stm32l0x2"]
+stm32l052 = ["stm32l0x2"]
 stm32l062 = ["stm32l0x2"]
+stm32l072 = ["stm32l0x2"]
 stm32l082 = ["stm32l0x2"]
+# Chip packages
+lqfp32   = []
+lqfp48   = []
+lqfp64   = []
+lqfp100  = []
+tfbga64  = []
+ufbga64  = []
+ufbg100  = []
+ufqfpn32 = []
+ufqfpn48 = []
+wlcsp36  = []
+wlcsp49  = []
 
 
 [profile.dev]

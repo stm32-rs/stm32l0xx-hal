@@ -36,14 +36,29 @@ pub enum Precision {
 /// ADC Sampling time
 #[derive(Copy, Clone, PartialEq)]
 pub enum SampleTime {
-    T_2 = 0b000,
-    T_4 = 0b001,
-    T_8 = 0b010,
-    T_12 = 0b011,
-    T_20 = 0b100,
-    T_40 = 0b101,
-    T_80 = 0b110,
-    T_160 = 0b111,
+    /// 1.5 ADC clock cycles
+    T_1_5 = 0b000,
+
+    /// 3.5 ADC clock cycles
+    T_3_5 = 0b001,
+
+    /// 7.5 ADC clock cycles
+    T_7_5 = 0b010,
+
+    /// 12.5 ADC clock cycles
+    T_12_5 = 0b011,
+
+    /// 19.5 ADC clock cycles
+    T_19_5 = 0b100,
+
+    /// 39.5 ADC clock cycles
+    T_39_5 = 0b101,
+
+    /// 79.5 ADC clock cycles
+    T_79_5 = 0b110,
+
+    /// 160.5 ADC clock cycles
+    T_160_5 = 0b111,
 }
 
 /// Analog to Digital converter interface
@@ -62,7 +77,7 @@ impl Adc {
 
         Self {
             rb: adc,
-            sample_time: SampleTime::T_2,
+            sample_time: SampleTime::T_1_5,
             align: Align::Right,
             precision: Precision::B_12,
         }
@@ -95,6 +110,22 @@ impl Adc {
         while self.rb.cr.read().aden().bit_is_set() {}
     }
 
+    #[cfg(feature = "stm32l0x1")]
+    fn write_smpr(&mut self) {
+        self.rb
+            .smpr
+            .modify(|_, w| w.smp().bits(self.sample_time as u8));
+    }
+
+    #[cfg(feature = "stm32l0x2")]
+    fn write_smpr(&mut self) {
+        self.rb
+            .smpr
+            // Safe, because `self.sample_time` is of type `SampleTime`, which
+            // defines only valid values.
+            .modify(|_, w| unsafe { w.smpr().bits(self.sample_time as u8) });
+    }
+
     pub fn release(self) -> ADC {
         self.rb
     }
@@ -120,31 +151,24 @@ where
     fn read(&mut self, _pin: &mut PIN) -> nb::Result<WORD, Self::Error> {
         self.power_up();
         self.rb.cfgr1.modify(|_, w| {
-            w.res()
-                .bits(self.precision as u8)
-                .align()
-                .bit(self.align == Align::Left)
+            // Safe, as `self.precision` is of type `Precision`, which defines
+            // only valid values.
+            //
+            // The `bits` method is not unsafe on STM32L0x1, so we need to
+            // suppress the warning there.
+            #[cfg_attr(feature = "stm32l0x1", allow(unused_unsafe))]
+            let w = unsafe { w.res().bits(self.precision as u8) };
+            w
+                .align().bit(self.align == Align::Left)
         });
 
-        self.rb
-            .smpr
-            .modify(|_, w| w.smp().bits(self.sample_time as u8));
+        self.write_smpr();
 
-        match PIN::channel() {
-            0 => self.rb.chselr.modify(|_, w| w.chsel0().set_bit()),
-            1 => self.rb.chselr.modify(|_, w| w.chsel1().set_bit()),
-            2 => self.rb.chselr.modify(|_, w| w.chsel2().set_bit()),
-            3 => self.rb.chselr.modify(|_, w| w.chsel3().set_bit()),
-            4 => self.rb.chselr.modify(|_, w| w.chsel4().set_bit()),
-            5 => self.rb.chselr.modify(|_, w| w.chsel5().set_bit()),
-            6 => self.rb.chselr.modify(|_, w| w.chsel6().set_bit()),
-            7 => self.rb.chselr.modify(|_, w| w.chsel7().set_bit()),
-            8 => self.rb.chselr.modify(|_, w| w.chsel8().set_bit()),
-            9 => self.rb.chselr.modify(|_, w| w.chsel9().set_bit()),
-            17 => self.rb.chselr.modify(|_, w| w.chsel17().set_bit()),
-            18 => self.rb.chselr.modify(|_, w| w.chsel18().set_bit()),
-            _ => unreachable!(),
-        }
+        self.rb.chselr.write(|w|
+            // Safe, as long as there are no `Channel` implementations that
+            // define invalid values.
+            unsafe { w.bits(0b1 << PIN::channel()) }
+        );
 
         self.rb.isr.modify(|_, w| w.eos().set_bit());
         self.rb.cr.modify(|_, w| w.adstart().set_bit());
@@ -220,4 +244,95 @@ adc_pins! {
     Channel7: (gpioa::PA7<Analog>, 7u8),
     Channel8: (gpiob::PB0<Analog>, 8u8),
     Channel9: (gpiob::PB1<Analog>, 9u8),
+}
+
+#[cfg(
+    all(
+        feature = "stm32l052",
+        any(
+            feature = "lqfp64",
+            feature = "tfbga64",
+        ),
+    )
+)]
+adc_pins! {
+    Channel10: (gpioc::PC0<Analog>, 10u8),
+    Channel11: (gpioc::PC1<Analog>, 11u8),
+    Channel12: (gpioc::PC2<Analog>, 12u8),
+}
+
+#[cfg(
+    all(
+        feature = "stm32l072",
+        any(
+            feature = "lqfp64",
+            feature = "lqfp100",
+            feature = "tfbga64",
+            feature = "ufbga64",
+            feature = "ufbg100",
+            feature = "wlcsp49",
+        ),
+    )
+)]
+adc_pins! {
+    Channel10: (gpioc::PC0<Analog>, 10u8),
+    Channel11: (gpioc::PC1<Analog>, 11u8),
+    Channel12: (gpioc::PC2<Analog>, 12u8),
+}
+
+#[cfg(all(feature = "stm32l082", feature = "wlcsp49"))]
+adc_pins! {
+    Channel10: (gpioc::PC0<Analog>, 10u8),
+    Channel11: (gpioc::PC1<Analog>, 11u8),
+    Channel12: (gpioc::PC2<Analog>, 12u8),
+}
+
+#[cfg(all(feature = "stm32l052", feature = "lqfp64"))]
+adc_pins! {
+    Channel13: (gpioc::PC3<Analog>, 13u8),
+}
+
+#[cfg(
+    all(
+        feature = "stm32l072",
+        any(
+            feature = "lqfp64",
+            feature = "lqfp100",
+            feature = "ufbg100",
+        ),
+    )
+)]
+adc_pins! {
+    Channel13: (gpioc::PC3<Analog>, 13u8),
+}
+
+#[cfg(
+    all(
+        feature = "stm32l052",
+        any(
+            feature = "lqfp64",
+            feature = "tfbga64",
+        ),
+    )
+)]
+adc_pins! {
+    Channel14: (gpioc::PC4<Analog>, 14u8),
+    Channel15: (gpioc::PC5<Analog>, 15u8),
+}
+
+#[cfg(
+    all(
+        feature = "stm32l072",
+        any(
+            feature = "lqfp64",
+            feature = "lqfp100",
+            feature = "tfbga64",
+            feature = "ufbga64",
+            feature = "ufbg100",
+        ),
+    )
+)]
+adc_pins! {
+    Channel14: (gpioc::PC4<Analog>, 14u8),
+    Channel15: (gpioc::PC5<Analog>, 15u8),
 }

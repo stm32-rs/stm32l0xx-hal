@@ -1,18 +1,49 @@
 language: rust
+cache: cargo
 rust:
   - stable
   - nightly
-cache: cargo
 env:
-- MCU=stm32l0x1
-- MCU=stm32l0x2
-# STM32L062 is not being run, as it's currently identical to STM32L082
-- MCU=stm32l082
+  - MCU=stm32l0x1
+  - MCU=stm32l0x2
 matrix:
   allow_failures:
     - rust: nightly
   fast_finish: true
+  # Most of these configurations are commented out, as running them takes far
+  # too long. I've still left them in, to document which combinations are
+  # supported.
+  #
+  # It probably makes sense to uncomment them selectively, from time to time, to
+  # test any changes to the affected code.
+  include:
+    # STM32L052
+    # - env: MCU=stm32l052 PACKAGE=lqfp32
+    # - env: MCU=stm32l052 PACKAGE=lqfp48
+    # - env: MCU=stm32l052 PACKAGE=lqfp64
+    # - env: MCU=stm32l052 PACKAGE=tfbga64
+    # - env: MCU=stm32l052 PACKAGE=ufqfpn32
+    # - env: MCU=stm32l052 PACKAGE=ufqfpn48
+    # - env: MCU=stm32l052 PACKAGE=wlcsp36
+    # STM32L062
+    # - env: MCU=stm32l062 PACKAGE=lqfp32
+    # - env: MCU=stm32l062 PACKAGE=ufqfpn32
+    # - env: MCU=stm32l062 PACKAGE=wlcsp36
+    # STM32L072
+    - env: MCU=stm32l072 PACKAGE=lqfp32
+    # - env: MCU=stm32l072 PACKAGE=lqfp48
+    # - env: MCU=stm32l072 PACKAGE=lqfp64
+    # - env: MCU=stm32l072 PACKAGE=lqfp100
+    # - env: MCU=stm32l072 PACKAGE=tfbga64
+    # - env: MCU=stm32l072 PACKAGE=ufbga64
+    # - env: MCU=stm32l072 PACKAGE=ufbg100
+    # - env: MCU=stm32l072 PACKAGE=ufqfpn32
+    # - env: MCU=stm32l072 PACKAGE=wlcsp49
+    # STM32L082
+    - env: MCU=stm32l082 PACKAGE=lqfp32
+    # - env: MCU=stm32l082 PACKAGE=ufqfpn32
+    # - env: MCU=stm32l082 PACKAGE=wlcsp49
 before_script:
   - rustup target add thumbv6m-none-eabi
 script:
-  - RUSTFLAGS="-D warnings" cargo build --release --examples --features rt,$MCU
+  - RUSTFLAGS="-D warnings" cargo build --release --examples --features="rt $MCU $PACKAGE"
