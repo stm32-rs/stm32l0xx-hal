@@ -68,13 +68,18 @@ impl ExtiExt for EXTI {
             #[cfg(any(feature = "stm32l0x2"))]
             gpio::Port::PD => 3,
             #[cfg(any(feature = "stm32l0x2"))]
-            gpio::Port::PH => 7,
+            gpio::Port::PE => 4,
+            #[cfg(any(feature = "stm32l0x2"))]
+            gpio::Port::PH => {
+                assert!((line < 2) | (line == 9) | (line == 10));
+                5
+            }
         };
-
+        //self.imr.modify(|r, w| w.bits(r.bits() | bm));
         unsafe {
             match line {
                 0 | 1 | 2 | 3 => {
-                    syscfg.exticr1.write(|w| match line {
+                    syscfg.exticr1.modify(|_, w| match line {
                         0 => w.exti0().bits(port_bm),
                         1 => w.exti1().bits(port_bm),
                         2 => w.exti2().bits(port_bm),
@@ -83,7 +88,9 @@ impl ExtiExt for EXTI {
                     });
                 }
                 4 | 5 | 6 | 7 => {
-                    syscfg.exticr2.write(|w| match line {
+                    // no need to assert that PH is not port,
+                    // since line is assert on port above
+                    syscfg.exticr2.modify(|_, w| match line {
                         4 => w.exti4().bits(port_bm),
                         5 => w.exti5().bits(port_bm),
                         6 => w.exti6().bits(port_bm),
@@ -92,7 +99,7 @@ impl ExtiExt for EXTI {
                     });
                 }
                 8 | 9 | 10 | 11 => {
-                    syscfg.exticr3.write(|w| match line {
+                    syscfg.exticr3.modify(|_, w| match line {
                         8 => w.exti8().bits(port_bm),
                         9 => w.exti9().bits(port_bm),
                         10 => w.exti10().bits(port_bm),
@@ -101,7 +108,7 @@ impl ExtiExt for EXTI {
                     });
                 }
                 12 | 13 | 14 | 15 => {
-                    syscfg.exticr4.write(|w| match line {
+                    syscfg.exticr4.modify(|_, w| match line {
                         12 => w.exti12().bits(port_bm),
                         13 => w.exti13().bits(port_bm),
                         14 => w.exti14().bits(port_bm),
@@ -147,7 +154,6 @@ impl ExtiExt for EXTI {
 
     fn clear_irq(&self, line: u8) {
         assert!(line < 24);
-
         self.pr.modify(|_, w| unsafe { w.bits(0b1 << line) });
     }
 }

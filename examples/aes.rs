@@ -1,12 +1,21 @@
 //! Encryption/decryption using the AES peripheral
 
+
 #![no_main]
 #![no_std]
 
+
 extern crate panic_semihosting;
 
+
 use cortex_m_rt::entry;
-use stm32l0xx_hal::{aes::AES, pac, prelude::*, rcc::Config};
+use stm32l0xx_hal::{
+    prelude::*,
+    aes::AES,
+    pac,
+    rcc::Config,
+};
+
 
 #[entry]
 fn main() -> ! {
@@ -19,18 +28,20 @@ fn main() -> ! {
     let ivr = [0xfedcba98, 0x76543210, 0xfedcba98];
 
     let data = [
-        0x00, 0x11, 0x22, 0x33, 0x44, 0x55, 0x66, 0x77, 0x88, 0x99, 0xaa, 0xbb, 0xcc, 0xdd, 0xee,
-        0xff,
+        0x00, 0x11, 0x22, 0x33,
+        0x44, 0x55, 0x66, 0x77,
+        0x88, 0x99, 0xaa, 0xbb,
+        0xcc, 0xdd, 0xee, 0xff,
     ];
 
     loop {
         let mut ctr_stream = aes.start_ctr_stream(key, ivr);
 
         let mut encrypted = [[0; 16]; 4];
-        encrypted[0] = ctr_stream.process(&data);
-        encrypted[1] = ctr_stream.process(&data);
-        encrypted[2] = ctr_stream.process(&data);
-        encrypted[3] = ctr_stream.process(&data);
+        encrypted[0] = ctr_stream.process(&data).unwrap();
+        encrypted[1] = ctr_stream.process(&data).unwrap();
+        encrypted[2] = ctr_stream.process(&data).unwrap();
+        encrypted[3] = ctr_stream.process(&data).unwrap();
 
         assert_ne!(encrypted[0], data);
         assert_ne!(encrypted[1], data);
@@ -41,10 +52,10 @@ fn main() -> ! {
         let mut ctr_stream = aes.start_ctr_stream(key, ivr);
 
         let mut decrypted = [[0; 16]; 4];
-        decrypted[0] = ctr_stream.process(&encrypted[0]);
-        decrypted[1] = ctr_stream.process(&encrypted[1]);
-        decrypted[2] = ctr_stream.process(&encrypted[2]);
-        decrypted[3] = ctr_stream.process(&encrypted[3]);
+        decrypted[0] = ctr_stream.process(&encrypted[0]).unwrap();
+        decrypted[1] = ctr_stream.process(&encrypted[1]).unwrap();
+        decrypted[2] = ctr_stream.process(&encrypted[2]).unwrap();
+        decrypted[3] = ctr_stream.process(&encrypted[3]).unwrap();
 
         assert_eq!(decrypted[0], data);
         assert_eq!(decrypted[1], data);
