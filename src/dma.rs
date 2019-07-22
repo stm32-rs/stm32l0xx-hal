@@ -129,10 +129,18 @@ impl<T, C, B> Transfer<T, C, B, Ready>
         }
     }
 
+    /// Enables the provided interrupts
+    ///
+    /// This setting only affects this transfer. It doesn't affect transfer on
+    /// other channels, or subsequent transfers on the same channel.
     pub fn enable_interrupts(&mut self, interrupts: Interrupts) {
         self.res.channel.enable_interrupts(interrupts);
     }
 
+    /// Start the DMA transfer
+    ///
+    /// Consumes this instance of `Transfer` and returns a new one, with its
+    /// state changes to indicate that the transfer has been started.
     pub fn start(self) -> Transfer<T, C, B, Started> {
         compiler_fence(Ordering::SeqCst);
 
@@ -153,7 +161,7 @@ impl<T, C, B> Transfer<T, C, B, Started>
         self.res.channel.is_active()
     }
 
-    /// Waits for the transfer to finish and return owned resources
+    /// Waits for the transfer to finish and returns the owned resources
     ///
     /// This function will busily wait until the transfer is finished. If you
     /// don't want this, please call this function only once you know that the
