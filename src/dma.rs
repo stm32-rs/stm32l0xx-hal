@@ -71,8 +71,8 @@ pub struct Handle {
 }
 
 
-pub struct Transfer<C, T, B, State> {
-    res:    TransferResources<C, T, B>,
+pub struct Transfer<T, C, B, State> {
+    res:    TransferResources<T, C, B>,
     _state: State,
 }
 
