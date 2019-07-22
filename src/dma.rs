@@ -109,7 +109,7 @@ impl<T, C, B> Transfer<T, C, B, Ready>
                 channel,
                 buffer,
                 address,
-                ccr1::DIRW::FROMMEMORY,
+                Direction::memory_to_peripheral(),
             )
         }
     }
@@ -136,7 +136,7 @@ impl<T, C, B> Transfer<T, C, B, Ready>
                 channel,
                 buffer,
                 address,
-                ccr1::DIRW::FROMPERIPHERAL,
+                Direction::peripheral_to_memory(),
             )
         }
     }
@@ -162,7 +162,7 @@ impl<T, C, B> Transfer<T, C, B, Ready>
         channel: C,
         buffer:  Pin<B>,
         address: u32,
-        dir:     ccr1::DIRW,
+        dir:     Direction,
     )
         -> Self
         where
@@ -177,7 +177,7 @@ impl<T, C, B> Transfer<T, C, B, Ready>
         channel.set_peripheral_address(handle, address);
         channel.set_memory_address(handle, buffer.as_slice().as_ptr() as u32);
         channel.set_transfer_len(handle, buffer.as_slice().len() as u16);
-        channel.configure::<Word>(handle, dir);
+        channel.configure::<Word>(handle, dir.0);
 
         Transfer {
             res: TransferResources {
@@ -257,6 +257,20 @@ pub struct TransferResources<T, C, B> {
 impl<T, C, B> fmt::Debug for TransferResources<T, C, B> {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         write!(f, "TransferResources {{ ... }}")
+    }
+}
+
+
+/// The direction of the DMA transfer
+pub(crate) struct Direction(ccr1::DIRW);
+
+impl Direction {
+    pub fn memory_to_peripheral() -> Self {
+        Self(ccr1::DIRW::FROMMEMORY)
+    }
+
+    pub fn peripheral_to_memory() -> Self {
+        Self(ccr1::DIRW::FROMPERIPHERAL)
     }
 }
 
