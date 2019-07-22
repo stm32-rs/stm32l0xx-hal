@@ -469,6 +469,33 @@ impl<T, Word> Buffer<Word> for T
 }
 
 
+/// Can be used as a fallback [`Buffer`], if safer implementations can't be used
+pub(crate) struct PtrBuffer<Word> {
+    pub ptr: *const Word,
+    pub len: usize,
+}
+
+// Required to make in possible to put this in a `Pin`, in a way that satisfies
+// the requirements on `Transfer::new`.
+impl<Word> Deref for PtrBuffer<Word> {
+    type Target = Self;
+
+    fn deref(&self) -> &Self::Target {
+        self
+    }
+}
+
+impl<Word> Buffer<Word> for PtrBuffer<Word> {
+    fn as_ptr(&self) -> *const Word {
+        self.ptr
+    }
+
+    fn len(&self) -> usize {
+        self.len
+    }
+}
+
+
 pub trait SupportedWordSize {
     fn size() -> ccr1::MSIZEW;
 }

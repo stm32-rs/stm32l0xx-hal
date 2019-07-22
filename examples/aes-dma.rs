@@ -42,21 +42,21 @@ fn main() -> ! {
     let key = [0x01234567, 0x89abcdef, 0x01234567, 0x89abcdef];
     let ivr = [0xfedcba98, 0x76543210, 0xfedcba98];
 
-    const DATA: [u32; 8] = [
-        0x00112233,
-        0x44556677,
-        0x8899aabb,
-        0xccddeeff,
+    const DATA: [u8; 32] = [
+        0x00, 0x11, 0x22, 0x33,
+        0x44, 0x55, 0x66, 0x77,
+        0x88, 0x99, 0xaa, 0xbb,
+        0xcc, 0xdd, 0xee, 0xff,
 
-        0x00112233,
-        0x44556677,
-        0x8899aabb,
-        0xccddeeff,
+        0x00, 0x11, 0x22, 0x33,
+        0x44, 0x55, 0x66, 0x77,
+        0x88, 0x99, 0xaa, 0xbb,
+        0xcc, 0xdd, 0xee, 0xff,
     ];
     let data = Pin::new(&DATA);
 
-    static mut ENCRYPTED: [u32; 8] = [0; 8];
-    static mut DECRYPTED: [u32; 8] = [0; 8];
+    static mut ENCRYPTED: [u8; 32] = [0; 32];
+    static mut DECRYPTED: [u8; 32] = [0; 32];
 
     // Prepare DMA buffers. This is safe, as this is the `main` function, and no
     // other functions have access to these statics.
@@ -112,7 +112,7 @@ fn main() -> ! {
         encrypted             = rx_res.buffer;
         aes                   = ctr_stream.finish();
 
-        assert_ne!(encrypted, Pin::new(&mut [0; 8]));
+        assert_ne!(encrypted, Pin::new(&mut [0; 32]));
         assert_ne!(encrypted, data);
 
         let mut ctr_stream = aes.start_ctr_stream(key, ivr);
