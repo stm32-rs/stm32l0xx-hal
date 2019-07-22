@@ -16,10 +16,7 @@
 use core::{
     fmt,
     mem,
-    ops::{
-        Deref,
-        DerefMut,
-    },
+    ops::Deref,
     pin::Pin,
     sync::atomic::{
         compiler_fence,
@@ -27,10 +24,7 @@ use core::{
     }
 };
 
-use as_slice::{
-    AsMutSlice,
-    AsSlice,
-};
+use as_slice::AsSlice;
 
 use crate::{
     pac::{
@@ -87,60 +81,6 @@ impl<T, C, B> Transfer<T, C, B, Ready>
         T: Target<C>,
         C: Channel,
 {
-    pub(crate) fn memory_to_peripheral<Word>(
-        handle:  &mut Handle,
-        target:  T,
-        channel: C,
-        buffer:  Pin<B>,
-        address: u32,
-    )
-        -> Self
-        where
-            B:         Deref,
-            B::Target: AsSlice<Element=Word>,
-            Word:      SupportedWordSize,
-    {
-        // Safe, because the traits bounds of this method guarantee that
-        // `buffer` can be read from.
-        unsafe {
-            Self::new(
-                handle,
-                target,
-                channel,
-                buffer,
-                address,
-                Direction::memory_to_peripheral(),
-            )
-        }
-    }
-
-    pub(crate) fn peripheral_to_memory<Word>(
-        handle:  &mut Handle,
-        target:  T,
-        channel: C,
-        buffer:  Pin<B>,
-        address: u32,
-    )
-        -> Self
-        where
-            B:         DerefMut,
-            B::Target: AsMutSlice<Element=Word>,
-            Word:      SupportedWordSize,
-    {
-        // Safe, because the traits bounds of this method guarantee that
-        // `buffer` can be written to.
-        unsafe {
-            Self::new(
-                handle,
-                target,
-                channel,
-                buffer,
-                address,
-                Direction::peripheral_to_memory(),
-            )
-        }
-    }
-
     /// Internal constructor
     ///
     /// # Safety
@@ -156,7 +96,7 @@ impl<T, C, B> Transfer<T, C, B, Ready>
     /// Panics, if the length of the buffer is larger than `u16::max_value()`.
     ///
     /// Panics, if the buffer is not aligned to the word size.
-    unsafe fn new<Word>(
+    pub(crate) unsafe fn new<Word>(
         handle:  &mut Handle,
         target:  T,
         channel: C,

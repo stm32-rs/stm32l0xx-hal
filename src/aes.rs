@@ -219,7 +219,18 @@ impl Tx {
         // Safe, because we're only taking the address of a register.
         let address = &unsafe { &*pac::AES::ptr() }.dinr as *const _ as u32;
 
-        dma::Transfer::memory_to_peripheral(dma, self, channel, buffer, address)
+        // Safe, because the traits bounds of this method guarantee that
+        // `buffer` can be read from.
+        unsafe {
+            dma::Transfer::new(
+                dma,
+                self,
+                channel,
+                buffer,
+                address,
+                dma::Direction::memory_to_peripheral(),
+            )
+        }
     }
 }
 
@@ -294,7 +305,18 @@ impl Rx {
         // Safe, because we're only taking the address of a register.
         let address = &unsafe { &*pac::AES::ptr() }.doutr as *const _ as u32;
 
-        dma::Transfer::peripheral_to_memory(dma, self, channel, buffer, address)
+        // Safe, because the traits bounds of this method guarantee that
+        // `buffer` can be written to.
+        unsafe {
+            dma::Transfer::new(
+                dma,
+                self,
+                channel,
+                buffer,
+                address,
+                dma::Direction::peripheral_to_memory(),
+            )
+        }
     }
 }
 
