@@ -107,16 +107,16 @@ impl<T, C, B> Transfer<T, C, B, Ready>
         -> Self
         where
             B:         Deref,
-            B::Target: AsSlice<Element=Word>,
+            B::Target: Buffer<Word>,
             Word:      SupportedWordSize,
     {
-        assert!(buffer.as_slice().len() <= u16::max_value() as usize);
+        assert!(buffer.len() <= u16::max_value() as usize);
         assert_eq!(buffer.as_ptr().align_offset(mem::size_of::<Word>()), 0);
 
         channel.select_target(handle, &target);
         channel.set_peripheral_address(handle, address);
-        channel.set_memory_address(handle, buffer.as_slice().as_ptr() as u32);
-        channel.set_transfer_len(handle, buffer.as_slice().len() as u16);
+        channel.set_memory_address(handle, buffer.as_ptr() as u32);
+        channel.set_transfer_len(handle, buffer.len() as u16);
         channel.configure::<Word>(handle, dir.0);
 
         Transfer {
@@ -440,6 +440,25 @@ pub struct Ready;
 
 /// Indicates that a DMA transfer has been started
 pub struct Started;
+
+
+/// Implemented for types, that can be used as a buffer for DMA transfers
+pub(crate) trait Buffer<Word> {
+    fn as_ptr(&self) -> *const Word;
+    fn len(&self) -> usize;
+}
+
+impl<T, Word> Buffer<Word> for T
+    where T: ?Sized + AsSlice<Element=Word>
+{
+    fn as_ptr(&self) -> *const Word {
+        self.as_slice().as_ptr()
+    }
+
+    fn len(&self) -> usize {
+        self.as_slice().len()
+    }
+}
 
 
 pub trait SupportedWordSize {
