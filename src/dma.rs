@@ -97,12 +97,13 @@ impl<T, C, B> Transfer<T, C, B, Ready>
     ///
     /// Panics, if the buffer is not aligned to the word size.
     pub(crate) unsafe fn new<Word>(
-        handle:  &mut Handle,
-        target:  T,
-        channel: C,
-        buffer:  Pin<B>,
-        address: u32,
-        dir:     Direction,
+        handle:   &mut Handle,
+        target:   T,
+        channel:  C,
+        buffer:   Pin<B>,
+        address:  u32,
+        priority: Priority,
+        dir:      Direction,
     )
         -> Self
         where
@@ -117,7 +118,7 @@ impl<T, C, B> Transfer<T, C, B, Ready>
         channel.set_peripheral_address(handle, address);
         channel.set_memory_address(handle, buffer.as_ptr() as u32);
         channel.set_transfer_len(handle, buffer.len() as u16);
-        channel.configure::<Word>(handle, dir.0);
+        channel.configure::<Word>(handle, priority.0, dir.0);
 
         Transfer {
             res: TransferResources {
@@ -209,6 +210,28 @@ impl<T, C, B> fmt::Debug for TransferResources<T, C, B> {
 }
 
 
+/// The priority of the DMA transfer
+pub struct Priority(ccr1::PLW);
+
+impl Priority {
+    pub fn low() -> Self {
+        Self(ccr1::PLW::LOW)
+    }
+
+    pub fn medium() -> Self {
+        Self(ccr1::PLW::MEDIUM)
+    }
+
+    pub fn high() -> Self {
+        Self(ccr1::PLW::HIGH)
+    }
+
+    pub fn very_high() -> Self {
+        Self(ccr1::PLW::VERYHIGH)
+    }
+}
+
+
 /// The direction of the DMA transfer
 pub(crate) struct Direction(ccr1::DIRW);
 
@@ -232,7 +255,11 @@ pub trait Channel: Sized {
     fn set_peripheral_address(&self, _: &mut Handle, address: u32);
     fn set_memory_address(&self, _: &mut Handle, address: u32);
     fn set_transfer_len(&self, _: &mut Handle, len: u16);
-    fn configure<Word>(&self, _: &mut Handle, dir: ccr1::DIRW)
+    fn configure<Word>(&self,
+        _:        &mut Handle,
+        priority: ccr1::PLW,
+        dir:      ccr1::DIRW,
+    )
         where Word: SupportedWordSize;
     fn enable_interrupts(&self, interrupts: Interrupts);
     fn start(&self);
@@ -298,8 +325,9 @@ macro_rules! impl_channel {
                 }
 
                 fn configure<Word>(&self,
-                    handle: &mut Handle,
-                    dir:    ccr1::DIRW,
+                    handle:   &mut Handle,
+                    priority: ccr1::PLW,
+                    dir:      ccr1::DIRW,
                 )
                     where Word: SupportedWordSize
                 {
@@ -317,8 +345,8 @@ macro_rules! impl_channel {
                         w
                             // Memory-to-memory mode disabled
                             .mem2mem().disabled()
-                            // Low priority
-                            .pl().low()
+                            // Priority level
+                            .pl().bits(priority._bits())
                             // Increment memory pointer
                             .minc().enabled()
                             // Don't increment peripheral pointer
