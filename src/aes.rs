@@ -200,6 +200,8 @@ impl Tx {
     ///
     /// The AES peripheral works with 128-bit blocks, which means the buffer
     /// length must be a multiple of 4. Panics, if this is not the case.
+    ///
+    /// Panics, if the buffer is not aligned to a word boundary.
     pub fn write_all<Buffer, Channel>(self,
         dma:     &mut dma::Handle,
         buffer:  Pin<Buffer>,
@@ -273,6 +275,8 @@ impl Rx {
     ///
     /// The AES peripheral works with 128-bit blocks, which means the buffer
     /// length must be a multiple of 4. Panics, if this is not the case.
+    ///
+    /// Panics, if the buffer is not aligned to a word boundary.
     pub fn read_all<Buffer, Channel>(self,
         dma:     &mut dma::Handle,
         buffer:  Pin<Buffer>,

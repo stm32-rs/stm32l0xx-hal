@@ -15,6 +15,7 @@
 
 use core::{
     fmt,
+    mem,
     ops::{
         Deref,
         DerefMut,
@@ -153,6 +154,8 @@ impl<T, C, B> Transfer<T, C, B, Ready>
     /// # Panics
     ///
     /// Panics, if the length of the buffer is larger than `u16::max_value()`.
+    ///
+    /// Panics, if the buffer is not aligned to the word size.
     unsafe fn new<Word>(
         handle:  &mut Handle,
         target:  T,
@@ -168,6 +171,7 @@ impl<T, C, B> Transfer<T, C, B, Ready>
             Word:      SupportedWordSize,
     {
         assert!(buffer.as_slice().len() <= u16::max_value() as usize);
+        assert_eq!(buffer.as_ptr().align_offset(mem::size_of::<Word>()), 0);
 
         channel.select_target(handle, &target);
         channel.set_peripheral_address(handle, address);
