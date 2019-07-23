@@ -384,6 +384,7 @@ impl<Target, Channel, Buffer> Transfer<Target, Channel, Buffer, dma::Ready>
                 len: buffer.as_slice().len() / 4,
             }),
             address,
+            dma::Priority::low(),
             dir,
         );
 
