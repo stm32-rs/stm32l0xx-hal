@@ -228,6 +228,12 @@ impl Tx {
                 channel,
                 buffer,
                 address,
+                // This priority should be lower than the priority of the
+                // transfer created in `read_all`. I'm not sure how relevant
+                // that is in practice, but it makes sense, and as I've seen a
+                // comment to that effect in ST's HAL code, I'd rather be
+                // careful than risk weird bugs.
+                dma::Priority::high(),
                 dma::Direction::memory_to_peripheral(),
             )
         }
@@ -314,6 +320,12 @@ impl Rx {
                 channel,
                 buffer,
                 address,
+                // This priority should be higher than the priority of the
+                // transfer created in `write_all`. I'm not sure how relevant
+                // that is in practice, but it makes sense, and as I've seen a
+                // comment to that effect in ST's HAL code, I'd rather be
+                // careful than risk weird bugs.
+                dma::Priority::very_high(),
                 dma::Direction::peripheral_to_memory(),
             )
         }
@@ -364,12 +376,13 @@ impl<Target, Channel, Buffer> Transfer<Target, Channel, Buffer, dma::Ready>
     ///
     /// The caller must guarantee that the buffer length is a multiple of 4.
     unsafe fn new(
-        dma:     &mut dma::Handle,
-        target:  Target,
-        channel: Channel,
-        buffer:  Pin<Buffer>,
-        address: u32,
-        dir:     dma::Direction,
+        dma:      &mut dma::Handle,
+        target:   Target,
+        channel:  Channel,
+        buffer:   Pin<Buffer>,
+        address:  u32,
+        priority: dma::Priority,
+        dir:      dma::Direction,
     )
         -> Self
     {
@@ -384,7 +397,7 @@ impl<Target, Channel, Buffer> Transfer<Target, Channel, Buffer, dma::Ready>
                 len: buffer.as_slice().len() / 4,
             }),
             address,
-            dma::Priority::low(),
+            priority,
             dir,
         );
 
