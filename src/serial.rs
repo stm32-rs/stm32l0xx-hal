@@ -14,7 +14,13 @@ use nb::block;
 pub use crate::pac::LPUART1;
 
 #[cfg(feature = "stm32l0x2")]
-pub use crate::pac::USART1;
+pub use crate::{
+    gpio::gpiob::{
+        PB6,
+        PB7,
+    },
+    pac::USART1,
+};
 
 /// Serial error
 #[derive(Debug)]
@@ -151,6 +157,7 @@ impl_pins!(
 #[cfg(feature = "stm32l0x2")]
 impl_pins!(
     USART1, PA9,  PA10, AF4;
+    USART1, PB6,  PB7,  AF0;
     USART2, PA2,  PA3,  AF4;
     USART2, PA14, PA15, AF4;
 );
