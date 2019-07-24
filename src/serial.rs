@@ -14,7 +14,23 @@ use nb::block;
 pub use crate::pac::LPUART1;
 
 #[cfg(feature = "stm32l0x2")]
+use core::{
+    ops::{
+        Deref,
+        DerefMut,
+    },
+    pin::Pin,
+};
+
+#[cfg(feature = "stm32l0x2")]
+use as_slice::{
+    AsMutSlice,
+    AsSlice,
+};
+
+#[cfg(feature = "stm32l0x2")]
 pub use crate::{
+    dma,
     gpio::gpiob::{
         PB6,
         PB7,
@@ -229,7 +245,16 @@ macro_rules! usart {
 
                     // Reset other registers to disable advanced USART features
                     usart.cr2.reset();
-                    usart.cr3.reset();
+
+                    // Enable DMA
+                    usart.cr3.write(|w|
+                        w
+                            // Stop DMA transfer on reception error
+                            .ddre().disabled()
+                            // Enable DMA
+                            .dmat().enabled()
+                            .dmar().enabled()
+                    );
 
                     // Enable transmission and receiving
                     // and configure frame
@@ -336,6 +361,41 @@ macro_rules! usart {
                 }
             }
 
+            #[cfg(feature = "stm32l0x2")]
+            impl Rx<$USARTX> {
+                pub fn read_all<Buffer, Channel>(self,
+                    dma:     &mut dma::Handle,
+                    buffer:  Pin<Buffer>,
+                    channel: Channel,
+                )
+                    -> dma::Transfer<Self, Channel, Buffer, dma::Ready>
+                    where
+                        Self:           dma::Target<Channel>,
+                        Buffer:         DerefMut + 'static,
+                        Buffer::Target: AsMutSlice<Element=u8>,
+                        Channel:        dma::Channel,
+                {
+                    // Safe, because we're only taking the address of a
+                    // register.
+                    let address =
+                        &unsafe { &*$USARTX::ptr() }.rdr as *const _ as u32;
+
+                    // Safe, because the trait bounds of this method guarantee
+                    // that the buffer can be written to.
+                    unsafe {
+                        dma::Transfer::new(
+                            dma,
+                            self,
+                            channel,
+                            buffer,
+                            address,
+                            dma::Priority::high(),
+                            dma::Direction::peripheral_to_memory(),
+                        )
+                    }
+                }
+            }
+
             impl hal::serial::Read<u8> for Rx<$USARTX> {
                 type Error = Error;
 
@@ -414,6 +474,41 @@ macro_rules! usart {
                         Ok(())
                     } else {
                         Err(nb::Error::WouldBlock)
+                    }
+                }
+            }
+
+            #[cfg(feature = "stm32l0x2")]
+            impl Tx<$USARTX> {
+                pub fn write_all<Buffer, Channel>(self,
+                    dma:     &mut dma::Handle,
+                    buffer:  Pin<Buffer>,
+                    channel: Channel,
+                )
+                    -> dma::Transfer<Self, Channel, Buffer, dma::Ready>
+                    where
+                        Self:           dma::Target<Channel>,
+                        Buffer:         Deref + 'static,
+                        Buffer::Target: AsSlice<Element=u8>,
+                        Channel:        dma::Channel,
+                {
+                    // Safe, because we're only taking the address of a
+                    // register.
+                    let address =
+                        &unsafe { &*$USARTX::ptr() }.tdr as *const _ as u32;
+
+                    // Safe, because the trait bounds of this method guarantee
+                    // that the buffer can be read from.
+                    unsafe {
+                        dma::Transfer::new(
+                            dma,
+                            self,
+                            channel,
+                            buffer,
+                            address,
+                            dma::Priority::high(),
+                            dma::Direction::memory_to_peripheral(),
+                        )
                     }
                 }
             }
