@@ -3,7 +3,7 @@ use core::marker::PhantomData;
 use core::ptr;
 
 use crate::gpio::gpioa::*;
-use crate::gpio::{AltMode, Floating, Input};
+use crate::gpio::AltMode;
 use crate::hal;
 use crate::hal::prelude::*;
 pub use crate::pac::USART2;
@@ -129,45 +129,32 @@ pub trait Pins<USART> {
     fn setup(&self);
 }
 
-#[cfg(feature = "stm32l0x1")]
-impl Pins<LPUART1> for (PA2<Input<Floating>>, PA3<Input<Floating>>) {
-    fn setup(&self) {
-        self.0.set_alt_mode(AltMode::AF6);
-        self.1.set_alt_mode(AltMode::AF6);
-    }
-}
-
-#[cfg(feature = "stm32l0x2")]
-impl Pins<USART1> for (PA9<Input<Floating>>, PA10<Input<Floating>>) {
-    fn setup(&self) {
-        self.0.set_alt_mode(AltMode::AF4);
-        self.1.set_alt_mode(AltMode::AF4);
-    }
-}
-
-#[cfg(feature = "stm32l0x2")]
-impl Pins<USART2> for (PA2<Input<Floating>>, PA3<Input<Floating>>) {
-    fn setup(&self) {
-        self.0.set_alt_mode(AltMode::AF4);
-        self.1.set_alt_mode(AltMode::AF4);
+macro_rules! impl_pins {
+    ($($instance:ty, $tx:ident, $rx:ident, $alt:ident;)*) => {
+        $(
+            impl<Tx, Rx> Pins<$instance> for ($tx<Tx>, $rx<Rx>) {
+                fn setup(&self) {
+                    self.0.set_alt_mode(AltMode::$alt);
+                    self.1.set_alt_mode(AltMode::$alt);
+                }
+            }
+        )*
     }
 }
 
 #[cfg(feature = "stm32l0x1")]
-impl Pins<USART2> for (PA9<Input<Floating>>, PA10<Input<Floating>>) {
-    fn setup(&self) {
-        self.0.set_alt_mode(AltMode::AF4);
-        self.1.set_alt_mode(AltMode::AF4);
-    }
-}
+impl_pins!(
+    LPUART1, PA2, PA3,  AF6;
+    USART2,  PA9, PA10, AF4;
+);
 
 #[cfg(feature = "stm32l0x2")]
-impl Pins<USART2> for (PA14<Input<Floating>>, PA15<Input<Floating>>) {
-    fn setup(&self) {
-        self.0.set_alt_mode(AltMode::AF4);
-        self.1.set_alt_mode(AltMode::AF4);
-    }
-}
+impl_pins!(
+    USART1, PA9,  PA10, AF4;
+    USART2, PA2,  PA3,  AF4;
+    USART2, PA14, PA15, AF4;
+);
+
 
 /// Serial abstraction
 pub struct Serial<USART> {
