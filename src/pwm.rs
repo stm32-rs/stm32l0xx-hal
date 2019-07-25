@@ -4,15 +4,73 @@ use core::mem;
 use crate::gpio::gpioa::{PA0, PA1, PA2, PA3};
 use crate::gpio::{AltMode, Floating, Input};
 use crate::hal;
-use crate::pac::TIM2;
+use crate::pac::{
+    tim2,
+    TIM2,
+};
 use crate::rcc::Rcc;
 use crate::time::Hertz;
 use cast::{u16, u32};
 
-pub struct C1;
-pub struct C2;
-pub struct C3;
-pub struct C4;
+
+pub trait Channel {
+    fn disable(_: &tim2::RegisterBlock);
+    fn enable(_: &tim2::RegisterBlock);
+    fn get_duty(_: &tim2::RegisterBlock) -> u16;
+    fn set_duty(_: &tim2::RegisterBlock, duty: u16);
+}
+
+macro_rules! impl_channel {
+    (
+        $(
+            $name:ident,
+            $ccxe:ident,
+            $ccmr_output:ident,
+            $ocxpe:ident,
+            $ocxm:ident,
+            $ccrx:ident;
+        )*
+    ) => {
+        $(
+            pub struct $name;
+
+            impl Channel for $name {
+                fn disable(tim: &tim2::RegisterBlock) {
+                    tim.ccer.modify(|_, w| w.$ccxe().clear_bit());
+                }
+
+                fn enable(tim: &tim2::RegisterBlock) {
+                    tim.$ccmr_output.modify(|_, w| {
+                        w.$ocxpe().set_bit();
+                        // Safe. We're writing a valid bit pattern.
+                        unsafe { w.$ocxm().bits(0b110) }
+                    });
+                    tim.ccer.modify(|_, w| w.$ccxe().set_bit());
+                }
+
+                fn get_duty(tim: &tim2::RegisterBlock) -> u16 {
+                    // This cast to `u16` is fine. The type is already `u16`,
+                    // but on STM32L0x2, the SVD file seems to be wrong about
+                    // that (or the reference manual is wrong; but in any case,
+                    // we only ever write `u16` into this field).
+                    tim.$ccrx.read().ccr().bits() as u16
+                }
+
+                fn set_duty(tim: &tim2::RegisterBlock, duty: u16) {
+                    tim.$ccrx.write(|w| w.ccr().bits(duty.into()));
+                }
+            }
+        )*
+    }
+}
+
+impl_channel!(
+    C1, cc1e, ccmr1_output, oc1pe, oc1m, ccr1;
+    C2, cc2e, ccmr1_output, oc2pe, oc2m, ccr2;
+    C3, cc3e, ccmr2_output, oc3pe, oc3m, ccr3;
+    C4, cc4e, ccmr2_output, oc4pe, oc4m, ccr4;
+);
+
 
 pub trait Pins<TIM> {
     type Channels;
@@ -41,41 +99,40 @@ macro_rules! channels {
             }
         }
 
-        impl hal::PwmPin for Pwm<$TIMX, C1> {
+        impl<C> hal::PwmPin for Pwm<$TIMX, C>
+            where C: Channel
+        {
             type Duty = u16;
 
             fn disable(&mut self) {
-                unsafe {
-                    (*$TIMX::ptr()).ccer.modify(|_, w| w.cc1e().clear_bit());
-                }
+                // This is UNSAFE: Race condition during read-modify-write.
+                C::disable(unsafe { &*$TIMX::ptr() });
             }
 
             fn enable(&mut self) {
-                unsafe {
-                    let tim = &*$TIMX::ptr();
-                    tim.ccmr1_output
-                        .modify(|_, w| w.oc1pe().set_bit().oc1m().bits(6));
-                    tim.ccer.modify(|_, w| w.cc1e().set_bit());
-                }
+                // This is UNSAFE: Race condition during read-modify-write.
+                C::enable(unsafe { &*$TIMX::ptr() });
             }
 
             fn get_duty(&self) -> u16 {
-                unsafe { (*$TIMX::ptr()).ccr1.read().ccr().bits() as u16 }
+                // Safe, as we're only doing an atomic read.
+                C::get_duty(unsafe { &*$TIMX::ptr() })
             }
 
             fn get_max_duty(&self) -> u16 {
-                unsafe { (*$TIMX::ptr()).arr.read().arr().bits() as u16 }
+                // Safe, as we're only doing an atomic read.
+                let tim = unsafe { &*$TIMX::ptr() };
+
+                // This cast to `u16` is fine. The type is already `u16`, but on
+                // STM32L0x2, the SVD file seems to be wrong about that (or the
+                // reference manual is wrong; but in any case, we only ever
+                // write `u16` into this field).
+                tim.arr.read().arr().bits() as u16
             }
 
             fn set_duty(&mut self, duty: u16) {
-                #[cfg(feature = "stm32l0x1")]
-                unsafe {
-                    (*$TIMX::ptr()).ccr1.write(|w| w.ccr().bits(duty))
-                }
-                #[cfg(feature = "stm32l0x2")]
-                unsafe {
-                    (*$TIMX::ptr()).ccr1.write(|w| w.ccr().bits(duty as u32))
-                }
+                // Safe, as we're only doing an atomic write.
+                C::set_duty(unsafe { &*$TIMX::ptr() }, duty);
             }
         }
     };
@@ -128,148 +185,6 @@ macro_rules! channels {
                 self.1.set_alt_mode($af);
                 self.2.set_alt_mode($af);
                 self.3.set_alt_mode($af);
-            }
-        }
-
-        impl hal::PwmPin for Pwm<$TIMX, C2> {
-            type Duty = u16;
-
-            fn disable(&mut self) {
-                unsafe {
-                    (*$TIMX::ptr()).ccer.modify(|_, w| w.cc2e().clear_bit());
-                }
-            }
-
-            fn enable(&mut self) {
-                unsafe {
-                    let tim = &*$TIMX::ptr();
-                    tim.ccmr1_output
-                        .modify(|_, w| w.oc2pe().set_bit().oc2m().bits(6));
-                    tim.ccer.modify(|_, w| w.cc2e().set_bit());
-                }
-            }
-
-            fn get_duty(&self) -> u16 {
-                #[cfg(feature = "stm32l0x1")]
-                unsafe {
-                    (*$TIMX::ptr()).ccr2.read().ccr().bits()
-                }
-                #[cfg(feature = "stm32l0x2")]
-                unsafe {
-                    (*$TIMX::ptr()).ccr2.read().ccr().bits() as u16
-                }
-            }
-
-            fn get_max_duty(&self) -> u16 {
-                #[cfg(feature = "stm32l0x1")]
-                unsafe {
-                    (*$TIMX::ptr()).arr.read().arr().bits()
-                }
-                #[cfg(feature = "stm32l0x2")]
-                unsafe {
-                    (*$TIMX::ptr()).arr.read().arr().bits() as u16
-                }
-            }
-
-            fn set_duty(&mut self, duty: u16) {
-                #[cfg(feature = "stm32l0x1")]
-                unsafe {
-                    (*$TIMX::ptr()).ccr2.write(|w| w.ccr().bits(duty))
-                }
-                #[cfg(feature = "stm32l0x2")]
-                unsafe {
-                    (*$TIMX::ptr()).ccr2.write(|w| w.ccr().bits(duty as u32))
-                }
-            }
-        }
-
-        impl hal::PwmPin for Pwm<$TIMX, C3> {
-            type Duty = u16;
-
-            fn disable(&mut self) {
-                unsafe {
-                    (*$TIMX::ptr()).ccer.modify(|_, w| w.cc3e().clear_bit());
-                }
-            }
-
-            fn enable(&mut self) {
-                unsafe {
-                    let tim = &*$TIMX::ptr();
-                    tim.ccmr2_output
-                        .modify(|_, w| w.oc3pe().set_bit().oc3m().bits(6));
-                    tim.ccer.modify(|_, w| w.cc3e().set_bit());
-                }
-            }
-
-            fn get_duty(&self) -> u16 {
-                unsafe { (*$TIMX::ptr()).ccr3.read().ccr().bits() as u16 }
-            }
-
-            fn get_max_duty(&self) -> u16 {
-                unsafe { (*$TIMX::ptr()).arr.read().arr().bits() as u16 }
-            }
-
-            fn set_duty(&mut self, duty: u16) {
-                #[cfg(feature = "stm32l0x1")]
-                unsafe {
-                    (*$TIMX::ptr()).ccr3.write(|w| w.ccr().bits(duty))
-                }
-                #[cfg(feature = "stm32l0x2")]
-                unsafe {
-                    (*$TIMX::ptr()).ccr3.write(|w| w.ccr().bits(duty as u32))
-                }
-            }
-        }
-
-        impl hal::PwmPin for Pwm<$TIMX, C4> {
-            type Duty = u16;
-
-            fn disable(&mut self) {
-                unsafe {
-                    (*$TIMX::ptr()).ccer.modify(|_, w| w.cc4e().clear_bit());
-                }
-            }
-
-            fn enable(&mut self) {
-                unsafe {
-                    let tim = &*$TIMX::ptr();
-                    tim.ccmr2_output
-                        .modify(|_, w| w.oc4pe().set_bit().oc4m().bits(6));
-                    tim.ccer.modify(|_, w| w.cc4e().set_bit());
-                }
-            }
-
-            fn get_duty(&self) -> u16 {
-                #[cfg(feature = "stm32l0x1")]
-                unsafe {
-                    (*$TIMX::ptr()).ccr4.read().ccr().bits()
-                }
-                #[cfg(feature = "stm32l0x2")]
-                unsafe {
-                    (*$TIMX::ptr()).ccr4.read().ccr().bits() as u16
-                }
-            }
-
-            fn get_max_duty(&self) -> u16 {
-                #[cfg(feature = "stm32l0x1")]
-                unsafe {
-                    (*$TIMX::ptr()).arr.read().arr().bits()
-                }
-                #[cfg(feature = "stm32l0x2")]
-                unsafe {
-                    (*$TIMX::ptr()).arr.read().arr().bits() as u16
-                }
-            }
-
-            fn set_duty(&mut self, duty: u16) {
-                #[cfg(feature = "stm32l0x1")]
-                unsafe {
-                    (*$TIMX::ptr()).ccr4.write(|w| w.ccr().bits(duty))
-                }
-                #[cfg(feature = "stm32l0x2")]
-                unsafe {
-                    (*$TIMX::ptr()).ccr4.write(|w| w.ccr().bits(duty as u32))
-                }
             }
         }
     };
