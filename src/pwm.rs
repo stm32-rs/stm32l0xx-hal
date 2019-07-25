@@ -1,5 +1,6 @@
 use core::marker::PhantomData;
 use core::mem;
+use core::ops::Deref;
 
 use crate::gpio::gpioa::{PA0, PA1, PA2, PA3};
 use crate::gpio::{AltMode, Floating, Input};
@@ -11,6 +12,27 @@ use crate::pac::{
 use crate::rcc::Rcc;
 use crate::time::Hertz;
 use cast::{u16, u32};
+
+
+pub trait Instance: Deref<Target=tim2::RegisterBlock> {
+    fn ptr() -> *const tim2::RegisterBlock;
+}
+
+macro_rules! impl_instance {
+    ($($name:ty;)*) => {
+        $(
+            impl Instance for $name {
+                fn ptr() -> *const tim2::RegisterBlock {
+                    Self::ptr()
+                }
+            }
+        )*
+    }
+}
+
+impl_instance!(
+    TIM2;
+);
 
 
 pub trait Channel {
@@ -84,10 +106,51 @@ pub trait PwmExt: Sized {
         T: Into<Hertz>;
 }
 
+
 pub struct Pwm<TIM, CHANNEL> {
     _channel: PhantomData<CHANNEL>,
     _tim: PhantomData<TIM>,
 }
+
+impl<I, C> hal::PwmPin for Pwm<I, C>
+    where
+        I: Instance,
+        C: Channel,
+{
+    type Duty = u16;
+
+    fn disable(&mut self) {
+        // This is UNSAFE: Race condition during read-modify-write.
+        C::disable(unsafe { &*I::ptr() });
+    }
+
+    fn enable(&mut self) {
+        // This is UNSAFE: Race condition during read-modify-write.
+        C::enable(unsafe { &*I::ptr() });
+    }
+
+    fn get_duty(&self) -> u16 {
+        // Safe, as we're only doing an atomic read.
+        C::get_duty(unsafe { &*I::ptr() })
+    }
+
+    fn get_max_duty(&self) -> u16 {
+        // Safe, as we're only doing an atomic read.
+        let tim = unsafe { &*I::ptr() };
+
+        // This cast to `u16` is fine. The type is already `u16`, but on
+        // STM32L0x2, the SVD file seems to be wrong about that (or the
+        // reference manual is wrong; but in any case, we only ever write `u16`
+        // into this field).
+        tim.arr.read().arr().bits() as u16
+    }
+
+    fn set_duty(&mut self, duty: u16) {
+        // Safe, as we're only doing an atomic write.
+        C::set_duty(unsafe { &*I::ptr() }, duty);
+    }
+}
+
 
 macro_rules! channels {
     ($TIMX:ident, $af:expr, $c1:ty) => {
@@ -96,43 +159,6 @@ macro_rules! channels {
 
             fn setup(&self) {
                 self.set_alt_mode($af);
-            }
-        }
-
-        impl<C> hal::PwmPin for Pwm<$TIMX, C>
-            where C: Channel
-        {
-            type Duty = u16;
-
-            fn disable(&mut self) {
-                // This is UNSAFE: Race condition during read-modify-write.
-                C::disable(unsafe { &*$TIMX::ptr() });
-            }
-
-            fn enable(&mut self) {
-                // This is UNSAFE: Race condition during read-modify-write.
-                C::enable(unsafe { &*$TIMX::ptr() });
-            }
-
-            fn get_duty(&self) -> u16 {
-                // Safe, as we're only doing an atomic read.
-                C::get_duty(unsafe { &*$TIMX::ptr() })
-            }
-
-            fn get_max_duty(&self) -> u16 {
-                // Safe, as we're only doing an atomic read.
-                let tim = unsafe { &*$TIMX::ptr() };
-
-                // This cast to `u16` is fine. The type is already `u16`, but on
-                // STM32L0x2, the SVD file seems to be wrong about that (or the
-                // reference manual is wrong; but in any case, we only ever
-                // write `u16` into this field).
-                tim.arr.read().arr().bits() as u16
-            }
-
-            fn set_duty(&mut self, duty: u16) {
-                // Safe, as we're only doing an atomic write.
-                C::set_duty(unsafe { &*$TIMX::ptr() }, duty);
             }
         }
     };
