@@ -153,7 +153,7 @@ impl<I, C> hal::PwmPin for Pwm<I, C>
 
 
 macro_rules! channels {
-    ($TIMX:ident, $af:expr, $c1:ty) => {
+    ($TIMX:ident, $af:expr, $c1:ty, $c2:ty, $c3:ty, $c4:ty) => {
         impl Pins<$TIMX> for $c1 {
             type Channels = Pwm<$TIMX, C1>;
 
@@ -161,9 +161,6 @@ macro_rules! channels {
                 self.set_alt_mode($af);
             }
         }
-    };
-    ($TIMX:ident, $af:expr, $c1:ty, $c2:ty, $c3:ty, $c4:ty) => {
-        channels!($TIMX, $af, $c1);
 
         impl Pins<$TIMX> for $c2 {
             type Channels = Pwm<$TIMX, C2>;
