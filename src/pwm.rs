@@ -14,16 +14,72 @@ use crate::time::Hertz;
 use cast::{u16, u32};
 
 
+pub struct Timer<I, P: Pins<I>> {
+    _instance: I,
+
+    pub channels: P::Channels,
+}
+
+impl<I, P> Timer<I, P>
+    where
+        I: Instance,
+        P: Pins<I>,
+{
+    pub fn new(timer: I, pins: P, frequency: Hertz, rcc: &mut Rcc) -> Self {
+        pins.setup();
+        timer.enable(rcc);
+
+        let clk = timer.clock_frequency(rcc);
+        let freq = frequency.0;
+        let ticks = clk / freq;
+        let psc = u16((ticks - 1) / (1 << 16)).unwrap();
+        let arr = u16(ticks / u32(psc + 1)).unwrap();
+        timer.psc.write(|w| unsafe { w.psc().bits(psc) });
+        timer.arr.write(|w| w.arr().bits(arr.into()));
+        timer.cr1.write(|w| w.cen().set_bit());
+
+        Self {
+            _instance: timer,
+            // I'm not sure about this `unsafe`. It should be fine, as
+            // `channels` should have no data that is ever accessed, but it
+            // seems fishy, and there's probably a more elegant solution.
+            channels: unsafe { mem::uninitialized() },
+        }
+    }
+}
+
+
 pub trait Instance: Deref<Target=tim2::RegisterBlock> {
     fn ptr() -> *const tim2::RegisterBlock;
+    fn enable(&self, _: &mut Rcc);
+    fn clock_frequency(&self, _: &mut Rcc) -> u32;
 }
 
 macro_rules! impl_instance {
-    ($($name:ty;)*) => {
+    (
+        $(
+            $name:ty,
+            $apbXenr:ident,
+            $apbXrstr:ident,
+            $timXen:ident,
+            $timXrst:ident,
+            $apbX_clk:ident;
+        )*
+    ) => {
         $(
             impl Instance for $name {
                 fn ptr() -> *const tim2::RegisterBlock {
                     Self::ptr()
+                }
+
+                fn enable(&self, rcc: &mut Rcc) {
+                    rcc.rb.$apbXenr.modify(|_, w| w.$timXen().set_bit());
+                    rcc.rb.$apbXrstr.modify(|_, w| w.$timXrst().set_bit());
+                    rcc.rb.$apbXrstr.modify(|_, w| w.$timXrst().clear_bit());
+                }
+
+                fn clock_frequency(&self, rcc: &mut Rcc) -> u32 {
+                    rcc.clocks.$apbX_clk().0
                 }
             }
         )*
@@ -31,7 +87,7 @@ macro_rules! impl_instance {
 }
 
 impl_instance!(
-    TIM2;
+    TIM2, apb1enr, apb1rstr, tim2en, tim2rst, apb1_clk;
 );
 
 
@@ -97,13 +153,6 @@ impl_channel!(
 pub trait Pins<TIM> {
     type Channels;
     fn setup(&self);
-}
-
-pub trait PwmExt: Sized {
-    fn pwm<PINS, T>(self, _: PINS, frequency: T, rcc: &mut Rcc) -> PINS::Channels
-    where
-        PINS: Pins<Self>,
-        T: Into<Hertz>;
 }
 
 
@@ -213,52 +262,6 @@ macro_rules! channels {
     };
 }
 
-macro_rules! timers {
-    ($($TIMX:ident: ($apb_clk:ident, $apbXenr:ident, $apbXrstr:ident, $timX:ident, $timXen:ident, $timXrst:ident),)+) => {
-        $(
-            impl PwmExt for $TIMX {
-                fn pwm<PINS, T>(
-                    self,
-                    pins: PINS,
-                    freq: T,
-                    rcc: &mut Rcc,
-                ) -> PINS::Channels
-                where
-                    PINS: Pins<Self>,
-                    T: Into<Hertz>,
-                {
-                    $timX(self, pins, freq.into(), rcc)
-                }
-            }
-
-            fn $timX<PINS>(
-                tim: $TIMX,
-                pins: PINS,
-                freq: Hertz,
-                rcc: &mut Rcc,
-            ) -> PINS::Channels
-            where
-                PINS: Pins<$TIMX>,
-            {
-                pins.setup();
-                rcc.rb.$apbXenr.modify(|_, w| w.$timXen().set_bit());
-                rcc.rb.$apbXrstr.modify(|_, w| w.$timXrst().set_bit());
-                rcc.rb.$apbXrstr.modify(|_, w| w.$timXrst().clear_bit());
-
-                let clk = rcc.clocks.$apb_clk().0;
-                let freq = freq.0;
-                let ticks = clk / freq;
-                let psc = u16((ticks - 1) / (1 << 16)).unwrap();
-                let arr = u16(ticks / u32(psc + 1)).unwrap();
-                tim.psc.write(|w| unsafe { w.psc().bits(psc) });
-                tim.arr.write(|w| w.arr().bits(arr.into()));
-                tim.cr1.write(|w| w.cen().set_bit());
-                unsafe { mem::uninitialized() }
-            }
-        )+
-    }
-}
-
 channels!(
     TIM2,
     AltMode::AF2,
@@ -267,7 +270,3 @@ channels!(
     PA2<Input<Floating>>,
     PA3<Input<Floating>>
 );
-
-timers! {
-    TIM2: (apb1_clk, apb1enr, apb1rstr, tim2, tim2en, tim2rst),
-}

@@ -5,7 +5,7 @@
 extern crate panic_halt;
 
 use cortex_m_rt::entry;
-use stm32l0xx_hal::{pac, prelude::*, rcc::Config};
+use stm32l0xx_hal::{pac, prelude::*, pwm, rcc::Config};
 
 #[entry]
 fn main() -> ! {
@@ -19,9 +19,9 @@ fn main() -> ! {
     let gpioa = dp.GPIOA.split(&mut rcc);
 
     // Configure the timer as PWM on PA1.
-    let mut pwm = dp.TIM2.pwm(gpioa.pa1, 1.khz(), &mut rcc);
-    let max_duty = pwm.get_max_duty() / 4095;
-    pwm.enable();
+    let mut pwm = pwm::Timer::new(dp.TIM2, gpioa.pa1, 1.khz(), &mut rcc);
+    let max_duty = pwm.channels.get_max_duty() / 4095;
+    pwm.channels.enable();
 
     let mut adc = dp.ADC.constrain(&mut rcc);
 
@@ -31,6 +31,6 @@ fn main() -> ! {
     loop {
         // Set the PWM duty cycle from the value read on the ADC pin.
         let val: u16 = adc.read(&mut adc_pin).unwrap();
-        pwm.set_duty(max_duty * val);
+        pwm.channels.set_duty(max_duty * val);
     }
 }
