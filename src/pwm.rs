@@ -8,6 +8,7 @@ use crate::hal;
 use crate::pac::{
     tim2,
     TIM2,
+    TIM3,
 };
 use crate::rcc::Rcc;
 use crate::time::Hertz;
@@ -88,6 +89,7 @@ macro_rules! impl_instance {
 
 impl_instance!(
     TIM2, apb1enr, apb1rstr, tim2en, tim2rst, apb1_clk;
+    TIM3, apb1enr, apb1rstr, tim3en, tim3rst, apb1_clk;
 );
 
 
