@@ -5,7 +5,6 @@
 
 extern crate panic_halt;
 
-use cortex_m::asm;
 use cortex_m_rt::entry;
 use stm32l0xx_hal::{pac, prelude::*, pwm, rcc::Config};
 
@@ -32,18 +31,17 @@ fn main() -> ! {
 
     pwm.channels.enable();
 
-    pwm.channels.set_duty(max);
-    delay.delay_ms(1000_u16);
-
-    pwm.channels.set_duty(max / 2);
-    delay.delay_ms(1000_u16);
-
-    pwm.channels.set_duty(max / 4);
-    delay.delay_ms(1000_u16);
-
-    pwm.channels.set_duty(max / 8);
-
     loop {
-        asm::nop();
+        pwm.channels.set_duty(max);
+        delay.delay_ms(500_u16);
+
+        pwm.channels.set_duty(max / 2);
+        delay.delay_ms(500_u16);
+
+        pwm.channels.set_duty(max / 4);
+        delay.delay_ms(500_u16);
+
+        pwm.channels.set_duty(max / 8);
+        delay.delay_ms(500_u16);
     }
 }
