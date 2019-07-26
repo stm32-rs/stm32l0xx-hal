@@ -226,27 +226,34 @@ pub trait Pin<I, C> {
 macro_rules! impl_pin {
     (
         $(
-            $name:ident,
-            $instance:ty,
-            $channel:ty,
-            $alternate_function:ident;
+            $instance:ty: (
+                $(
+                    $name:ident,
+                    $channel:ty,
+                    $alternate_function:ident;
+                )*
+            )
         )*
     ) => {
         $(
-            impl<State> Pin<$instance, $channel> for $name<State> {
-                fn setup(&self) {
-                    self.set_alt_mode(AltMode::$alternate_function);
+            $(
+                impl<State> Pin<$instance, $channel> for $name<State> {
+                    fn setup(&self) {
+                        self.set_alt_mode(AltMode::$alternate_function);
+                    }
                 }
-            }
+            )*
         )*
     }
 }
 
 impl_pin!(
-    PA0, TIM2, C1, AF2;
-    PA1, TIM2, C2, AF2;
-    PA2, TIM2, C3, AF2;
-    PA3, TIM2, C4, AF2;
+    TIM2: (
+        PA0, C1, AF2;
+        PA1, C2, AF2;
+        PA2, C3, AF2;
+        PA3, C4, AF2;
+    )
 );
 
 
