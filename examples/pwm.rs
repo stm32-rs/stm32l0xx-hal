@@ -25,23 +25,24 @@ fn main() -> ! {
 
     // Configure TIM2 as PWM on PA1.
     let c2 = gpioa.pa1;
-    let mut pwm = pwm::Timer::new(dp.TIM2, c2, 10.khz(), &mut rcc);
+    let pwm = pwm::Timer::new(dp.TIM2, 10.khz(), &mut rcc);
+    let mut pwm = pwm.channel2.assign(c2);
 
-    let max = pwm.channels.get_max_duty();
+    let max = pwm.get_max_duty();
 
-    pwm.channels.enable();
+    pwm.enable();
 
     loop {
-        pwm.channels.set_duty(max);
+        pwm.set_duty(max);
         delay.delay_ms(500_u16);
 
-        pwm.channels.set_duty(max / 2);
+        pwm.set_duty(max / 2);
         delay.delay_ms(500_u16);
 
-        pwm.channels.set_duty(max / 4);
+        pwm.set_duty(max / 4);
         delay.delay_ms(500_u16);
 
-        pwm.channels.set_duty(max / 8);
+        pwm.set_duty(max / 8);
         delay.delay_ms(500_u16);
     }
 }

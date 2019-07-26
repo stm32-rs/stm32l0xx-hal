@@ -19,9 +19,10 @@ fn main() -> ! {
     let gpioa = dp.GPIOA.split(&mut rcc);
 
     // Configure the timer as PWM on PA1.
-    let mut pwm = pwm::Timer::new(dp.TIM2, gpioa.pa1, 1.khz(), &mut rcc);
-    let max_duty = pwm.channels.get_max_duty() / 4095;
-    pwm.channels.enable();
+    let pwm = pwm::Timer::new(dp.TIM2, 1.khz(), &mut rcc);
+    let mut pwm = pwm.channel2.assign(gpioa.pa1);
+    let max_duty = pwm.get_max_duty() / 4095;
+    pwm.enable();
 
     let mut adc = dp.ADC.constrain(&mut rcc);
 
@@ -31,6 +32,6 @@ fn main() -> ! {
     loop {
         // Set the PWM duty cycle from the value read on the ADC pin.
         let val: u16 = adc.read(&mut adc_pin).unwrap();
-        pwm.channels.set_duty(max_duty * val);
+        pwm.set_duty(max_duty * val);
     }
 }

@@ -1,9 +1,8 @@
 use core::marker::PhantomData;
-use core::mem;
 use core::ops::Deref;
 
 use crate::gpio::gpioa::{PA0, PA1, PA2, PA3};
-use crate::gpio::{AltMode, Floating, Input};
+use crate::gpio::{AltMode};
 use crate::hal;
 use crate::pac::{
     tim2,
@@ -15,19 +14,19 @@ use crate::time::Hertz;
 use cast::{u16, u32};
 
 
-pub struct Timer<I, P: Pins<I>> {
+pub struct Timer<I> {
     _instance: I,
 
-    pub channels: P::Channels,
+    pub channel1: Pwm<I, C1, Unassigned>,
+    pub channel2: Pwm<I, C2, Unassigned>,
+    pub channel3: Pwm<I, C3, Unassigned>,
+    pub channel4: Pwm<I, C4, Unassigned>,
 }
 
-impl<I, P> Timer<I, P>
-    where
-        I: Instance,
-        P: Pins<I>,
+impl<I> Timer<I>
+    where I: Instance
 {
-    pub fn new(timer: I, pins: P, frequency: Hertz, rcc: &mut Rcc) -> Self {
-        pins.setup();
+    pub fn new(timer: I, frequency: Hertz, rcc: &mut Rcc) -> Self {
         timer.enable(rcc);
 
         let clk = timer.clock_frequency(rcc);
@@ -41,10 +40,11 @@ impl<I, P> Timer<I, P>
 
         Self {
             _instance: timer,
-            // I'm not sure about this `unsafe`. It should be fine, as
-            // `channels` should have no data that is ever accessed, but it
-            // seems fishy, and there's probably a more elegant solution.
-            channels: unsafe { mem::uninitialized() },
+
+            channel1: Pwm::new(),
+            channel2: Pwm::new(),
+            channel3: Pwm::new(),
+            channel4: Pwm::new(),
         }
     }
 }
@@ -152,18 +152,34 @@ impl_channel!(
 );
 
 
-pub trait Pins<TIM> {
-    type Channels;
-    fn setup(&self);
+pub struct Pwm<I, C, State> {
+    channel: PhantomData<C>,
+    timer:   PhantomData<I>,
+    _state:  State,
 }
 
+impl<I, C> Pwm<I, C, Unassigned> {
+    fn new() -> Self {
+        Self {
+            channel: PhantomData,
+            timer:   PhantomData,
+            _state:  Unassigned,
+        }
+    }
 
-pub struct Pwm<I, C> {
-    _channel: PhantomData<C>,
-    _tim: PhantomData<I>,
+    pub fn assign<P>(self, pin: P) -> Pwm<I, C, Assigned<P>>
+        where P: Pin<I, C>
+    {
+        pin.setup();
+        Pwm {
+            channel: self.channel,
+            timer:   self.timer,
+            _state:  Assigned(pin),
+        }
+    }
 }
 
-impl<I, C> hal::PwmPin for Pwm<I, C>
+impl<I, C, P> hal::PwmPin for Pwm<I, C, Assigned<P>>
     where
         I: Instance,
         C: Channel,
@@ -203,72 +219,39 @@ impl<I, C> hal::PwmPin for Pwm<I, C>
 }
 
 
-macro_rules! channels {
-    ($TIMX:ident, $af:expr, $c1:ty, $c2:ty, $c3:ty, $c4:ty) => {
-        impl Pins<$TIMX> for $c1 {
-            type Channels = Pwm<$TIMX, C1>;
-
-            fn setup(&self) {
-                self.set_alt_mode($af);
-            }
-        }
-
-        impl Pins<$TIMX> for $c2 {
-            type Channels = Pwm<$TIMX, C2>;
-
-            fn setup(&self) {
-                self.set_alt_mode($af);
-            }
-        }
-
-        impl Pins<$TIMX> for $c3 {
-            type Channels = Pwm<$TIMX, C3>;
-
-            fn setup(&self) {
-                self.set_alt_mode($af);
-            }
-        }
-
-        impl Pins<$TIMX> for $c4 {
-            type Channels = Pwm<$TIMX, C4>;
-
-            fn setup(&self) {
-                self.set_alt_mode($af);
-            }
-        }
-
-        impl Pins<$TIMX> for ($c1, $c2) {
-            type Channels = (Pwm<$TIMX, C1>, Pwm<$TIMX, C2>);
-
-            fn setup(&self) {
-                self.0.set_alt_mode($af);
-                self.1.set_alt_mode($af);
-            }
-        }
-
-        impl Pins<$TIMX> for ($c1, $c2, $c3, $c4) {
-            type Channels = (
-                Pwm<$TIMX, C1>,
-                Pwm<$TIMX, C2>,
-                Pwm<$TIMX, C3>,
-                Pwm<$TIMX, C4>,
-            );
-
-            fn setup(&self) {
-                self.0.set_alt_mode($af);
-                self.1.set_alt_mode($af);
-                self.2.set_alt_mode($af);
-                self.3.set_alt_mode($af);
-            }
-        }
-    };
+pub trait Pin<I, C> {
+    fn setup(&self);
 }
 
-channels!(
-    TIM2,
-    AltMode::AF2,
-    PA0<Input<Floating>>,
-    PA1<Input<Floating>>,
-    PA2<Input<Floating>>,
-    PA3<Input<Floating>>
+macro_rules! impl_pin {
+    (
+        $(
+            $name:ident,
+            $instance:ty,
+            $channel:ty,
+            $alternate_function:ident;
+        )*
+    ) => {
+        $(
+            impl<State> Pin<$instance, $channel> for $name<State> {
+                fn setup(&self) {
+                    self.set_alt_mode(AltMode::$alternate_function);
+                }
+            }
+        )*
+    }
+}
+
+impl_pin!(
+    PA0, TIM2, C1, AF2;
+    PA1, TIM2, C2, AF2;
+    PA2, TIM2, C3, AF2;
+    PA3, TIM2, C4, AF2;
 );
+
+
+/// Indicates that a PWM channel has not been assigned to a pin
+pub struct Unassigned;
+
+/// Indicates that a PWM channel has been assigned to the given pin
+pub struct Assigned<P>(P);
