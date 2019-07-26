@@ -158,9 +158,9 @@ pub trait Pins<TIM> {
 }
 
 
-pub struct Pwm<TIM, CHANNEL> {
-    _channel: PhantomData<CHANNEL>,
-    _tim: PhantomData<TIM>,
+pub struct Pwm<I, C> {
+    _channel: PhantomData<C>,
+    _tim: PhantomData<I>,
 }
 
 impl<I, C> hal::PwmPin for Pwm<I, C>
