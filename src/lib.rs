@@ -20,6 +20,8 @@ pub mod adc;
 #[cfg(any(feature = "stm32l062", feature = "stm32l082"))]
 pub mod aes;
 pub mod delay;
+#[cfg(feature = "stm32l0x2")]
+pub mod dma;
 pub mod exti;
 pub mod gpio;
 pub mod i2c;

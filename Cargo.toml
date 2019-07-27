@@ -27,6 +27,7 @@ version = "0.1.7"
 features = ["stm32l0x1", "stm32l0x2", "rt"]
 
 [dependencies]
+as-slice = "0.1.0"
 embedded-hal = { version = "0.2.3", features = ["unproven"] }
 cortex-m = {version = "0.5.8", features = ["const-fn"] }
 cortex-m-rt = "0.6.8"
@@ -83,6 +84,10 @@ opt-level = "s"
 
 [[example]]
 name = "aes"
+required-features = ["stm32l082"]
+
+[[example]]
+name = "aes-dma"
 required-features = ["stm32l082"]
 
 [[example]]

@@ -3,12 +3,24 @@
 //! See STM32L0x2 reference manual, chapter 18.
 
 
-use core::convert::TryInto;
+use core::{
+    convert::TryInto,
+    ops::{
+        Deref,
+        DerefMut,
+    },
+    pin::Pin,
+};
 
+use as_slice::{
+    AsMutSlice,
+    AsSlice,
+};
 use nb::block;
 use void::Void;
 
 use crate::{
+    dma,
     pac,
     rcc::Rcc,
 };
@@ -32,9 +44,9 @@ impl AES {
         // Configure peripheral
         aes.cr.write(|w| {
             w
-                // Disable DMA
-                .dmaouten().clear_bit()
-                .dmainen().clear_bit()
+                // Enable DMA
+                .dmaouten().set_bit()
+                .dmainen().set_bit()
                 // Disable interrupts
                 .errie().clear_bit()
                 .ccfie().clear_bit()
@@ -176,6 +188,37 @@ impl Tx {
 
         Ok(())
     }
+
+    /// Writes the provided buffer to the AES peripheral using DMA
+    ///
+    /// Returns a DMA transfer that is ready to be started. It needs to be
+    /// started for anything to happen.
+    ///
+    /// # Panics
+    ///
+    /// Panics, if the buffer length is larger than `u16::max_value()`.
+    ///
+    /// The AES peripheral works with 128-bit blocks, which means the buffer
+    /// length must be a multiple of 4. Panics, if this is not the case.
+    pub fn write_all<Buffer, Channel>(self,
+        dma:     &mut dma::Handle,
+        buffer:  Pin<Buffer>,
+        channel: Channel,
+    )
+        -> dma::Transfer<Self, Channel, Buffer, dma::Ready>
+        where
+            Self:           dma::Target<Channel>,
+            Buffer:         Deref + 'static,
+            Buffer::Target: AsSlice<Element=u32>,
+            Channel:        dma::Channel,
+    {
+        assert!(buffer.as_slice().len() % 4 == 0);
+
+        // Safe, because we're only taking the address of a register.
+        let address = &unsafe { &*pac::AES::ptr() }.dinr as *const _ as u32;
+
+        dma::Transfer::memory_to_peripheral(dma, self, channel, buffer, address)
+    }
 }
 
 
@@ -217,6 +260,37 @@ impl Rx {
         cr.modify(|_, w| w.ccfc().set_bit());
 
         Ok(block)
+    }
+
+    /// Reads data from the AES peripheral into the provided buffer using DMA
+    ///
+    /// Returns a DMA transfer that is ready to be started. It needs to be
+    /// started for anything to happen.
+    ///
+    /// # Panics
+    ///
+    /// Panics, if the buffer length is larger than `u16::max_value()`.
+    ///
+    /// The AES peripheral works with 128-bit blocks, which means the buffer
+    /// length must be a multiple of 4. Panics, if this is not the case.
+    pub fn read_all<Buffer, Channel>(self,
+        dma:     &mut dma::Handle,
+        buffer:  Pin<Buffer>,
+        channel: Channel,
+    )
+        -> dma::Transfer<Self, Channel, Buffer, dma::Ready>
+        where
+            Self:           dma::Target<Channel>,
+            Buffer:         DerefMut + 'static,
+            Buffer::Target: AsMutSlice<Element=u32>,
+            Channel:        dma::Channel,
+    {
+        assert!(buffer.as_slice().len() % 4 == 0);
+
+        // Safe, because we're only taking the address of a register.
+        let address = &unsafe { &*pac::AES::ptr() }.doutr as *const _ as u32;
+
+        dma::Transfer::peripheral_to_memory(dma, self, channel, buffer, address)
     }
 }
 
