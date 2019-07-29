@@ -68,7 +68,7 @@ fn main() -> ! {
     let mut decrypted = Pin::new(unsafe { &mut DECRYPTED });
 
     loop {
-        let mut ctr_stream = aes.start_ctr_stream(key, ivr);
+        let mut ctr_stream = aes.enable(key, ivr);
         let mut tx_transfer = ctr_stream.tx
             .write_all(
                 &mut dma.handle,
@@ -119,7 +119,7 @@ fn main() -> ! {
         assert_ne!(**encrypted, [0; 32]);
         assert_ne!(**encrypted, **data);
 
-        let mut ctr_stream = aes.start_ctr_stream(key, ivr);
+        let mut ctr_stream = aes.enable(key, ivr);
         let mut tx_transfer = ctr_stream.tx
             .write_all(
                 &mut dma.handle,

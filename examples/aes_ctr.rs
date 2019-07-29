@@ -35,7 +35,7 @@ fn main() -> ! {
     ];
 
     loop {
-        let mut ctr_stream = aes.start_ctr_stream(key, ivr);
+        let mut ctr_stream = aes.enable(key, ivr);
 
         let mut encrypted = [[0; 16]; 4];
         encrypted[0] = ctr_stream.process(&data).unwrap();
@@ -49,7 +49,7 @@ fn main() -> ! {
         assert_ne!(encrypted[3], data);
 
         aes = ctr_stream.finish();
-        let mut ctr_stream = aes.start_ctr_stream(key, ivr);
+        let mut ctr_stream = aes.enable(key, ivr);
 
         let mut decrypted = [[0; 16]; 4];
         decrypted[0] = ctr_stream.process(&encrypted[0]).unwrap();

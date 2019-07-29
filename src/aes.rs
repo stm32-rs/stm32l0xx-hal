@@ -62,9 +62,7 @@ impl AES {
     /// Will consume this AES instance and return another instance which is
     /// switched to CTR mode. While in CTR mode, you can use other methods to
     /// encrypt/decrypt data.
-    pub fn start_ctr_stream(self, key: [u32; 4], init_vector: [u32; 3])
-        -> CtrStream
-    {
+    pub fn enable(self, key: [u32; 4], init_vector: [u32; 3]) -> CtrStream {
         // Initialize key
         self.aes.keyr0.write(|w| unsafe { w.bits(key[0]) });
         self.aes.keyr1.write(|w| unsafe { w.bits(key[1]) });
