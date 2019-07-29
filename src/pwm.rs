@@ -13,6 +13,53 @@ use crate::rcc::Rcc;
 use crate::time::Hertz;
 use cast::{u16, u32};
 
+#[cfg(feature = "stm32l0x2")]
+use crate::gpio::{
+    gpioa::{
+        PA5,
+        PA15,
+    },
+    gpiob::{
+        PB3,
+        PB10,
+        PB11,
+    },
+};
+
+#[cfg(any(feature = "stm32l072", feature = "stm32l082"))]
+use crate::gpio::{
+    gpioa::{
+        PA6,
+        PA7,
+    },
+    gpiob::{
+        PB0,
+        PB1,
+        PB4,
+        PB5,
+    },
+};
+
+#[cfg(feature = "stm32l072")]
+use crate::gpio::{
+    gpioc::{
+        PC6,
+        PC7,
+        PC8,
+        PC9,
+    },
+    gpioe::{
+        PE3,
+        PE4,
+        PE5,
+        PE6,
+        PE9,
+        PE10,
+        PE11,
+        PE12,
+    },
+};
+
 
 pub struct Timer<I> {
     _instance: I,
@@ -253,6 +300,49 @@ impl_pin!(
         PA1, C2, AF2;
         PA2, C3, AF2;
         PA3, C4, AF2;
+    )
+);
+
+#[cfg(feature = "stm32l0x2")]
+impl_pin!(
+    TIM2: (
+        PA5,  C1, AF5;
+        PA15, C1, AF5;
+        PB3,  C2, AF2;
+        PB10, C3, AF2;
+        PB11, C4, AF2;
+    )
+);
+
+#[cfg(any(feature = "stm32l072", feature = "stm32l082"))]
+impl_pin!(
+    TIM3: (
+        PA6, C1, AF2;
+        PA7, C2, AF2;
+        PB0, C3, AF2;
+        PB1, C4, AF2;
+        PB4, C1, AF2;
+        PB5, C2, AF4;
+    )
+);
+
+#[cfg(feature = "stm32l072")]
+impl_pin!(
+    TIM2: (
+        PE9,  C1, AF0;
+        PE10, C2, AF0;
+        PE11, C3, AF0;
+        PE12, C4, AF0;
+    )
+    TIM3: (
+        PC6, C1, AF2;
+        PC7, C2, AF2;
+        PC8, C3, AF2;
+        PC9, C4, AF2;
+        PE3, C1, AF2;
+        PE4, C2, AF2;
+        PE5, C3, AF2;
+        PE6, C4, AF2;
     )
 );
 
