@@ -1,6 +1,8 @@
 use core::marker::PhantomData;
 use core::ops::Deref;
 
+use cortex_m::interrupt;
+
 use crate::gpio::gpioa::{PA0, PA1, PA2, PA3};
 use crate::gpio::{AltMode};
 use crate::hal;
@@ -234,13 +236,17 @@ impl<I, C, P> hal::PwmPin for Pwm<I, C, Assigned<P>>
     type Duty = u16;
 
     fn disable(&mut self) {
-        // This is UNSAFE: Race condition during read-modify-write.
-        C::disable(unsafe { &*I::ptr() });
+        interrupt::free(|_|
+            // Safe, as the read-modify-write within the critical section
+            C::disable(unsafe { &*I::ptr() })
+        )
     }
 
     fn enable(&mut self) {
-        // This is UNSAFE: Race condition during read-modify-write.
-        C::enable(unsafe { &*I::ptr() });
+        interrupt::free(|_|
+            // Safe, as the read-modify-write within the critical section
+            C::enable(unsafe { &*I::ptr() })
+        )
     }
 
     fn get_duty(&self) -> u16 {
