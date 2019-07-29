@@ -62,7 +62,7 @@ impl AES {
     /// Will consume this AES instance and return another instance which is
     /// switched to CTR mode. While in CTR mode, you can use other methods to
     /// encrypt/decrypt data.
-    pub fn enable(self, key: [u32; 4], init_vector: [u32; 3]) -> CtrStream {
+    pub fn enable(self, key: [u32; 4], init_vector: [u32; 3]) -> Stream {
         // Initialize key
         self.aes.keyr0.write(|w| unsafe { w.bits(key[0]) });
         self.aes.keyr1.write(|w| unsafe { w.bits(key[1]) });
@@ -93,7 +93,7 @@ impl AES {
             w.en().set_bit()
         });
 
-        CtrStream {
+        Stream {
             aes: self,
             rx:  Rx(()),
             tx:  Tx(()),
@@ -105,14 +105,14 @@ impl AES {
 /// An active encryption/decryption stream using CTR mode
 ///
 /// You can get an instance of this struct by calling [`AES::start_ctr_stream`].
-pub struct CtrStream {
+pub struct Stream {
     aes: AES,
 
     pub tx: Tx,
     pub rx: Rx,
 }
 
-impl CtrStream {
+impl Stream {
     /// Processes one block of data
     ///
     /// In CTR mode, encrypting and decrypting work the same. If you pass a
