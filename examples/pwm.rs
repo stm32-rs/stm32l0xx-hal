@@ -23,10 +23,15 @@ fn main() -> ! {
     // the RCC register.
     let gpioa = dp.GPIOA.split(&mut rcc);
 
-    // Configure TIM2 as PWM on PA1.
-    let c2 = gpioa.pa1;
+    // Initialize TIM2 for PWM
     let pwm = pwm::Timer::new(dp.TIM2, 10.khz(), &mut rcc);
-    let mut pwm = pwm.channel2.assign(c2);
+
+    #[cfg(feature = "stm32l0x1")]
+    let mut pwm = pwm.channel2.assign(gpioa.pa1);
+
+    // This is LD2 on ST's B-L072Z-LRWAN1 development board.
+    #[cfg(feature = "stm32l0x2")]
+    let mut pwm = pwm.channel1.assign(gpioa.pa5);
 
     let max = pwm.get_max_duty();
 

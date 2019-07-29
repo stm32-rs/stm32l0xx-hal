@@ -109,7 +109,3 @@ required-features = ["rt"]
 [[example]]
 name = "adc_pwm"
 required-features = ["stm32l0x1"]
-
-[[example]]
-name = "pwm"
-required-features = ["stm32l0x1"]
