@@ -185,6 +185,10 @@ impl<T, C, B> Transfer<T, C, B, Ready>
         }
     }
 
+    pub fn enable_interrupts(&mut self, interrupts: Interrupts) {
+        self.res.channel.enable_interrupts(interrupts);
+    }
+
     pub fn start(self) -> Transfer<T, C, B, Started> {
         compiler_fence(Ordering::SeqCst);
 
@@ -264,6 +268,7 @@ pub trait Channel: Sized {
     fn set_transfer_len(&self, _: &mut Handle, len: u16);
     fn configure<Word>(&self, _: &mut Handle, dir: ccr1::DIRW)
         where Word: SupportedWordSize;
+    fn enable_interrupts(&self, interrupts: Interrupts);
     fn start(&self);
     fn is_active(&self) -> bool;
     fn error_occured(&self) -> bool;
@@ -361,6 +366,19 @@ macro_rules! impl_channel {
                             .htie().disabled()
                             .tcie().disabled()
                     });
+                }
+
+                fn enable_interrupts(&self, interrupts: Interrupts) {
+                    // Safe, because we're only accessing a register that this
+                    // channel has exclusive access to.
+                    let ccr = &unsafe { &*pac::DMA1::ptr() }.$ccr;
+
+                    ccr.modify(|_, w|
+                        w
+                            .teie().bit(interrupts.transfer_error)
+                            .htie().bit(interrupts.half_transfer)
+                            .tcie().bit(interrupts.transfer_complete)
+                    );
                 }
 
                 fn start(&self) {
@@ -485,5 +503,23 @@ impl SupportedWordSize for u16 {
 impl SupportedWordSize for u32 {
     fn size() -> ccr1::MSIZEW {
         ccr1::MSIZEW::BIT32
+    }
+}
+
+
+#[derive(Clone, Copy)]
+pub struct Interrupts {
+    pub transfer_error:    bool,
+    pub half_transfer:     bool,
+    pub transfer_complete: bool,
+}
+
+impl Default for Interrupts {
+    fn default() -> Self {
+        Self {
+            transfer_error:    false,
+            half_transfer:     false,
+            transfer_complete: false,
+        }
     }
 }
