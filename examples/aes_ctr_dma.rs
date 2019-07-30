@@ -21,7 +21,10 @@ use cortex_m::{
 use cortex_m_rt::entry;
 use stm32l0xx_hal::{
     prelude::*,
-    aes::AES,
+    aes::{
+        self,
+        AES,
+    },
     dma::{
         self,
         DMA,
@@ -68,7 +71,7 @@ fn main() -> ! {
     let mut decrypted = Pin::new(unsafe { &mut DECRYPTED });
 
     loop {
-        let mut ctr_stream = aes.enable(key, ivr);
+        let mut ctr_stream = aes.enable(aes::Mode::ctr(ivr), key);
         let mut tx_transfer = ctr_stream.tx
             .write_all(
                 &mut dma.handle,
@@ -119,7 +122,7 @@ fn main() -> ! {
         assert_ne!(**encrypted, [0; 32]);
         assert_ne!(**encrypted, **data);
 
-        let mut ctr_stream = aes.enable(key, ivr);
+        let mut ctr_stream = aes.enable(aes::Mode::ctr(ivr), key);
         let mut tx_transfer = ctr_stream.tx
             .write_all(
                 &mut dma.handle,

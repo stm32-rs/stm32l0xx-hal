@@ -21,7 +21,13 @@ use void::Void;
 
 use crate::{
     dma,
-    pac,
+    pac::{
+        self,
+        aes::{
+            self,
+            cr,
+        },
+    },
     rcc::Rcc,
 };
 
@@ -62,33 +68,26 @@ impl AES {
     /// Will consume this AES instance and return another instance which is
     /// switched to CTR mode. While in CTR mode, you can use other methods to
     /// encrypt/decrypt data.
-    pub fn enable(self, key: [u32; 4], init_vector: [u32; 3]) -> Stream {
-        // Initialize key
+    pub fn enable<M>(self, mode: M, key: [u32; 4]) -> Stream
+        where M: Mode
+    {
+        // Write key. This is safe, as the register accepts the full range of
+        // `u32`.
         self.aes.keyr0.write(|w| unsafe { w.bits(key[0]) });
         self.aes.keyr1.write(|w| unsafe { w.bits(key[1]) });
         self.aes.keyr2.write(|w| unsafe { w.bits(key[2]) });
         self.aes.keyr3.write(|w| unsafe { w.bits(key[3]) });
 
-        // Initialize initialization vector
-        //
-        // See STM32L0x2 reference manual, table 78 on page 408.
-        self.aes.ivr3.write(|w| unsafe { w.bits(init_vector[0]) });
-        self.aes.ivr2.write(|w| unsafe { w.bits(init_vector[1]) });
-        self.aes.ivr1.write(|w| unsafe { w.bits(init_vector[2]) });
-        self.aes.ivr0.write(|w| unsafe { w.bits(0x0001) }); // counter
+        mode.prepare(&self.aes);
 
         self.aes.cr.modify(|_, w| {
-            let w = unsafe {
-                w
-                    // Select Counter Mode (CTR) mode
-                    .chmod().bits(0b10)
-                    // These bits mean encryption mode, but in CTR mode,
-                    // encryption and descryption are technically identical, so
-                    // this is fine for either mode.
-                    .mode().bits(0b00)
-                    // Configure for stream of bytes
-                    .datatype().bits(0b10)
-            };
+            // Select mode
+            mode.select(w);
+
+            // Configure for stream of bytes
+            // Safe, as we write a valid byte pattern.
+            unsafe { w.datatype().bits(0b10) };
+
             // Enable peripheral
             w.en().set_bit()
         });
@@ -326,6 +325,59 @@ impl Rx {
                 dma::Priority::very_high(),
                 dma::Direction::peripheral_to_memory(),
             )
+        }
+    }
+}
+
+
+/// Implemented for all chaining modes
+///
+/// This is an internal trait. The user won't typically need to use or implement
+/// this.
+pub trait Mode {
+    fn prepare(&self, _: &aes::RegisterBlock);
+    fn select(&self, _: &mut cr::W);
+}
+
+impl Mode {
+    pub fn ctr(init_vector: [u32; 3]) -> CTR {
+        CTR {
+            init_vector,
+        }
+    }
+}
+
+
+/// The CTR (counter) chaining mode
+///
+/// The user can pass this type to [`AES::enable`], to start encrypting or
+/// decrypting using CTR mode. In CTR mode, encryption and decryption are
+/// technically identical, so further qualification is not required.
+pub struct CTR {
+    init_vector: [u32; 3],
+}
+
+impl Mode for CTR {
+    fn prepare(&self, aes: &aes::RegisterBlock) {
+        // Initialize initialization vector
+        //
+        // See STM32L0x2 reference manual, table 78 on page 408.
+        aes.ivr3.write(|w| unsafe { w.bits(self.init_vector[0]) });
+        aes.ivr2.write(|w| unsafe { w.bits(self.init_vector[1]) });
+        aes.ivr1.write(|w| unsafe { w.bits(self.init_vector[2]) });
+        aes.ivr0.write(|w| unsafe { w.bits(0x0001) }); // counter
+    }
+
+    fn select(&self, w: &mut cr::W) {
+        // Safe, as we're only writing valid bit patterns.
+        unsafe {
+            w
+                // Select Counter Mode (CTR) mode
+                .chmod().bits(0b10)
+                // These bits mean encryption mode, but in CTR mode,
+                // encryption and descryption are technically identical, so this
+                // is fine for either mode.
+                .mode().bits(0b00);
         }
     }
 }
