@@ -130,7 +130,7 @@ impl Stream {
     ///
     /// Consumes the stream and returns the AES peripheral that was used to
     /// start it.
-    pub fn finish(self) -> AES {
+    pub fn disable(self) -> AES {
         // Disable AES
         self.aes.aes.cr.modify(|_, w| w.en().clear_bit());
 

@@ -48,7 +48,7 @@ fn main() -> ! {
         assert_ne!(encrypted[2], data);
         assert_ne!(encrypted[3], data);
 
-        aes = ctr_stream.finish();
+        aes = ctr_stream.disable();
         let mut ctr_stream = aes.enable(key, ivr);
 
         let mut decrypted = [[0; 16]; 4];
@@ -62,6 +62,6 @@ fn main() -> ! {
         assert_eq!(decrypted[2], data);
         assert_eq!(decrypted[3], data);
 
-        aes = ctr_stream.finish();
+        aes = ctr_stream.disable();
     }
 }

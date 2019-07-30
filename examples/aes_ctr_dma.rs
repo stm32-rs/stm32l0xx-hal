@@ -114,7 +114,7 @@ fn main() -> ! {
         dma.channels.channel1 = tx_res.channel;
         dma.channels.channel2 = rx_res.channel;
         encrypted             = rx_res.buffer;
-        aes                   = ctr_stream.finish();
+        aes                   = ctr_stream.disable();
 
         assert_ne!(**encrypted, [0; 32]);
         assert_ne!(**encrypted, **data);
@@ -166,7 +166,7 @@ fn main() -> ! {
         dma.channels.channel2 = rx_res.channel;
         encrypted             = tx_res.buffer;
         decrypted             = rx_res.buffer;
-        aes                   = ctr_stream.finish();
+        aes                   = ctr_stream.disable();
 
         assert_eq!(**decrypted, **data);
     }
