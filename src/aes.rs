@@ -340,9 +340,77 @@ pub trait Mode {
 }
 
 impl Mode {
+    pub fn cbc_encrypt(init_vector: [u32; 4]) -> CBC<Encrypt> {
+        CBC {
+            _mode: Encrypt,
+            init_vector,
+        }
+    }
+
+    pub fn cbc_decrypt(init_vector: [u32; 4]) -> CBC<Decrypt> {
+        CBC {
+            _mode: Decrypt,
+            init_vector,
+        }
+    }
+
     pub fn ctr(init_vector: [u32; 3]) -> CTR {
         CTR {
             init_vector,
+        }
+    }
+}
+
+
+/// The CBC (cipher block chaining) chaining mode
+///
+/// The user can pass this type to [`AES::enable`], to start encrypting or
+/// decrypting using CBC mode. `Mode` must be either [`Encrypt`] or [`Decrypt`].
+pub struct CBC<Mode> {
+    _mode:       Mode,
+    init_vector: [u32; 4],
+}
+
+impl Mode for CBC<Encrypt> {
+    fn prepare(&self, aes: &aes::RegisterBlock) {
+        // Safe, as the registers accept the full range of `u32`.
+        aes.ivr3.write(|w| unsafe { w.bits(self.init_vector[0]) });
+        aes.ivr2.write(|w| unsafe { w.bits(self.init_vector[1]) });
+        aes.ivr1.write(|w| unsafe { w.bits(self.init_vector[2]) });
+        aes.ivr0.write(|w| unsafe { w.bits(self.init_vector[3]) });
+    }
+
+    fn select(&self, w: &mut cr::W) {
+        // Safe, as we're only writing valid bit patterns.
+        unsafe {
+            w
+                // Select CBC chaining mode
+                .chmod().bits(0b01)
+                // Select encryption mode
+                .mode().bits(0b00);
+        }
+    }
+}
+
+impl Mode for CBC<Decrypt> {
+    fn prepare(&self, aes: &aes::RegisterBlock) {
+        derive_key(aes);
+
+        // Safe, as the registers accept the full range of `u32`.
+        aes.ivr3.write(|w| unsafe { w.bits(self.init_vector[0]) });
+        aes.ivr2.write(|w| unsafe { w.bits(self.init_vector[1]) });
+        aes.ivr1.write(|w| unsafe { w.bits(self.init_vector[2]) });
+        aes.ivr0.write(|w| unsafe { w.bits(self.init_vector[3]) });
+    }
+
+    fn select(&self, w: &mut cr::W) {
+        // Safe, as we're only writing valid bit patterns.
+        unsafe {
+            w
+                // Select CBC chaining mode
+                .chmod().bits(0b01)
+                // Select decryption mode
+                .mode().bits(0b10);
         }
     }
 }
@@ -381,6 +449,27 @@ impl Mode for CTR {
         }
     }
 }
+
+
+fn derive_key(aes: &aes::RegisterBlock) {
+    // Select key derivation mode. This is safe, as we're writing a valid bit
+    // pattern.
+    unsafe { aes.cr.modify(|_, w| w.mode().bits(0b01)) };
+
+    // Enable the peripheral. It will be automatically disabled again once the
+    // key has been derived.
+    aes.cr.modify(|_, w| w.en().set_bit());
+
+    // Wait for key derivation to finish
+    while aes.sr.read().ccf().bit_is_clear() {}
+}
+
+
+/// Used to identify encryption mode
+pub struct Encrypt;
+
+/// Used to identify decryption mode
+pub struct Decrypt;
 
 
 /// A 128-bit block
