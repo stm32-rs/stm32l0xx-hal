@@ -63,11 +63,13 @@ impl AES {
         }
     }
 
-    /// Start a CTR stream
+    /// Enable the AES peripheral
     ///
-    /// Will consume this AES instance and return another instance which is
-    /// switched to CTR mode. While in CTR mode, you can use other methods to
-    /// encrypt/decrypt data.
+    /// Returns a [`Stream`] instance which can be used to encrypt or decrypt
+    /// data using the mode selected with the `mode` argument.
+    ///
+    /// Consumes the `AES` instance. You can get it back later once you're done
+    /// with the `Stream`, using [`Stream::disable`].
     pub fn enable<M>(self, mode: M, key: [u32; 4]) -> Stream
         where M: Mode
     {
@@ -101,23 +103,27 @@ impl AES {
 }
 
 
-/// An active encryption/decryption stream using CTR mode
+/// An active encryption/decryption stream
 ///
-/// You can get an instance of this struct by calling [`AES::start_ctr_stream`].
+/// You can get an instance of this struct by calling [`AES::enable`].
 pub struct Stream {
     aes: AES,
 
+    /// Can be used to write data to the AES peripheral
     pub tx: Tx,
+
+    /// Can be used to read data from the AES peripheral
     pub rx: Rx,
 }
 
 impl Stream {
     /// Processes one block of data
     ///
-    /// In CTR mode, encrypting and decrypting work the same. If you pass a
-    /// block of clear data to this function, an encrypted block is returned. If
-    /// you pass a block of encrypted data, it is decrypted and a clear block
-    /// is returned.
+    /// Writes one block of data to the AES peripheral, wait until it is
+    /// processed then reads the processed block and returns it.
+    ///
+    /// Whether this is encryption or decryption depends on the mode that was
+    /// selected when this `Stream` was created.
     pub fn process(&mut self, input: &Block) -> Result<Block, Error> {
         self.tx.write(input)?;
         // Can't panic. Error value of `Rx::read` is `Void`.
@@ -125,10 +131,11 @@ impl Stream {
         Ok(output)
     }
 
-    /// Finish the CTR stream
+    /// Disable the AES peripheral
     ///
-    /// Consumes the stream and returns the AES peripheral that was used to
-    /// start it.
+    /// Consumes the stream and returns the disabled [`AES`] instance. Call this
+    /// method when you're done encrypting/decrypting data. You can then create
+    /// another `Stream` using [`AES::enable`].
     pub fn disable(self) -> AES {
         // Disable AES
         self.aes.aes.cr.modify(|_, w| w.en().clear_bit());
@@ -140,7 +147,7 @@ impl Stream {
 
 /// Can be used to write data to the AES peripheral
 ///
-/// You can access this struct via [`CtrStream`].
+/// You can access this struct via [`Stream`].
 pub struct Tx(());
 
 impl Tx {
@@ -240,7 +247,7 @@ impl Tx {
 
 /// Can be used to read data from the AES peripheral
 ///
-/// You can access this struct via [`CtrStream`].
+/// You can access this struct via [`Stream`].
 pub struct Rx(());
 
 impl Rx {
@@ -332,22 +339,26 @@ impl Rx {
 
 /// Implemented for all chaining modes
 ///
-/// This is an internal trait. The user won't typically need to use or implement
-/// this.
+/// This is mostly an internal trait. The user won't typically need to use or
+/// implement this, except to call the various static methods that create a
+/// mode.
 pub trait Mode {
     fn prepare(&self, _: &aes::RegisterBlock);
     fn select(&self, _: &mut cr::W);
 }
 
 impl Mode {
+    /// Use this with [`AES::enable`] to encrypt using ECB
     pub fn ecb_encrypt() -> ECB<Encrypt> {
         ECB(Encrypt)
     }
 
+    /// Use this with [`AES::enable`] to decrypt using ECB
     pub fn ecb_decrypt() -> ECB<Decrypt> {
         ECB(Decrypt)
     }
 
+    /// Use this with [`AES::enable`] to encrypt using CBC
     pub fn cbc_encrypt(init_vector: [u32; 4]) -> CBC<Encrypt> {
         CBC {
             _mode: Encrypt,
@@ -355,6 +366,7 @@ impl Mode {
         }
     }
 
+    /// Use this with [`AES::enable`] to decrypt using CBC
     pub fn cbc_decrypt(init_vector: [u32; 4]) -> CBC<Decrypt> {
         CBC {
             _mode: Decrypt,
@@ -362,6 +374,7 @@ impl Mode {
         }
     }
 
+    /// Use this with [`AES::enable`] to encrypt or decrypt using CTR
     pub fn ctr(init_vector: [u32; 3]) -> CTR {
         CTR {
             init_vector,
@@ -372,8 +385,11 @@ impl Mode {
 
 /// The ECB (electronic code book) chaining mode
 ///
-/// The user can pass this type to [`AES::enable`], to start encrypting or
-/// decrypting using ECB mode. `Mode` must be either [`Encrypt`] or [`Decrypt`].
+/// Can be passed [`AES::enable`], to start encrypting or decrypting using ECB
+/// mode. `Mode` must be either [`Encrypt`] or [`Decrypt`].
+///
+/// You gen get an instance of this struct via [`Mode::ecb_encrypt`] or
+/// [`Mode::ecb_decrypt`].
 pub struct ECB<Mode>(Mode);
 
 impl Mode for ECB<Encrypt> {
@@ -413,8 +429,11 @@ impl Mode for ECB<Decrypt> {
 
 /// The CBC (cipher block chaining) chaining mode
 ///
-/// The user can pass this type to [`AES::enable`], to start encrypting or
-/// decrypting using CBC mode. `Mode` must be either [`Encrypt`] or [`Decrypt`].
+/// Can be passed [`AES::enable`], to start encrypting or decrypting using CBC
+/// mode. `Mode` must be either [`Encrypt`] or [`Decrypt`].
+///
+/// You gen get an instance of this struct via [`Mode::cbc_encrypt`] or
+/// [`Mode::cbc_decrypt`].
 pub struct CBC<Mode> {
     _mode:       Mode,
     init_vector: [u32; 4],
@@ -467,9 +486,11 @@ impl Mode for CBC<Decrypt> {
 
 /// The CTR (counter) chaining mode
 ///
-/// The user can pass this type to [`AES::enable`], to start encrypting or
-/// decrypting using CTR mode. In CTR mode, encryption and decryption are
-/// technically identical, so further qualification is not required.
+/// Can be passed [`AES::enable`], to start encrypting or decrypting using CTR
+/// mode. In CTR mode, encryption and decryption are technically identical, so
+/// further qualification is not required.
+///
+/// You gen get an instance of this struct via [`Mode::ctr`].
 pub struct CTR {
     init_vector: [u32; 3],
 }
