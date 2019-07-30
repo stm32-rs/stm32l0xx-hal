@@ -340,6 +340,14 @@ pub trait Mode {
 }
 
 impl Mode {
+    pub fn ecb_encrypt() -> ECB<Encrypt> {
+        ECB(Encrypt)
+    }
+
+    pub fn ecb_decrypt() -> ECB<Decrypt> {
+        ECB(Decrypt)
+    }
+
     pub fn cbc_encrypt(init_vector: [u32; 4]) -> CBC<Encrypt> {
         CBC {
             _mode: Encrypt,
@@ -357,6 +365,47 @@ impl Mode {
     pub fn ctr(init_vector: [u32; 3]) -> CTR {
         CTR {
             init_vector,
+        }
+    }
+}
+
+
+/// The ECB (electronic code book) chaining mode
+///
+/// The user can pass this type to [`AES::enable`], to start encrypting or
+/// decrypting using ECB mode. `Mode` must be either [`Encrypt`] or [`Decrypt`].
+pub struct ECB<Mode>(Mode);
+
+impl Mode for ECB<Encrypt> {
+    fn prepare(&self, _: &aes::RegisterBlock) {
+        // Nothing to do.
+    }
+
+    fn select(&self, w: &mut cr::W) {
+        // Safe, as we're only writing valid bit patterns.
+        unsafe {
+            w
+                // Select ECB chaining mode
+                .chmod().bits(0b00)
+                // Select encryption mode
+                .mode().bits(0b00);
+        }
+    }
+}
+
+impl Mode for ECB<Decrypt> {
+    fn prepare(&self, aes: &aes::RegisterBlock) {
+        derive_key(aes)
+    }
+
+    fn select(&self, w: &mut cr::W) {
+        // Safe, as we're only writing valid bit patterns.
+        unsafe {
+            w
+                // Select ECB chaining mode
+                .chmod().bits(0b00)
+                // Select decryption mode
+                .mode().bits(0b10);
         }
     }
 }
