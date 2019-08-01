@@ -5,9 +5,8 @@
 
 extern crate panic_halt;
 
-use cortex_m::asm;
 use cortex_m_rt::entry;
-use stm32l0xx_hal::{pac, prelude::*, rcc::Config};
+use stm32l0xx_hal::{pac, prelude::*, pwm, rcc::Config};
 
 #[entry]
 fn main() -> ! {
@@ -24,26 +23,31 @@ fn main() -> ! {
     // the RCC register.
     let gpioa = dp.GPIOA.split(&mut rcc);
 
-    // Configure TIM2 as PWM on PA1.
-    let c2 = gpioa.pa1;
-    let mut pwm = dp.TIM2.pwm(c2, 10.khz(), &mut rcc);
+    // Initialize TIM2 for PWM
+    let pwm = pwm::Timer::new(dp.TIM2, 10.khz(), &mut rcc);
+
+    #[cfg(feature = "stm32l0x1")]
+    let mut pwm = pwm.channel2.assign(gpioa.pa1);
+
+    // This is LD2 on ST's B-L072Z-LRWAN1 development board.
+    #[cfg(feature = "stm32l0x2")]
+    let mut pwm = pwm.channel1.assign(gpioa.pa5);
 
     let max = pwm.get_max_duty();
 
     pwm.enable();
 
-    pwm.set_duty(max);
-    delay.delay_ms(1000_u16);
-
-    pwm.set_duty(max / 2);
-    delay.delay_ms(1000_u16);
-
-    pwm.set_duty(max / 4);
-    delay.delay_ms(1000_u16);
-
-    pwm.set_duty(max / 8);
-
     loop {
-        asm::nop();
+        pwm.set_duty(max);
+        delay.delay_ms(500_u16);
+
+        pwm.set_duty(max / 2);
+        delay.delay_ms(500_u16);
+
+        pwm.set_duty(max / 4);
+        delay.delay_ms(500_u16);
+
+        pwm.set_duty(max / 8);
+        delay.delay_ms(500_u16);
     }
 }
