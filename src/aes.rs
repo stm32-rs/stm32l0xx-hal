@@ -199,25 +199,44 @@ impl Tx {
     /// Panics, if the buffer length is larger than `u16::max_value()`.
     ///
     /// The AES peripheral works with 128-bit blocks, which means the buffer
-    /// length must be a multiple of 4. Panics, if this is not the case.
+    /// length must be a multiple of 16. Panics, if this is not the case.
+    ///
+    /// Panics, if the buffer is not aligned to a word boundary.
     pub fn write_all<Buffer, Channel>(self,
         dma:     &mut dma::Handle,
         buffer:  Pin<Buffer>,
         channel: Channel,
     )
-        -> dma::Transfer<Self, Channel, Buffer, dma::Ready>
+        -> Transfer<Self, Channel, Buffer, dma::Ready>
         where
             Self:           dma::Target<Channel>,
             Buffer:         Deref + 'static,
-            Buffer::Target: AsSlice<Element=u32>,
+            Buffer::Target: AsSlice<Element=u8>,
             Channel:        dma::Channel,
     {
-        assert!(buffer.as_slice().len() % 4 == 0);
+        assert!(buffer.as_slice().len() % 16 == 0);
 
         // Safe, because we're only taking the address of a register.
         let address = &unsafe { &*pac::AES::ptr() }.dinr as *const _ as u32;
 
-        dma::Transfer::memory_to_peripheral(dma, self, channel, buffer, address)
+        // Safe, because the traits bounds of this method guarantee that
+        // `buffer` can be read from.
+        unsafe {
+            Transfer::new(
+                dma,
+                self,
+                channel,
+                buffer,
+                address,
+                // This priority should be lower than the priority of the
+                // transfer created in `read_all`. I'm not sure how relevant
+                // that is in practice, but it makes sense, and as I've seen a
+                // comment to that effect in ST's HAL code, I'd rather be
+                // careful than risk weird bugs.
+                dma::Priority::high(),
+                dma::Direction::memory_to_peripheral(),
+            )
+        }
     }
 }
 
@@ -272,25 +291,44 @@ impl Rx {
     /// Panics, if the buffer length is larger than `u16::max_value()`.
     ///
     /// The AES peripheral works with 128-bit blocks, which means the buffer
-    /// length must be a multiple of 4. Panics, if this is not the case.
+    /// length must be a multiple of 16. Panics, if this is not the case.
+    ///
+    /// Panics, if the buffer is not aligned to a word boundary.
     pub fn read_all<Buffer, Channel>(self,
         dma:     &mut dma::Handle,
         buffer:  Pin<Buffer>,
         channel: Channel,
     )
-        -> dma::Transfer<Self, Channel, Buffer, dma::Ready>
+        -> Transfer<Self, Channel, Buffer, dma::Ready>
         where
             Self:           dma::Target<Channel>,
             Buffer:         DerefMut + 'static,
-            Buffer::Target: AsMutSlice<Element=u32>,
+            Buffer::Target: AsMutSlice<Element=u8>,
             Channel:        dma::Channel,
     {
-        assert!(buffer.as_slice().len() % 4 == 0);
+        assert!(buffer.as_slice().len() % 16 == 0);
 
         // Safe, because we're only taking the address of a register.
         let address = &unsafe { &*pac::AES::ptr() }.doutr as *const _ as u32;
 
-        dma::Transfer::peripheral_to_memory(dma, self, channel, buffer, address)
+        // Safe, because the traits bounds of this method guarantee that
+        // `buffer` can be written to.
+        unsafe {
+            Transfer::new(
+                dma,
+                self,
+                channel,
+                buffer,
+                address,
+                // This priority should be higher than the priority of the
+                // transfer created in `write_all`. I'm not sure how relevant
+                // that is in practice, but it makes sense, and as I've seen a
+                // comment to that effect in ST's HAL code, I'd rather be
+                // careful than risk weird bugs.
+                dma::Priority::very_high(),
+                dma::Direction::peripheral_to_memory(),
+            )
+        }
     }
 }
 
@@ -306,4 +344,126 @@ pub type Block = [u8; 16];
 pub enum Error {
     /// AES peripheral is busy
     Busy,
+}
+
+
+/// Wrapper around a [`dma::Transfer`].
+///
+/// This struct is required, because under the hood, the AES peripheral only
+/// supports 32-bit word DMA transfers, while the public API works with byte
+/// slices.
+pub struct Transfer<Target, Channel, Buffer, State> {
+    buffer: Pin<Buffer>,
+    inner:  dma::Transfer<Target, Channel, dma::PtrBuffer<u32>, State>,
+}
+
+impl<Target, Channel, Buffer> Transfer<Target, Channel, Buffer, dma::Ready>
+    where
+        Target:         dma::Target<Channel>,
+        Channel:        dma::Channel,
+        Buffer:         Deref + 'static,
+        Buffer::Target: AsSlice<Element=u8>,
+{
+    /// Create a new instance of `Transfer`
+    ///
+    /// # Safety
+    ///
+    /// If this is used to prepare a memory-to-peripheral transfer, the caller
+    /// must make sure that the buffer can be read from safely.
+    ///
+    /// If this is used to prepare a peripheral-to-memory transfer, the caller
+    /// must make sure that the buffer can be written to safely.
+    ///
+    /// The caller must guarantee that the buffer length is a multiple of 4.
+    unsafe fn new(
+        dma:      &mut dma::Handle,
+        target:   Target,
+        channel:  Channel,
+        buffer:   Pin<Buffer>,
+        address:  u32,
+        priority: dma::Priority,
+        dir:      dma::Direction,
+    )
+        -> Self
+    {
+        let transfer = dma::Transfer::new(
+            dma,
+            target,
+            channel,
+            // The caller must guarantee that our length is a multiple of 4, so
+            // this should be fine.
+            Pin::new(dma::PtrBuffer {
+                ptr: buffer.as_slice().as_ptr() as *const u32,
+                len: buffer.as_slice().len() / 4,
+            }),
+            address,
+            priority,
+            dir,
+        );
+
+        Self {
+            buffer: buffer,
+            inner:  transfer,
+        }
+    }
+
+    /// Enables the provided interrupts
+    ///
+    /// This setting only affects this transfer. It doesn't affect transfer on
+    /// other channels, or subsequent transfers on the same channel.
+    pub fn enable_interrupts(&mut self, interrupts: dma::Interrupts) {
+        self.inner.enable_interrupts(interrupts)
+    }
+
+    /// Start the DMA transfer
+    ///
+    /// Consumes this instance of `Transfer` and returns a new one, with its
+    /// state changes to indicate that the transfer has been started.
+    pub fn start(self) -> Transfer<Target, Channel, Buffer, dma::Started> {
+        Transfer {
+            buffer: self.buffer,
+            inner:  self.inner.start(),
+        }
+    }
+}
+
+impl<Target, Channel, Buffer> Transfer<Target, Channel, Buffer, dma::Started>
+    where
+        Channel: dma::Channel,
+{
+    /// Indicates whether the transfer is still ongoing
+    pub fn is_active(&self) -> bool {
+        self.inner.is_active()
+    }
+
+    /// Waits for the transfer to finish and returns the owned resources
+    ///
+    /// This function will busily wait until the transfer is finished. If you
+    /// don't want this, please call this function only once you know that the
+    /// transfer has finished.
+    ///
+    /// This function will return immediately, if [`Transfer::is_active`]
+    /// returns `false`.
+    pub fn wait(self)
+        -> Result<
+            dma::TransferResources<Target, Channel, Buffer>,
+            (dma::TransferResources<Target, Channel, Buffer>, dma::Error)
+        >
+    {
+        let (res, err) = match self.inner.wait() {
+            Ok(res)         => (res, None),
+            Err((res, err)) => (res, Some(err)),
+        };
+
+        let res = dma::TransferResources {
+            target:  res.target,
+            channel: res.channel,
+            buffer:  self.buffer,
+        };
+
+        match err {
+            None      => Ok(res),
+            Some(err) => Err((res, err)),
+        }
+    }
 }

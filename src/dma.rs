@@ -15,10 +15,8 @@
 
 use core::{
     fmt,
-    ops::{
-        Deref,
-        DerefMut,
-    },
+    mem,
+    ops::Deref,
     pin::Pin,
     sync::atomic::{
         compiler_fence,
@@ -26,10 +24,7 @@ use core::{
     }
 };
 
-use as_slice::{
-    AsMutSlice,
-    AsSlice,
-};
+use as_slice::AsSlice;
 
 use crate::{
     pac::{
@@ -76,8 +71,8 @@ pub struct Handle {
 }
 
 
-pub struct Transfer<C, T, B, State> {
-    res:    TransferResources<C, T, B>,
+pub struct Transfer<T, C, B, State> {
+    res:    TransferResources<T, C, B>,
     _state: State,
 }
 
@@ -86,60 +81,6 @@ impl<T, C, B> Transfer<T, C, B, Ready>
         T: Target<C>,
         C: Channel,
 {
-    pub(crate) fn memory_to_peripheral<Word>(
-        handle:  &mut Handle,
-        target:  T,
-        channel: C,
-        buffer:  Pin<B>,
-        address: u32,
-    )
-        -> Self
-        where
-            B:         Deref,
-            B::Target: AsSlice<Element=Word>,
-            Word:      SupportedWordSize,
-    {
-        // Safe, because the traits bounds of this method guarantee that
-        // `buffer` can be read from.
-        unsafe {
-            Self::new(
-                handle,
-                target,
-                channel,
-                buffer,
-                address,
-                ccr1::DIRW::FROMMEMORY,
-            )
-        }
-    }
-
-    pub(crate) fn peripheral_to_memory<Word>(
-        handle:  &mut Handle,
-        target:  T,
-        channel: C,
-        buffer:  Pin<B>,
-        address: u32,
-    )
-        -> Self
-        where
-            B:         DerefMut,
-            B::Target: AsMutSlice<Element=Word>,
-            Word:      SupportedWordSize,
-    {
-        // Safe, because the traits bounds of this method guarantee that
-        // `buffer` can be written to.
-        unsafe {
-            Self::new(
-                handle,
-                target,
-                channel,
-                buffer,
-                address,
-                ccr1::DIRW::FROMPERIPHERAL,
-            )
-        }
-    }
-
     /// Internal constructor
     ///
     /// # Safety
@@ -153,27 +94,31 @@ impl<T, C, B> Transfer<T, C, B, Ready>
     /// # Panics
     ///
     /// Panics, if the length of the buffer is larger than `u16::max_value()`.
-    unsafe fn new<Word>(
-        handle:  &mut Handle,
-        target:  T,
-        channel: C,
-        buffer:  Pin<B>,
-        address: u32,
-        dir:     ccr1::DIRW,
+    ///
+    /// Panics, if the buffer is not aligned to the word size.
+    pub(crate) unsafe fn new<Word>(
+        handle:   &mut Handle,
+        target:   T,
+        channel:  C,
+        buffer:   Pin<B>,
+        address:  u32,
+        priority: Priority,
+        dir:      Direction,
     )
         -> Self
         where
             B:         Deref,
-            B::Target: AsSlice<Element=Word>,
+            B::Target: Buffer<Word>,
             Word:      SupportedWordSize,
     {
-        assert!(buffer.as_slice().len() <= u16::max_value() as usize);
+        assert!(buffer.len() <= u16::max_value() as usize);
+        assert_eq!(buffer.as_ptr().align_offset(mem::size_of::<Word>()), 0);
 
         channel.select_target(handle, &target);
         channel.set_peripheral_address(handle, address);
-        channel.set_memory_address(handle, buffer.as_slice().as_ptr() as u32);
-        channel.set_transfer_len(handle, buffer.as_slice().len() as u16);
-        channel.configure::<Word>(handle, dir);
+        channel.set_memory_address(handle, buffer.as_ptr() as u32);
+        channel.set_transfer_len(handle, buffer.len() as u16);
+        channel.configure::<Word>(handle, priority.0, dir.0);
 
         Transfer {
             res: TransferResources {
@@ -185,10 +130,18 @@ impl<T, C, B> Transfer<T, C, B, Ready>
         }
     }
 
+    /// Enables the provided interrupts
+    ///
+    /// This setting only affects this transfer. It doesn't affect transfer on
+    /// other channels, or subsequent transfers on the same channel.
     pub fn enable_interrupts(&mut self, interrupts: Interrupts) {
         self.res.channel.enable_interrupts(interrupts);
     }
 
+    /// Start the DMA transfer
+    ///
+    /// Consumes this instance of `Transfer` and returns a new one, with its
+    /// state changes to indicate that the transfer has been started.
     pub fn start(self) -> Transfer<T, C, B, Started> {
         compiler_fence(Ordering::SeqCst);
 
@@ -209,7 +162,7 @@ impl<T, C, B> Transfer<T, C, B, Started>
         self.res.channel.is_active()
     }
 
-    /// Waits for the transfer to finish and return owned resources
+    /// Waits for the transfer to finish and returns the owned resources
     ///
     /// This function will busily wait until the transfer is finished. If you
     /// don't want this, please call this function only once you know that the
@@ -257,6 +210,42 @@ impl<T, C, B> fmt::Debug for TransferResources<T, C, B> {
 }
 
 
+/// The priority of the DMA transfer
+pub struct Priority(ccr1::PLW);
+
+impl Priority {
+    pub fn low() -> Self {
+        Self(ccr1::PLW::LOW)
+    }
+
+    pub fn medium() -> Self {
+        Self(ccr1::PLW::MEDIUM)
+    }
+
+    pub fn high() -> Self {
+        Self(ccr1::PLW::HIGH)
+    }
+
+    pub fn very_high() -> Self {
+        Self(ccr1::PLW::VERYHIGH)
+    }
+}
+
+
+/// The direction of the DMA transfer
+pub(crate) struct Direction(ccr1::DIRW);
+
+impl Direction {
+    pub fn memory_to_peripheral() -> Self {
+        Self(ccr1::DIRW::FROMMEMORY)
+    }
+
+    pub fn peripheral_to_memory() -> Self {
+        Self(ccr1::DIRW::FROMPERIPHERAL)
+    }
+}
+
+
 #[derive(Debug)]
 pub struct Error;
 
@@ -266,7 +255,11 @@ pub trait Channel: Sized {
     fn set_peripheral_address(&self, _: &mut Handle, address: u32);
     fn set_memory_address(&self, _: &mut Handle, address: u32);
     fn set_transfer_len(&self, _: &mut Handle, len: u16);
-    fn configure<Word>(&self, _: &mut Handle, dir: ccr1::DIRW)
+    fn configure<Word>(&self,
+        _:        &mut Handle,
+        priority: ccr1::PLW,
+        dir:      ccr1::DIRW,
+    )
         where Word: SupportedWordSize;
     fn enable_interrupts(&self, interrupts: Interrupts);
     fn start(&self);
@@ -332,8 +325,9 @@ macro_rules! impl_channel {
                 }
 
                 fn configure<Word>(&self,
-                    handle: &mut Handle,
-                    dir:    ccr1::DIRW,
+                    handle:   &mut Handle,
+                    priority: ccr1::PLW,
+                    dir:      ccr1::DIRW,
                 )
                     where Word: SupportedWordSize
                 {
@@ -351,8 +345,8 @@ macro_rules! impl_channel {
                         w
                             // Memory-to-memory mode disabled
                             .mem2mem().disabled()
-                            // Low priority
-                            .pl().low()
+                            // Priority level
+                            .pl().bits(priority._bits())
                             // Increment memory pointer
                             .minc().enabled()
                             // Don't increment peripheral pointer
@@ -482,6 +476,52 @@ pub struct Ready;
 
 /// Indicates that a DMA transfer has been started
 pub struct Started;
+
+
+/// Implemented for types, that can be used as a buffer for DMA transfers
+pub(crate) trait Buffer<Word> {
+    fn as_ptr(&self) -> *const Word;
+    fn len(&self) -> usize;
+}
+
+impl<T, Word> Buffer<Word> for T
+    where T: ?Sized + AsSlice<Element=Word>
+{
+    fn as_ptr(&self) -> *const Word {
+        self.as_slice().as_ptr()
+    }
+
+    fn len(&self) -> usize {
+        self.as_slice().len()
+    }
+}
+
+
+/// Can be used as a fallback [`Buffer`], if safer implementations can't be used
+pub(crate) struct PtrBuffer<Word> {
+    pub ptr: *const Word,
+    pub len: usize,
+}
+
+// Required to make in possible to put this in a `Pin`, in a way that satisfies
+// the requirements on `Transfer::new`.
+impl<Word> Deref for PtrBuffer<Word> {
+    type Target = Self;
+
+    fn deref(&self) -> &Self::Target {
+        self
+    }
+}
+
+impl<Word> Buffer<Word> for PtrBuffer<Word> {
+    fn as_ptr(&self) -> *const Word {
+        self.ptr
+    }
+
+    fn len(&self) -> usize {
+        self.len
+    }
+}
 
 
 pub trait SupportedWordSize {
