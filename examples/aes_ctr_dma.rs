@@ -21,7 +21,10 @@ use cortex_m::{
 use cortex_m_rt::entry;
 use stm32l0xx_hal::{
     prelude::*,
-    aes::AES,
+    aes::{
+        self,
+        AES,
+    },
     dma::{
         self,
         DMA,
@@ -68,7 +71,7 @@ fn main() -> ! {
     let mut decrypted = Pin::new(unsafe { &mut DECRYPTED });
 
     loop {
-        let mut ctr_stream = aes.start_ctr_stream(key, ivr);
+        let mut ctr_stream = aes.enable(aes::Mode::ctr(ivr), key);
         let mut tx_transfer = ctr_stream.tx
             .write_all(
                 &mut dma.handle,
@@ -114,12 +117,12 @@ fn main() -> ! {
         dma.channels.channel1 = tx_res.channel;
         dma.channels.channel2 = rx_res.channel;
         encrypted             = rx_res.buffer;
-        aes                   = ctr_stream.finish();
+        aes                   = ctr_stream.disable();
 
         assert_ne!(**encrypted, [0; 32]);
         assert_ne!(**encrypted, **data);
 
-        let mut ctr_stream = aes.start_ctr_stream(key, ivr);
+        let mut ctr_stream = aes.enable(aes::Mode::ctr(ivr), key);
         let mut tx_transfer = ctr_stream.tx
             .write_all(
                 &mut dma.handle,
@@ -166,7 +169,7 @@ fn main() -> ! {
         dma.channels.channel2 = rx_res.channel;
         encrypted             = tx_res.buffer;
         decrypted             = rx_res.buffer;
-        aes                   = ctr_stream.finish();
+        aes                   = ctr_stream.disable();
 
         assert_eq!(**decrypted, **data);
     }

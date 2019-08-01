@@ -21,7 +21,13 @@ use void::Void;
 
 use crate::{
     dma,
-    pac,
+    pac::{
+        self,
+        aes::{
+            self,
+            cr,
+        },
+    },
     rcc::Rcc,
 };
 
@@ -57,45 +63,38 @@ impl AES {
         }
     }
 
-    /// Start a CTR stream
+    /// Enable the AES peripheral
     ///
-    /// Will consume this AES instance and return another instance which is
-    /// switched to CTR mode. While in CTR mode, you can use other methods to
-    /// encrypt/decrypt data.
-    pub fn start_ctr_stream(self, key: [u32; 4], init_vector: [u32; 3])
-        -> CtrStream
+    /// Returns a [`Stream`] instance which can be used to encrypt or decrypt
+    /// data using the mode selected with the `mode` argument.
+    ///
+    /// Consumes the `AES` instance. You can get it back later once you're done
+    /// with the `Stream`, using [`Stream::disable`].
+    pub fn enable<M>(self, mode: M, key: [u32; 4]) -> Stream
+        where M: Mode
     {
-        // Initialize key
+        // Write key. This is safe, as the register accepts the full range of
+        // `u32`.
         self.aes.keyr0.write(|w| unsafe { w.bits(key[0]) });
         self.aes.keyr1.write(|w| unsafe { w.bits(key[1]) });
         self.aes.keyr2.write(|w| unsafe { w.bits(key[2]) });
         self.aes.keyr3.write(|w| unsafe { w.bits(key[3]) });
 
-        // Initialize initialization vector
-        //
-        // See STM32L0x2 reference manual, table 78 on page 408.
-        self.aes.ivr3.write(|w| unsafe { w.bits(init_vector[0]) });
-        self.aes.ivr2.write(|w| unsafe { w.bits(init_vector[1]) });
-        self.aes.ivr1.write(|w| unsafe { w.bits(init_vector[2]) });
-        self.aes.ivr0.write(|w| unsafe { w.bits(0x0001) }); // counter
+        mode.prepare(&self.aes);
 
         self.aes.cr.modify(|_, w| {
-            let w = unsafe {
-                w
-                    // Select Counter Mode (CTR) mode
-                    .chmod().bits(0b10)
-                    // These bits mean encryption mode, but in CTR mode,
-                    // encryption and descryption are technically identical, so
-                    // this is fine for either mode.
-                    .mode().bits(0b00)
-                    // Configure for stream of bytes
-                    .datatype().bits(0b10)
-            };
+            // Select mode
+            mode.select(w);
+
+            // Configure for stream of bytes
+            // Safe, as we write a valid byte pattern.
+            unsafe { w.datatype().bits(0b10) };
+
             // Enable peripheral
             w.en().set_bit()
         });
 
-        CtrStream {
+        Stream {
             aes: self,
             rx:  Rx(()),
             tx:  Tx(()),
@@ -104,23 +103,27 @@ impl AES {
 }
 
 
-/// An active encryption/decryption stream using CTR mode
+/// An active encryption/decryption stream
 ///
-/// You can get an instance of this struct by calling [`AES::start_ctr_stream`].
-pub struct CtrStream {
+/// You can get an instance of this struct by calling [`AES::enable`].
+pub struct Stream {
     aes: AES,
 
+    /// Can be used to write data to the AES peripheral
     pub tx: Tx,
+
+    /// Can be used to read data from the AES peripheral
     pub rx: Rx,
 }
 
-impl CtrStream {
+impl Stream {
     /// Processes one block of data
     ///
-    /// In CTR mode, encrypting and decrypting work the same. If you pass a
-    /// block of clear data to this function, an encrypted block is returned. If
-    /// you pass a block of encrypted data, it is decrypted and a clear block
-    /// is returned.
+    /// Writes one block of data to the AES peripheral, wait until it is
+    /// processed then reads the processed block and returns it.
+    ///
+    /// Whether this is encryption or decryption depends on the mode that was
+    /// selected when this `Stream` was created.
     pub fn process(&mut self, input: &Block) -> Result<Block, Error> {
         self.tx.write(input)?;
         // Can't panic. Error value of `Rx::read` is `Void`.
@@ -128,11 +131,12 @@ impl CtrStream {
         Ok(output)
     }
 
-    /// Finish the CTR stream
+    /// Disable the AES peripheral
     ///
-    /// Consumes the stream and returns the AES peripheral that was used to
-    /// start it.
-    pub fn finish(self) -> AES {
+    /// Consumes the stream and returns the disabled [`AES`] instance. Call this
+    /// method when you're done encrypting/decrypting data. You can then create
+    /// another `Stream` using [`AES::enable`].
+    pub fn disable(self) -> AES {
         // Disable AES
         self.aes.aes.cr.modify(|_, w| w.en().clear_bit());
 
@@ -143,7 +147,7 @@ impl CtrStream {
 
 /// Can be used to write data to the AES peripheral
 ///
-/// You can access this struct via [`CtrStream`].
+/// You can access this struct via [`Stream`].
 pub struct Tx(());
 
 impl Tx {
@@ -243,7 +247,7 @@ impl Tx {
 
 /// Can be used to read data from the AES peripheral
 ///
-/// You can access this struct via [`CtrStream`].
+/// You can access this struct via [`Stream`].
 pub struct Rx(());
 
 impl Rx {
@@ -331,6 +335,211 @@ impl Rx {
         }
     }
 }
+
+
+/// Implemented for all chaining modes
+///
+/// This is mostly an internal trait. The user won't typically need to use or
+/// implement this, except to call the various static methods that create a
+/// mode.
+pub trait Mode {
+    fn prepare(&self, _: &aes::RegisterBlock);
+    fn select(&self, _: &mut cr::W);
+}
+
+impl Mode {
+    /// Use this with [`AES::enable`] to encrypt using ECB
+    pub fn ecb_encrypt() -> ECB<Encrypt> {
+        ECB(Encrypt)
+    }
+
+    /// Use this with [`AES::enable`] to decrypt using ECB
+    pub fn ecb_decrypt() -> ECB<Decrypt> {
+        ECB(Decrypt)
+    }
+
+    /// Use this with [`AES::enable`] to encrypt using CBC
+    pub fn cbc_encrypt(init_vector: [u32; 4]) -> CBC<Encrypt> {
+        CBC {
+            _mode: Encrypt,
+            init_vector,
+        }
+    }
+
+    /// Use this with [`AES::enable`] to decrypt using CBC
+    pub fn cbc_decrypt(init_vector: [u32; 4]) -> CBC<Decrypt> {
+        CBC {
+            _mode: Decrypt,
+            init_vector,
+        }
+    }
+
+    /// Use this with [`AES::enable`] to encrypt or decrypt using CTR
+    pub fn ctr(init_vector: [u32; 3]) -> CTR {
+        CTR {
+            init_vector,
+        }
+    }
+}
+
+
+/// The ECB (electronic code book) chaining mode
+///
+/// Can be passed [`AES::enable`], to start encrypting or decrypting using ECB
+/// mode. `Mode` must be either [`Encrypt`] or [`Decrypt`].
+///
+/// You gen get an instance of this struct via [`Mode::ecb_encrypt`] or
+/// [`Mode::ecb_decrypt`].
+pub struct ECB<Mode>(Mode);
+
+impl Mode for ECB<Encrypt> {
+    fn prepare(&self, _: &aes::RegisterBlock) {
+        // Nothing to do.
+    }
+
+    fn select(&self, w: &mut cr::W) {
+        // Safe, as we're only writing valid bit patterns.
+        unsafe {
+            w
+                // Select ECB chaining mode
+                .chmod().bits(0b00)
+                // Select encryption mode
+                .mode().bits(0b00);
+        }
+    }
+}
+
+impl Mode for ECB<Decrypt> {
+    fn prepare(&self, aes: &aes::RegisterBlock) {
+        derive_key(aes)
+    }
+
+    fn select(&self, w: &mut cr::W) {
+        // Safe, as we're only writing valid bit patterns.
+        unsafe {
+            w
+                // Select ECB chaining mode
+                .chmod().bits(0b00)
+                // Select decryption mode
+                .mode().bits(0b10);
+        }
+    }
+}
+
+
+/// The CBC (cipher block chaining) chaining mode
+///
+/// Can be passed [`AES::enable`], to start encrypting or decrypting using CBC
+/// mode. `Mode` must be either [`Encrypt`] or [`Decrypt`].
+///
+/// You gen get an instance of this struct via [`Mode::cbc_encrypt`] or
+/// [`Mode::cbc_decrypt`].
+pub struct CBC<Mode> {
+    _mode:       Mode,
+    init_vector: [u32; 4],
+}
+
+impl Mode for CBC<Encrypt> {
+    fn prepare(&self, aes: &aes::RegisterBlock) {
+        // Safe, as the registers accept the full range of `u32`.
+        aes.ivr3.write(|w| unsafe { w.bits(self.init_vector[0]) });
+        aes.ivr2.write(|w| unsafe { w.bits(self.init_vector[1]) });
+        aes.ivr1.write(|w| unsafe { w.bits(self.init_vector[2]) });
+        aes.ivr0.write(|w| unsafe { w.bits(self.init_vector[3]) });
+    }
+
+    fn select(&self, w: &mut cr::W) {
+        // Safe, as we're only writing valid bit patterns.
+        unsafe {
+            w
+                // Select CBC chaining mode
+                .chmod().bits(0b01)
+                // Select encryption mode
+                .mode().bits(0b00);
+        }
+    }
+}
+
+impl Mode for CBC<Decrypt> {
+    fn prepare(&self, aes: &aes::RegisterBlock) {
+        derive_key(aes);
+
+        // Safe, as the registers accept the full range of `u32`.
+        aes.ivr3.write(|w| unsafe { w.bits(self.init_vector[0]) });
+        aes.ivr2.write(|w| unsafe { w.bits(self.init_vector[1]) });
+        aes.ivr1.write(|w| unsafe { w.bits(self.init_vector[2]) });
+        aes.ivr0.write(|w| unsafe { w.bits(self.init_vector[3]) });
+    }
+
+    fn select(&self, w: &mut cr::W) {
+        // Safe, as we're only writing valid bit patterns.
+        unsafe {
+            w
+                // Select CBC chaining mode
+                .chmod().bits(0b01)
+                // Select decryption mode
+                .mode().bits(0b10);
+        }
+    }
+}
+
+
+/// The CTR (counter) chaining mode
+///
+/// Can be passed [`AES::enable`], to start encrypting or decrypting using CTR
+/// mode. In CTR mode, encryption and decryption are technically identical, so
+/// further qualification is not required.
+///
+/// You gen get an instance of this struct via [`Mode::ctr`].
+pub struct CTR {
+    init_vector: [u32; 3],
+}
+
+impl Mode for CTR {
+    fn prepare(&self, aes: &aes::RegisterBlock) {
+        // Initialize initialization vector
+        //
+        // See STM32L0x2 reference manual, table 78 on page 408.
+        aes.ivr3.write(|w| unsafe { w.bits(self.init_vector[0]) });
+        aes.ivr2.write(|w| unsafe { w.bits(self.init_vector[1]) });
+        aes.ivr1.write(|w| unsafe { w.bits(self.init_vector[2]) });
+        aes.ivr0.write(|w| unsafe { w.bits(0x0001) }); // counter
+    }
+
+    fn select(&self, w: &mut cr::W) {
+        // Safe, as we're only writing valid bit patterns.
+        unsafe {
+            w
+                // Select Counter Mode (CTR) mode
+                .chmod().bits(0b10)
+                // These bits mean encryption mode, but in CTR mode,
+                // encryption and descryption are technically identical, so this
+                // is fine for either mode.
+                .mode().bits(0b00);
+        }
+    }
+}
+
+
+fn derive_key(aes: &aes::RegisterBlock) {
+    // Select key derivation mode. This is safe, as we're writing a valid bit
+    // pattern.
+    unsafe { aes.cr.modify(|_, w| w.mode().bits(0b01)) };
+
+    // Enable the peripheral. It will be automatically disabled again once the
+    // key has been derived.
+    aes.cr.modify(|_, w| w.en().set_bit());
+
+    // Wait for key derivation to finish
+    while aes.sr.read().ccf().bit_is_clear() {}
+}
+
+
+/// Used to identify encryption mode
+pub struct Encrypt;
+
+/// Used to identify decryption mode
+pub struct Decrypt;
 
 
 /// A 128-bit block

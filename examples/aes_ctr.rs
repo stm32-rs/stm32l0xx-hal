@@ -11,7 +11,10 @@ extern crate panic_semihosting;
 use cortex_m_rt::entry;
 use stm32l0xx_hal::{
     prelude::*,
-    aes::AES,
+    aes::{
+        self,
+        AES,
+    },
     pac,
     rcc::Config,
 };
@@ -35,7 +38,7 @@ fn main() -> ! {
     ];
 
     loop {
-        let mut ctr_stream = aes.start_ctr_stream(key, ivr);
+        let mut ctr_stream = aes.enable(aes::Mode::ctr(ivr), key);
 
         let mut encrypted = [[0; 16]; 4];
         encrypted[0] = ctr_stream.process(&data).unwrap();
@@ -48,8 +51,8 @@ fn main() -> ! {
         assert_ne!(encrypted[2], data);
         assert_ne!(encrypted[3], data);
 
-        aes = ctr_stream.finish();
-        let mut ctr_stream = aes.start_ctr_stream(key, ivr);
+        aes = ctr_stream.disable();
+        let mut ctr_stream = aes.enable(aes::Mode::ctr(ivr), key);
 
         let mut decrypted = [[0; 16]; 4];
         decrypted[0] = ctr_stream.process(&encrypted[0]).unwrap();
@@ -62,6 +65,6 @@ fn main() -> ! {
         assert_eq!(decrypted[2], data);
         assert_eq!(decrypted[3], data);
 
-        aes = ctr_stream.finish();
+        aes = ctr_stream.disable();
     }
 }

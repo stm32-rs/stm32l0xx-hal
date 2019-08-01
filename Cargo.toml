@@ -84,11 +84,19 @@ opt-level = "s"
 
 
 [[example]]
-name = "aes"
+name = "aes_ecb"
 required-features = ["stm32l082"]
 
 [[example]]
-name = "aes-dma"
+name = "aes_cbc"
+required-features = ["stm32l082"]
+
+[[example]]
+name = "aes_ctr"
+required-features = ["stm32l082"]
+
+[[example]]
+name = "aes_ctr_dma"
 required-features = ["stm32l082"]
 
 [[example]]
