@@ -3,7 +3,7 @@ use core::marker::PhantomData;
 use core::ptr;
 
 use crate::gpio::gpioa::*;
-use crate::gpio::{AltMode, Floating, Input};
+use crate::gpio::AltMode;
 use crate::hal;
 use crate::hal::prelude::*;
 pub use crate::pac::USART2;
@@ -14,7 +14,29 @@ use nb::block;
 pub use crate::pac::LPUART1;
 
 #[cfg(feature = "stm32l0x2")]
-pub use crate::pac::USART1;
+use core::{
+    ops::{
+        Deref,
+        DerefMut,
+    },
+    pin::Pin,
+};
+
+#[cfg(feature = "stm32l0x2")]
+use as_slice::{
+    AsMutSlice,
+    AsSlice,
+};
+
+#[cfg(feature = "stm32l0x2")]
+pub use crate::{
+    dma,
+    gpio::gpiob::{
+        PB6,
+        PB7,
+    },
+    pac::USART1,
+};
 
 /// Serial error
 #[derive(Debug)]
@@ -129,45 +151,33 @@ pub trait Pins<USART> {
     fn setup(&self);
 }
 
-#[cfg(feature = "stm32l0x1")]
-impl Pins<LPUART1> for (PA2<Input<Floating>>, PA3<Input<Floating>>) {
-    fn setup(&self) {
-        self.0.set_alt_mode(AltMode::AF6);
-        self.1.set_alt_mode(AltMode::AF6);
-    }
-}
-
-#[cfg(feature = "stm32l0x2")]
-impl Pins<USART1> for (PA9<Input<Floating>>, PA10<Input<Floating>>) {
-    fn setup(&self) {
-        self.0.set_alt_mode(AltMode::AF4);
-        self.1.set_alt_mode(AltMode::AF4);
-    }
-}
-
-#[cfg(feature = "stm32l0x2")]
-impl Pins<USART2> for (PA2<Input<Floating>>, PA3<Input<Floating>>) {
-    fn setup(&self) {
-        self.0.set_alt_mode(AltMode::AF4);
-        self.1.set_alt_mode(AltMode::AF4);
+macro_rules! impl_pins {
+    ($($instance:ty, $tx:ident, $rx:ident, $alt:ident;)*) => {
+        $(
+            impl<Tx, Rx> Pins<$instance> for ($tx<Tx>, $rx<Rx>) {
+                fn setup(&self) {
+                    self.0.set_alt_mode(AltMode::$alt);
+                    self.1.set_alt_mode(AltMode::$alt);
+                }
+            }
+        )*
     }
 }
 
 #[cfg(feature = "stm32l0x1")]
-impl Pins<USART2> for (PA9<Input<Floating>>, PA10<Input<Floating>>) {
-    fn setup(&self) {
-        self.0.set_alt_mode(AltMode::AF4);
-        self.1.set_alt_mode(AltMode::AF4);
-    }
-}
+impl_pins!(
+    LPUART1, PA2, PA3,  AF6;
+    USART2,  PA9, PA10, AF4;
+);
 
 #[cfg(feature = "stm32l0x2")]
-impl Pins<USART2> for (PA14<Input<Floating>>, PA15<Input<Floating>>) {
-    fn setup(&self) {
-        self.0.set_alt_mode(AltMode::AF4);
-        self.1.set_alt_mode(AltMode::AF4);
-    }
-}
+impl_pins!(
+    USART1, PA9,  PA10, AF4;
+    USART1, PB6,  PB7,  AF0;
+    USART2, PA2,  PA3,  AF4;
+    USART2, PA14, PA15, AF4;
+);
+
 
 /// Serial abstraction
 pub struct Serial<USART> {
@@ -235,7 +245,16 @@ macro_rules! usart {
 
                     // Reset other registers to disable advanced USART features
                     usart.cr2.reset();
-                    usart.cr3.reset();
+
+                    // Enable DMA
+                    usart.cr3.write(|w|
+                        w
+                            // Stop DMA transfer on reception error
+                            .ddre().disabled()
+                            // Enable DMA
+                            .dmat().enabled()
+                            .dmar().enabled()
+                    );
 
                     // Enable transmission and receiving
                     // and configure frame
@@ -342,6 +361,41 @@ macro_rules! usart {
                 }
             }
 
+            #[cfg(feature = "stm32l0x2")]
+            impl Rx<$USARTX> {
+                pub fn read_all<Buffer, Channel>(self,
+                    dma:     &mut dma::Handle,
+                    buffer:  Pin<Buffer>,
+                    channel: Channel,
+                )
+                    -> dma::Transfer<Self, Channel, Buffer, dma::Ready>
+                    where
+                        Self:           dma::Target<Channel>,
+                        Buffer:         DerefMut + 'static,
+                        Buffer::Target: AsMutSlice<Element=u8>,
+                        Channel:        dma::Channel,
+                {
+                    // Safe, because we're only taking the address of a
+                    // register.
+                    let address =
+                        &unsafe { &*$USARTX::ptr() }.rdr as *const _ as u32;
+
+                    // Safe, because the trait bounds of this method guarantee
+                    // that the buffer can be written to.
+                    unsafe {
+                        dma::Transfer::new(
+                            dma,
+                            self,
+                            channel,
+                            buffer,
+                            address,
+                            dma::Priority::high(),
+                            dma::Direction::peripheral_to_memory(),
+                        )
+                    }
+                }
+            }
+
             impl hal::serial::Read<u8> for Rx<$USARTX> {
                 type Error = Error;
 
@@ -420,6 +474,41 @@ macro_rules! usart {
                         Ok(())
                     } else {
                         Err(nb::Error::WouldBlock)
+                    }
+                }
+            }
+
+            #[cfg(feature = "stm32l0x2")]
+            impl Tx<$USARTX> {
+                pub fn write_all<Buffer, Channel>(self,
+                    dma:     &mut dma::Handle,
+                    buffer:  Pin<Buffer>,
+                    channel: Channel,
+                )
+                    -> dma::Transfer<Self, Channel, Buffer, dma::Ready>
+                    where
+                        Self:           dma::Target<Channel>,
+                        Buffer:         Deref + 'static,
+                        Buffer::Target: AsSlice<Element=u8>,
+                        Channel:        dma::Channel,
+                {
+                    // Safe, because we're only taking the address of a
+                    // register.
+                    let address =
+                        &unsafe { &*$USARTX::ptr() }.tdr as *const _ as u32;
+
+                    // Safe, because the trait bounds of this method guarantee
+                    // that the buffer can be read from.
+                    unsafe {
+                        dma::Transfer::new(
+                            dma,
+                            self,
+                            channel,
+                            buffer,
+                            address,
+                            dma::Priority::high(),
+                            dma::Direction::memory_to_peripheral(),
+                        )
                     }
                 }
             }

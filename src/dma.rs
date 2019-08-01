@@ -30,8 +30,11 @@ use crate::{
     pac::{
         self,
         dma1::ccr1,
+        USART1,
+        USART2,
     },
     rcc::Rcc,
+    serial,
 };
 
 #[cfg(feature = "stm32l082")]
@@ -460,6 +463,18 @@ macro_rules! impl_target {
         )*
     }
 }
+
+impl_target!(
+    serial::Tx<USART1>, Channel2, 3;
+    serial::Tx<USART1>, Channel4, 3;
+    serial::Rx<USART1>, Channel3, 3;
+    serial::Rx<USART1>, Channel5, 3;
+
+    serial::Tx<USART2>, Channel4, 4;
+    serial::Tx<USART2>, Channel7, 4;
+    serial::Rx<USART2>, Channel5, 4;
+    serial::Rx<USART2>, Channel6, 4;
+);
 
 // See STM32L0x2 Reference Manual, table 51 (page 267).
 #[cfg(feature = "stm32l082")]
