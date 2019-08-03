@@ -34,11 +34,11 @@ Based on the [stm32l1xx-hal](https://github.com/stm32-rs/stm32l1xx-hal) crate by
 
 # Using as a Dependency
 
-To use this crate as a dependency, add the following definition to your `Cargo.toml`:
+To use the stm32l0xx-hal [crate](https://crates.io/crates/stm32l0xx-hal) as a dependency, add the following definition to your `Cargo.toml`:
 
 ``` 
 [dependencies.stm32l0xx-hal]
-version = "0.1.7"
+version = "0.1.8"
 features = ["stm32l0x1", "rt"]
 ```
 
