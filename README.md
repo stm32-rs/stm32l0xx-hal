@@ -38,7 +38,7 @@ To use the stm32l0xx-hal [crate](https://crates.io/crates/stm32l0xx-hal) as a de
 
 ``` 
 [dependencies.stm32l0xx-hal]
-version = "0.1.8"
+version = "0.2.0"
 features = ["stm32l0x1", "rt"]
 ```
 
