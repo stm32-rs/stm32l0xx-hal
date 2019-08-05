@@ -6,7 +6,6 @@ extern crate panic_halt;
 
 
 use cortex_m::{
-    asm,
     interrupt,
     peripheral::NVIC,
 };
@@ -18,6 +17,7 @@ use stm32l0xx_hal::{
         self,
         Interrupt,
     },
+    pwr::PWR,
     rcc::Config,
 };
 
@@ -30,8 +30,10 @@ fn main() -> ! {
     let mut rcc   = dp.RCC.freeze(Config::hsi16());
     let     gpiob = dp.GPIOB.split(&mut rcc);
     let     exti  = dp.EXTI;
+    let mut pwr   = PWR::new(dp.PWR);
     let mut delay = cp.SYST.delay(rcc.clocks);
     let mut nvic  = cp.NVIC;
+    let mut scb   = cp.SCB;
 
     // Those are the user button and blue LED on the B-L072Z-LRWAN1 Discovery
     // board.
@@ -57,7 +59,7 @@ fn main() -> ! {
         interrupt::free(|_| {
             nvic.enable(Interrupt::EXTI2_3);
 
-            asm::wfi();
+            pwr.enter_sleep_mode(&mut scb);
 
             exti.clear_irq(button.i);
             NVIC::unpend(Interrupt::EXTI2_3);
