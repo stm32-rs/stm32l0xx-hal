@@ -545,19 +545,19 @@ pub trait SupportedWordSize {
 
 impl SupportedWordSize for u8 {
     fn size() -> ccr1::MSIZEW {
-        ccr1::MSIZEW::BIT8
+        ccr1::MSIZEW::BITS8
     }
 }
 
 impl SupportedWordSize for u16 {
     fn size() -> ccr1::MSIZEW {
-        ccr1::MSIZEW::BIT16
+        ccr1::MSIZEW::BITS16
     }
 }
 
 impl SupportedWordSize for u32 {
     fn size() -> ccr1::MSIZEW {
-        ccr1::MSIZEW::BIT32
+        ccr1::MSIZEW::BITS32
     }
 }
 
