@@ -2,6 +2,7 @@ use crate::pac::RCC;
 use crate::time::{Hertz, U32Ext};
 
 /// System clock mux source
+#[derive(Clone, Copy)]
 pub enum ClockSrc {
     MSI(MSIRange),
     PLL(PLLSource, PLLMul, PLLDiv),
@@ -334,6 +335,7 @@ impl RccExt for RCC {
         };
 
         let clocks = Clocks {
+            source: cfgr.mux,
             sys_clk: sys_clk.hz(),
             ahb_clk: ahb_freq.hz(),
             apb1_clk: apb1_freq.hz(),
@@ -351,6 +353,7 @@ impl RccExt for RCC {
 /// The existence of this value indicates that the clock configuration can no longer be changed
 #[derive(Clone, Copy)]
 pub struct Clocks {
+    source: ClockSrc,
     sys_clk: Hertz,
     ahb_clk: Hertz,
     apb1_clk: Hertz,
@@ -360,6 +363,11 @@ pub struct Clocks {
 }
 
 impl Clocks {
+    /// Returns the clock source
+    pub fn source(&self) -> &ClockSrc {
+        &self.source
+    }
+
     /// Returns the system (core) frequency
     pub fn sys_clk(&self) -> Hertz {
         self.sys_clk
