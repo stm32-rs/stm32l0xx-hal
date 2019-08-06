@@ -17,7 +17,10 @@ use stm32l0xx_hal::{
         self,
         Interrupt,
     },
-    pwr::PWR,
+    pwr::{
+        self,
+        PWR,
+    },
     rcc::Config,
 };
 
@@ -59,7 +62,13 @@ fn main() -> ! {
         interrupt::free(|_| {
             nvic.enable(Interrupt::EXTI2_3);
 
-            pwr.enter_sleep_mode(&mut scb);
+            pwr.enter_stop_mode(
+                &mut scb,
+                &mut rcc,
+                pwr::StopModeConfig {
+                    ultra_low_power: true,
+                },
+            );
 
             exti.clear_irq(button.i);
             NVIC::unpend(Interrupt::EXTI2_3);
