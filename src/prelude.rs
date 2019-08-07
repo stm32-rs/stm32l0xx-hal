@@ -1,20 +1,20 @@
 pub use embedded_hal::digital::v2::*;
 pub use embedded_hal::prelude::*;
 
-pub use crate::hal::adc::OneShot as _hal_adc_OneShot;
-pub use crate::hal::watchdog::Watchdog as _hal_watchdog_Watchdog;
-pub use crate::hal::watchdog::WatchdogEnable as _hal_watchdog_WatchdogEnable;
+pub use crate::hal::adc::OneShot as _;
+pub use crate::hal::watchdog::Watchdog as _;
+pub use crate::hal::watchdog::WatchdogEnable as _;
 
-pub use crate::adc::AdcExt as _stm32l0xx_hal_analog_AdcExt;
-pub use crate::delay::DelayExt as _stm32l0xx_hal_delay_DelayExt;
-pub use crate::exti::ExtiExt as _stm32l0xx_hal_exti_ExtiExt;
-pub use crate::gpio::GpioExt as _stm32l0xx_hal_gpio_GpioExt;
-pub use crate::i2c::I2cExt as _stm32l0xx_hal_i2c_I2cExt;
-pub use crate::rcc::RccExt as _stm32l0xx_hal_rcc_RccExt;
-pub use crate::serial::Serial1Ext as _stm32l0xx_hal_serial_Serial1Ext;
-pub use crate::serial::Serial2Ext as _stm32l0xx_hal_serial_Serial2Ext;
-pub use crate::spi::SpiExt as _stm32l0xx_hal_spi_SpiExt;
-pub use crate::time::U32Ext as _stm32l0xx_hal_time_U32Ext;
-pub use crate::timer::TimerExt as _stm32l0xx_hal_timer_TimerExt;
-pub use crate::watchdog::IndependedWatchdogExt as _stm32l0xx_hal_watchdog_IndependedWatchdogExt;
-pub use crate::watchdog::WindowWatchdogExt as _stm32l0xx_hal_watchdog_WindowWatchdogExt;
+pub use crate::adc::AdcExt as _;
+pub use crate::delay::DelayExt as _;
+pub use crate::exti::ExtiExt as _;
+pub use crate::gpio::GpioExt as _;
+pub use crate::i2c::I2cExt as _;
+pub use crate::rcc::RccExt as _;
+pub use crate::serial::Serial1Ext as _;
+pub use crate::serial::Serial2Ext as _;
+pub use crate::spi::SpiExt as _;
+pub use crate::time::U32Ext as _;
+pub use crate::timer::TimerExt as _;
+pub use crate::watchdog::IndependedWatchdogExt as _;
+pub use crate::watchdog::WindowWatchdogExt as _;
