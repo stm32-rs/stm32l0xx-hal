@@ -1,10 +1,18 @@
 //! External interrupt controller
 use crate::bb;
 use crate::gpio;
-use crate::pac::EXTI;
+use crate::pac::{
+    self,
+    EXTI,
+};
+use crate::pwr;
 use crate::rcc;
 use crate::rcc::Rcc;
 
+use cortex_m::{
+    interrupt,
+    peripheral::NVIC,
+};
 #[cfg(feature = "stm32l0x1")]
 use stm32l0::stm32l0x1::SYSCFG as syscfg_comp;
 #[cfg(feature = "stm32l0x2")]
@@ -35,6 +43,8 @@ pub trait ExtiExt {
     fn pend_interrupt(&self, line: u8);
     fn clear_irq(&self, line: u8);
     fn get_pending_irq(&self) -> u32;
+    fn wait_for_irq<M>(&mut self, line: u8, power_mode: M, nvic: &mut NVIC)
+        where M: SupportedPowerMode;
 }
 
 pub fn line_is_triggered(reg: u32, line: u8) -> bool {
@@ -156,4 +166,41 @@ impl ExtiExt for EXTI {
         assert!(line < 24);
         self.pr.modify(|_, w| unsafe { w.bits(0b1 << line) });
     }
+
+    /// Enters a low-power mode until an interrupt occurs
+    ///
+    /// Please note that this method will return after _any_ interrupt that can
+    /// wake up the microcontroller from the given power mode.
+    ///
+    /// # Panics
+    ///
+    /// Panics, if `line` is not between 0 and 15 (inclusive).
+    fn wait_for_irq<M>(&mut self, line: u8, mut power_mode: M, nvic: &mut NVIC)
+        where M: SupportedPowerMode
+    {
+        let interrupt = match line {
+            0 ..=  1 => pac::Interrupt::EXTI0_1,
+            2 ..=  3 => pac::Interrupt::EXTI2_3,
+            4 ..= 15 => pac::Interrupt::EXTI4_15,
+            line     => panic!("Line {} not supported", line),
+        };
+
+        // This construct allows us to wait for the interrupt without having to
+        // define an interrupt handler.
+        interrupt::free(|_| {
+            nvic.enable(interrupt);
+
+            power_mode.enter();
+
+            self.clear_irq(line);
+            NVIC::unpend(interrupt);
+            nvic.disable(interrupt);
+        });
+    }
 }
+
+
+pub trait SupportedPowerMode : pwr::PowerMode {}
+
+impl SupportedPowerMode for pwr::SleepMode<'_> {}
+impl SupportedPowerMode for pwr::StopMode<'_> {}

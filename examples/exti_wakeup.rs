@@ -5,18 +5,11 @@
 extern crate panic_halt;
 
 
-use cortex_m::{
-    interrupt,
-    peripheral::NVIC,
-};
 use cortex_m_rt::entry;
 use stm32l0xx_hal::{
     prelude::*,
     exti,
-    pac::{
-        self,
-        Interrupt,
-    },
+    pac,
     pwr::{
         self,
         PWR,
@@ -32,7 +25,7 @@ fn main() -> ! {
 
     let mut rcc   = dp.RCC.freeze(Config::hsi16());
     let     gpiob = dp.GPIOB.split(&mut rcc);
-    let     exti  = dp.EXTI;
+    let mut exti  = dp.EXTI;
     let mut pwr   = PWR::new(dp.PWR);
     let mut delay = cp.SYST.delay(rcc.clocks);
     let mut nvic  = cp.NVIC;
@@ -57,25 +50,17 @@ fn main() -> ! {
     );
 
     loop {
-        // This construct allows us to wait for the interrupt without having to
-        // define an interrupt handler.
-        interrupt::free(|_| {
-            nvic.enable(Interrupt::EXTI2_3);
-
-            pwr
-                .stop_mode(
-                    &mut scb,
-                    &mut rcc,
-                    pwr::StopModeConfig {
-                        ultra_low_power: true,
-                    },
-                )
-                .enter();
-
-            exti.clear_irq(button.i);
-            NVIC::unpend(Interrupt::EXTI2_3);
-            nvic.disable(Interrupt::EXTI2_3);
-        });
+        exti.wait_for_irq(
+            button.i,
+            pwr.stop_mode(
+                &mut scb,
+                &mut rcc,
+                pwr::StopModeConfig {
+                    ultra_low_power: true,
+                },
+            ),
+            &mut nvic,
+        );
 
         led.set_high().unwrap();
         delay.delay_ms(100u32);
