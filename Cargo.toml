@@ -29,7 +29,7 @@ features = ["stm32l0x1", "stm32l0x2", "rt"]
 [dependencies]
 as-slice = "0.1.0"
 embedded-hal = { version = "0.2.3", features = ["unproven"] }
-cortex-m = {version = "0.5.8", features = ["const-fn"] }
+cortex-m = {version = "0.6.0", features = ["const-fn"] }
 cortex-m-rt = "0.6.8"
 cortex-m-semihosting = "0.3.2"
 cortex-m-rtfm = "0.4.3"
@@ -38,7 +38,7 @@ cast = { version = "0.2.2", default-features = false }
 nb = "0.1.2"
 
 [dependencies.stm32l0]
-version = "0.7.0"
+version = "0.8.0"
 
 [dev-dependencies]
 aligned = "0.3.1"

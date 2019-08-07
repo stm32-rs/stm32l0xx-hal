@@ -83,7 +83,7 @@ impl<I> Timer<I>
         let ticks = clk / freq;
         let psc = u16((ticks - 1) / (1 << 16)).unwrap();
         let arr = u16(ticks / u32(psc + 1)).unwrap();
-        timer.psc.write(|w| unsafe { w.psc().bits(psc) });
+        timer.psc.write(|w| w.psc().bits(psc));
         timer.arr.write(|w| w.arr().bits(arr.into()));
         timer.cr1.write(|w| w.cen().set_bit());
 
@@ -169,10 +169,9 @@ macro_rules! impl_channel {
                 }
 
                 fn enable(tim: &tim2::RegisterBlock) {
-                    tim.$ccmr_output.modify(|_, w| {
+                    tim.$ccmr_output().modify(|_, w| {
                         w.$ocxpe().set_bit();
-                        // Safe. We're writing a valid bit pattern.
-                        unsafe { w.$ocxm().bits(0b110) }
+                        w.$ocxm().bits(0b110)
                     });
                     tim.ccer.modify(|_, w| w.$ccxe().set_bit());
                 }
