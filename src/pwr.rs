@@ -27,43 +27,92 @@ impl PWR {
         Self(pwr)
     }
 
-    /// Enter Sleep mode
-    ///
-    /// This method will block until something the microcontroller up again.
-    /// Please make sure to configure an interrupt, or this could block forever.
-    ///
-    /// Please note that this method may change the SCB configuration.
-    pub fn enter_sleep_mode(&mut self, scb: &mut SCB) {
-        scb.clear_sleepdeep();
-        asm::wfi();
+    /// Returns a struct that can be used to enter Sleep mode
+    pub fn sleep_mode<'r>(&'r mut self, scb: &'r mut SCB) -> SleepMode<'r> {
+        SleepMode {
+            scb,
+        }
     }
 
-    /// Enter Stop mode
-    ///
-    /// This method will block until something the microcontroller up again.
-    /// Please make sure to configure an interrupt, or this could block forever.
-    ///
-    /// This method will always disable the internal voltage regulator during
-    /// Stop mode.
-    ///
-    /// Please note that this method may change the SCB configuration.
-    ///
-    /// # Panics
-    ///
-    /// Panics, if the external clock is selected as clock source. In principle,
-    /// it is possible to enter Stop mode with the external clock enabled,
-    /// although that might require special handling. This is explained in the
-    /// STM32L0x2 Reference Manual, section 6.3.9.
-    pub fn enter_stop_mode(&mut self,
-        scb:    &mut SCB,
-        rcc:    &mut Rcc,
+    /// Returns a struct that can be used to enter Stop mode
+    pub fn stop_mode<'r>(&'r mut self,
+        scb:    &'r mut SCB,
+        rcc:    &'r mut Rcc,
         config: StopModeConfig,
-    ) {
-        scb.set_sleepdeep();
+    )
+        -> StopMode<'r>
+    {
+        StopMode {
+            pwr: &mut self.0,
+            scb,
+            rcc,
+            config,
+        }
+    }
+}
+
+
+/// Implemented for all low-power modes
+pub trait PowerMode {
+    /// Enters the low-power mode
+    fn enter(&mut self);
+}
+
+
+/// Sleep mode
+///
+/// You can get an instance of this struct by calling [`PWR::sleep_mode`].
+///
+/// The `PowerMode` implementation of this type will block until something wakes
+/// the microcontroller up again. Please make sure to configure an interrupt, or
+/// it could block forever.
+///
+/// Please note that entering Sleep mode may change the SCB configuration.
+pub struct SleepMode<'r> {
+    scb: &'r mut SCB,
+}
+
+impl PowerMode for SleepMode<'_> {
+    fn enter(&mut self) {
+        self.scb.clear_sleepdeep();
+        asm::wfi();
+    }
+}
+
+
+/// Stop mode
+///
+/// You can get an instance of this struct by calling [`PWR::stop_mode`].
+///
+/// The `PowerMode` implementation of this type will block until something wakes
+/// the microcontroller up again. Please make sure to configure an interrupt, or
+/// it could block forever.
+///
+/// This method will always disable the internal voltage regulator during Stop
+/// mode.
+///
+/// Please note that entering Stop mode may change the SCB configuration.
+///
+/// # Panics
+///
+/// Panics, if the external clock is selected as clock source. In principle, it
+/// is possible to enter Stop mode with the external clock enabled, although
+/// that might require special handling. This is explained in the STM32L0x2
+/// Reference Manual, section 6.3.9.
+pub struct StopMode<'r> {
+    pwr:    &'r mut pac::PWR,
+    scb:    &'r mut SCB,
+    rcc:    &'r mut Rcc,
+    config: StopModeConfig,
+}
+
+impl PowerMode for StopMode<'_> {
+    fn enter(&mut self) {
+        self.scb.set_sleepdeep();
 
         // Restore current clock source after waking up from Stop mode.
-        rcc.rb.cfgr.modify(|_, w|
-            match rcc.clocks.source() {
+        self.rcc.rb.cfgr.modify(|_, w|
+            match self.rcc.clocks.source() {
                 ClockSrc::MSI(_) =>
                     // Use MSI as clock source after wake-up
                     w.stopwuck().clear_bit(),
@@ -105,10 +154,10 @@ impl PWR {
             }
         );
 
-        self.0.cr.modify(|_, w|
+        self.pwr.cr.modify(|_, w|
             w
                 // Ultra-low-power mode
-                .ulp().bit(config.ultra_low_power)
+                .ulp().bit(self.config.ultra_low_power)
                 // Enter Stop mode
                 .pdds().stop_mode()
                 // Disable internal voltage regulator
@@ -121,7 +170,7 @@ impl PWR {
 
 /// Configuration for entering Stop mode
 ///
-/// Used by [`PWR::enter_stop_mode`].
+/// Used by `StopMode`'s `PowerMode` implementation.
 pub struct StopModeConfig {
     /// Disable additional hardware when entering Stop mode
     ///

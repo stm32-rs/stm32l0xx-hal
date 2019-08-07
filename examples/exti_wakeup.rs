@@ -62,13 +62,15 @@ fn main() -> ! {
         interrupt::free(|_| {
             nvic.enable(Interrupt::EXTI2_3);
 
-            pwr.enter_stop_mode(
-                &mut scb,
-                &mut rcc,
-                pwr::StopModeConfig {
-                    ultra_low_power: true,
-                },
-            );
+            pwr
+                .stop_mode(
+                    &mut scb,
+                    &mut rcc,
+                    pwr::StopModeConfig {
+                        ultra_low_power: true,
+                    },
+                )
+                .enter();
 
             exti.clear_irq(button.i);
             NVIC::unpend(Interrupt::EXTI2_3);

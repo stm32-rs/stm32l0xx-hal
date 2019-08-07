@@ -14,6 +14,7 @@ pub use crate::{
     exti::ExtiExt as _,
     gpio::GpioExt as _,
     i2c::I2cExt as _,
+    pwr::PowerMode as _,
     rcc::RccExt as _,
     serial::{
         Serial1Ext as _,
