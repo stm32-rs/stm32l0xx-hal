@@ -23,7 +23,14 @@ pub struct PWR(pac::PWR);
 
 impl PWR {
     /// Create an instance of the PWR API
-    pub fn new(pwr: pac::PWR) -> Self {
+    pub fn new(pwr: pac::PWR, rcc: &mut Rcc) -> Self {
+        // Reset peripheral
+        rcc.rb.apb1rstr.modify(|_, w| w.pwrrst().set_bit());
+        rcc.rb.apb1rstr.modify(|_, w| w.pwrrst().clear_bit());
+
+        // Enable peripheral clock
+        rcc.rb.apb1enr.modify(|_, w| w.pwren().set_bit());
+
         Self(pwr)
     }
 

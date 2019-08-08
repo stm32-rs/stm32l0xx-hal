@@ -26,7 +26,7 @@ fn main() -> ! {
     let mut rcc   = dp.RCC.freeze(Config::hsi16());
     let     gpiob = dp.GPIOB.split(&mut rcc);
     let mut exti  = dp.EXTI;
-    let mut pwr   = PWR::new(dp.PWR);
+    let mut pwr   = PWR::new(dp.PWR, &mut rcc);
     let mut delay = cp.SYST.delay(rcc.clocks);
     let mut nvic  = cp.NVIC;
     let mut scb   = cp.SCB;
