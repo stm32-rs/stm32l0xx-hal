@@ -108,6 +108,10 @@ name = "button_irq_rtfm"
 required-features = ["rt"]
 
 [[example]]
+name = "rtc"
+required-features = ["stm32l0x2"]
+
+[[example]]
 name = "serial_dma"
 required-features = ["stm32l0x2"]
 
