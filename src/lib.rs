@@ -29,6 +29,7 @@ pub mod prelude;
 pub mod pwm;
 pub mod pwr;
 pub mod rcc;
+pub mod rtc;
 pub mod serial;
 pub mod spi;
 pub mod time;
