@@ -1,7 +1,7 @@
 use core::fmt;
 
 
-#[derive(PartialEq, PartialOrd, Clone, Copy)]
+#[derive(Debug, PartialEq, PartialOrd, Clone, Copy)]
 pub struct Bps(pub u32);
 
 impl fmt::Display for Bps {
@@ -11,7 +11,7 @@ impl fmt::Display for Bps {
 }
 
 
-#[derive(PartialEq, PartialOrd, Clone, Copy)]
+#[derive(Debug, PartialEq, PartialOrd, Clone, Copy)]
 pub struct Hertz(pub u32);
 
 impl fmt::Display for Hertz {
@@ -21,7 +21,7 @@ impl fmt::Display for Hertz {
 }
 
 
-#[derive(PartialEq, PartialOrd, Clone, Copy)]
+#[derive(Debug, PartialEq, PartialOrd, Clone, Copy)]
 pub struct MicroSeconds(pub u32);
 
 impl fmt::Display for MicroSeconds {
