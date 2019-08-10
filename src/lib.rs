@@ -27,6 +27,7 @@ pub mod gpio;
 pub mod i2c;
 pub mod prelude;
 pub mod pwm;
+pub mod pwr;
 pub mod rcc;
 pub mod serial;
 pub mod spi;
