@@ -100,6 +100,7 @@ impl RTC {
         rtc
     }
 
+    /// Sets the date/time
     pub fn set(&mut self, instant: Instant) {
         // Disable write protection.
         // This is safe, as we're only writin the correct and expected values.
@@ -181,6 +182,7 @@ impl RTC {
         self.rtc.isr.modify(|_, w| w.init().clear_bit());
     }
 
+    /// Returns the current date/time
     pub fn now(&mut self) -> Instant {
         // We need to wait until the RSF bit is set, for a multitude of reasons:
         // - In case the last read was within two cycles of RTCCLK. Not sure why
