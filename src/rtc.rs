@@ -229,6 +229,34 @@ impl RTC {
             second:  tr.st().bits() * 10 +  tr.su().bits(),
         }
     }
+
+    /// Enable interrupts
+    ///
+    /// The interrupts set to `true` in `interrupts` will be enabled. Those set
+    /// to false will not be modified.
+    pub fn enable_interrupts(&mut self, interrupts: Interrupts) {
+        self.rtc.cr.modify(|_, w| {
+            if interrupts.timestamp { w.tsie().set_bit(); }
+            if interrupts.wakeup_timer { w.wutie().set_bit(); }
+            if interrupts.alarm_b { w.alrbie().set_bit(); }
+            if interrupts.alarm_a { w.alraie().set_bit(); }
+            w
+        });
+    }
+
+    /// Disable interrupts
+    ///
+    /// The interrupts set to `true` in `interrupts` will be disabled. Those set
+    /// to false will not be modified.
+    pub fn disable_interrupts(&mut self, interrupts: Interrupts) {
+        self.rtc.cr.modify(|_, w| {
+            if interrupts.timestamp { w.tsie().clear_bit(); }
+            if interrupts.wakeup_timer { w.wutie().clear_bit(); }
+            if interrupts.alarm_b { w.alrbie().clear_bit(); }
+            if interrupts.alarm_a { w.alraie().clear_bit(); }
+            w
+        });
+    }
 }
 
 
@@ -359,5 +387,24 @@ impl Instant {
 
     pub fn second(&self) -> u8 {
         self.second
+    }
+}
+
+
+pub struct Interrupts {
+    pub timestamp:    bool,
+    pub wakeup_timer: bool,
+    pub alarm_a:      bool,
+    pub alarm_b:      bool,
+}
+
+impl Default for Interrupts {
+    fn default() -> Self {
+        Self {
+            timestamp:    false,
+            wakeup_timer: false,
+            alarm_a:      false,
+            alarm_b:      false,
+        }
     }
 }
