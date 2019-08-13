@@ -3,7 +3,13 @@
 //! See STM32L0x2 reference manual, chapter 26.
 
 
+use void::Void;
+
 use crate::{
+    hal::timer::{
+        self,
+        Cancel as _,
+    },
     pac,
     pwr::PWR,
     rcc::Rcc,
@@ -92,6 +98,13 @@ impl RTC {
             // RTC not yet initialized. Do that now.
             rtc.set(init);
         }
+
+        // Disable wakeup timer. It's periodic and persists over resets, but for
+        // ease of use, let's disable it on intialization, unless the user
+        // wishes to start it again.
+        //
+        // Can't panic, as the error type is `Void`.
+        rtc.wakeup_timer().cancel().unwrap();
 
         // Clear RSF bit, in case we woke up from Stop or Standby mode. This is
         // necessary, according to section 26.4.8.
@@ -257,6 +270,13 @@ impl RTC {
             w
         });
     }
+
+    /// Access the wakeup timer
+    pub fn wakeup_timer(&mut self) -> WakeupTimer {
+        WakeupTimer {
+            rtc: &mut self.rtc,
+        }
+    }
 }
 
 
@@ -406,5 +426,97 @@ impl Default for Interrupts {
             alarm_a:      false,
             alarm_b:      false,
         }
+    }
+}
+
+
+/// The RTC wakeup timer
+pub struct WakeupTimer<'r> {
+    rtc: &'r mut pac::RTC,
+}
+
+impl timer::Periodic for WakeupTimer<'_> {}
+
+impl timer::CountDown for WakeupTimer<'_> {
+    type Time = u32;
+
+    /// Starts the wakeup timer
+    ///
+    /// The `delay` argument specifies the timer delay in seconds. Up to 17 bits
+    /// of delay are supported, giving us a range of over 36 hours.
+    ///
+    /// # Panics
+    ///
+    /// The `delay` argument supports 17 bits. Panics, if a value larger than
+    /// 17 bits is passed.
+    fn start<T>(&mut self, delay: T)
+        where T: Into<Self::Time>
+    {
+        let delay = delay.into();
+        assert!(delay < 2^17);
+
+        // Can't panic, as the error type is `Void`.
+        self.cancel().unwrap();
+
+        // Set the wakeup delay
+        #[cfg_attr(feature = "stm32l0x1", allow(unused_unsafe))]
+        self.rtc.wutr.write(|w|
+            // Write the lower 16 bits of `delay`. The 17th bit is taken care of
+            // via WUCKSEL in CR (see below).
+            // This is safe, as the field accepts a full 16 bit value.
+            unsafe { w.wut().bits(delay as u16) }
+        );
+        // This is safe, as we're only writing valid bit patterns.
+        self.rtc.cr.modify(|_, w| {
+            if delay & 0x1_00_00 != 0 {
+                unsafe { w.wucksel().bits(0b110); }
+            }
+            else {
+                unsafe { w.wucksel().bits(0b100); }
+            }
+
+            // Enable wakeup timer
+            w.wute().set_bit()
+        });
+
+        // Let's wait for WUTFS to clear. Otherwise we might run into a race
+        // condition, if the user calls this method again really quickly.
+        while self.rtc.isr.read().wutwf().bit_is_set() {}
+    }
+
+    fn wait(&mut self) -> nb::Result<(), Void> {
+        if self.rtc.isr.read().wutf().bit_is_set() {
+            return Ok(())
+        }
+
+        Err(nb::Error::WouldBlock)
+    }
+}
+
+impl timer::Cancel for WakeupTimer<'_> {
+    type Error = Void;
+
+    fn cancel(&mut self) -> Result<(), Self::Error> {
+        // Disable the wakeup timer
+        self.rtc.cr.modify(|_, w| w.wute().clear_bit());
+
+        // Wait until we're allowed to update the wakeup timer configuration
+        while self.rtc.isr.read().wutwf().bit_is_clear() {}
+
+        // Clear wakeup timer flag
+        self.rtc.isr.modify(|_, w| w.wutf().clear_bit());
+
+        // According to the reference manual, section 26.7.4, the WUTF flag must
+        // be cleared at least 1.5 RTCCLK periods "before WUTF is set to 1
+        // again". If that's true, we're on the safe side, because we use
+        // ck_spre as the clock for this timer, which we've scaled to 1 Hz.
+        //
+        // I have the sneaking suspicion though that this is a typo, and the
+        // quote in the previous paragraph actually tries to refer to WUTE
+        // instead of WUTF. In that case, this might be a bug, so if you're
+        // seeing something weird, adding a busy loop of some length here would
+        // be a good start of your investigation.
+
+        Ok(())
     }
 }
