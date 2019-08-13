@@ -129,8 +129,8 @@ impl RTC {
             // Safe, because we're only writing valid values to the fields.
             unsafe {
                 w
-                    .prediv_a().bits(64)
-                    .prediv_s().bits(512)
+                    .prediv_a().bits(0x7f)
+                    .prediv_s().bits(0xff)
             }
         );
 
