@@ -31,6 +31,12 @@ impl PWR {
         // Enable peripheral clock
         rcc.rb.apb1enr.modify(|_, w| w.pwren().set_bit());
 
+        // Disable backup write protection. This is required to access various
+        // register of various peripherals, so don't remove this unless you know
+        // what you're doing and also change the affected peripheral APIs
+        // accordingly.
+        pwr.cr.modify(|_, w| w.dbp().set_bit());
+
         Self(pwr)
     }
 
