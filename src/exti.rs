@@ -60,10 +60,8 @@ impl ExtiExt for EXTI {
         line: u8,
         edge: TriggerEdge,
     ) {
-        #[cfg(feature = "stm32l0x1")]
-        assert!(line < 24);
-        #[cfg(feature = "stm32l0x2")]
-        assert!(line < 15);
+        assert!(line <= 22);
+        assert_ne!(line, 18);
 
         // ensure that the SYSCFG peripheral is powered on
         // SYSCFG is necessary to change which PORT is routed to EXTIn
@@ -147,14 +145,18 @@ impl ExtiExt for EXTI {
     }
 
     fn unlisten(&self, line: u8) {
-        assert!(line < 24);
+        assert!(line <= 22);
+        assert_ne!(line, 18);
+
         bb::clear(&self.rtsr, line);
         bb::clear(&self.ftsr, line);
         bb::clear(&self.imr, line);
     }
 
     fn pend_interrupt(&self, line: u8) {
-        assert!(line < 24);
+        assert!(line <= 22);
+        assert_ne!(line, 18);
+
         bb::set(&self.swier, line);
     }
 
@@ -163,7 +165,9 @@ impl ExtiExt for EXTI {
     }
 
     fn clear_irq(&self, line: u8) {
-        assert!(line < 24);
+        assert!(line <= 22);
+        assert_ne!(line, 18);
+
         self.pr.modify(|_, w| unsafe { w.bits(0b1 << line) });
     }
 
