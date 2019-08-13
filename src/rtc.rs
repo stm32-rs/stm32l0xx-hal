@@ -118,9 +118,7 @@ impl RTC {
         // Configure RTC. For now, the default values are all fine.
         self.rtc.cr.reset();
 
-        // Configuring the prescaler to generate a 1 Hz clock for the calendar.
-        // I think this may be necessary for the calendar to function correctly,
-        // but the documentation (section 26.4.7) is not super clear about that.
+        // Configure the prescaler to generate a 1 Hz clock for the calendar.
         //
         // ATTENTION:
         // This assumes the RTC clock frequency is 32768 Hz. If this assumption
