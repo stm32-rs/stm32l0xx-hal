@@ -186,6 +186,7 @@ impl ExtiExt for EXTI {
             0 ..=  1 => pac::Interrupt::EXTI0_1,
             2 ..=  3 => pac::Interrupt::EXTI2_3,
             4 ..= 15 => pac::Interrupt::EXTI4_15,
+            20       => pac::Interrupt::RTC,
             line     => panic!("Line {} not supported", line),
         };
 
