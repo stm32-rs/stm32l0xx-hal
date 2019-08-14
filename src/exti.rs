@@ -5,7 +5,7 @@ use crate::pac::{
     self,
     EXTI,
 };
-use crate::pwr;
+use crate::pwr::PowerMode;
 use crate::rcc;
 use crate::rcc::Rcc;
 
@@ -44,7 +44,7 @@ pub trait ExtiExt {
     fn clear_irq(&self, line: u8);
     fn get_pending_irq(&self) -> u32;
     fn wait_for_irq<M>(&mut self, line: u8, power_mode: M, nvic: &mut NVIC)
-        where M: SupportedPowerMode;
+        where M: PowerMode;
 }
 
 pub fn line_is_triggered(reg: u32, line: u8) -> bool {
@@ -180,7 +180,7 @@ impl ExtiExt for EXTI {
     ///
     /// Panics, if `line` is not between 0 and 15 (inclusive).
     fn wait_for_irq<M>(&mut self, line: u8, mut power_mode: M, nvic: &mut NVIC)
-        where M: SupportedPowerMode
+        where M: PowerMode
     {
         let interrupt = match line {
             0 ..=  1 => pac::Interrupt::EXTI0_1,
@@ -203,9 +203,3 @@ impl ExtiExt for EXTI {
         });
     }
 }
-
-
-pub trait SupportedPowerMode : pwr::PowerMode {}
-
-impl SupportedPowerMode for pwr::SleepMode<'_> {}
-impl SupportedPowerMode for pwr::StopMode<'_> {}
