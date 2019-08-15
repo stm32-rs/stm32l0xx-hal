@@ -88,6 +88,7 @@ pub struct SleepMode<'r> {
 impl PowerMode for SleepMode<'_> {
     fn enter(&mut self) {
         self.scb.clear_sleepdeep();
+        asm::dsb();
         asm::wfi();
     }
 }
@@ -176,6 +177,7 @@ impl PowerMode for StopMode<'_> {
                 // Disable internal voltage regulator
                 .lpds().set_bit()
         );
+        asm::dsb();
         asm::wfi();
     }
 }
