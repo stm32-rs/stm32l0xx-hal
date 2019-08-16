@@ -168,15 +168,23 @@ impl PowerMode for StopMode<'_> {
             }
         );
 
+        // Configure Stop mode
         self.pwr.cr.modify(|_, w|
             w
                 // Ultra-low-power mode
                 .ulp().bit(self.config.ultra_low_power)
+                // Clear WUF
+                .cwuf().set_bit()
                 // Enter Stop mode
                 .pdds().stop_mode()
                 // Disable internal voltage regulator
                 .lpds().set_bit()
         );
+
+        // Wait for WUF to be cleared
+        while self.pwr.csr.read().wuf().bit_is_set() {}
+
+        // Enter Stop mode
         asm::dsb();
         asm::wfi();
     }
