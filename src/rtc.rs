@@ -510,7 +510,12 @@ impl timer::CountDown for WakeupTimer<'_> {
 
     fn wait(&mut self) -> nb::Result<(), Void> {
         if self.rtc.rtc.isr.read().wutf().bit_is_set() {
-            return Ok(())
+            self.rtc.write(|rtc| {
+                // Clear wakeup timer flag
+                rtc.isr.modify(|_, w| w.wutf().clear_bit());
+            });
+
+            return Ok(());
         }
 
         Err(nb::Error::WouldBlock)
