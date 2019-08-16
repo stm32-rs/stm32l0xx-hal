@@ -115,82 +115,78 @@ impl RTC {
 
     /// Sets the date/time
     pub fn set(&mut self, instant: Instant) {
-        // Disable write protection.
-        // This is safe, as we're only writin the correct and expected values.
-        #[cfg_attr(feature = "stm32l0x1", allow(unused_unsafe))]
-        self.rtc.wpr.write(|w| unsafe { w.key().bits(0xca) });
-        #[cfg_attr(feature = "stm32l0x1", allow(unused_unsafe))]
-        self.rtc.wpr.write(|w| unsafe { w.key().bits(0x53) });
+        self.write(|rtc| {
+            // Start initialization
+            rtc.isr.modify(|_, w| w.init().set_bit());
 
-        // Start initialization
-        self.rtc.isr.modify(|_, w| w.init().set_bit());
+            // Wait until RTC register access is allowed
+            while rtc.isr.read().initf().bit_is_clear() {}
 
-        // Wait until RTC register access is allowed
-        while self.rtc.isr.read().initf().bit_is_clear() {}
+            // Configure RTC. For now, the default values are all fine.
+            rtc.cr.reset();
 
-        // Configure RTC. For now, the default values are all fine.
-        self.rtc.cr.reset();
+            // Configure the prescaler to generate a 1 Hz clock for the
+            // calendar.
+            //
+            // ATTENTION:
+            // This assumes the RTC clock frequency is 32768 Hz. If this
+            // assumption holds no longer true, you need to change this code.
+            rtc.prer.write(|w|
+                // Safe, because we're only writing valid values to the fields.
+                unsafe {
+                    w
+                        .prediv_a().bits(0x7f)
+                        .prediv_s().bits(0xff)
+                }
+            );
 
-        // Configure the prescaler to generate a 1 Hz clock for the calendar.
-        //
-        // ATTENTION:
-        // This assumes the RTC clock frequency is 32768 Hz. If this assumption
-        // holds no longer true, you need to change this code.
-        self.rtc.prer.write(|w|
-            // Safe, because we're only writing valid values to the fields.
-            unsafe {
-                w
-                    .prediv_a().bits(0x7f)
-                    .prediv_s().bits(0xff)
-            }
-        );
+            // Write time
+            #[cfg_attr(feature = "stm32l0x1", allow(unused_unsafe))]
+            rtc.tr.write(|w|
+                // Safe, as `Instant` verifies that its fields are valid.
+                unsafe {
+                    w
+                        // 24-hour format
+                        .pm().clear_bit()
+                        // Hour tens
+                        .ht().bits(instant.hour / 10)
+                        // Hour units
+                        .hu().bits(instant.hour % 10)
+                        // Minute tens
+                        .mnt().bits(instant.minute / 10)
+                        // Minute units
+                        .mnu().bits(instant.minute % 10)
+                        // Second tens
+                        .st().bits(instant.second / 10)
+                        // Second units
+                        .su().bits(instant.second % 10)
+                }
+            );
 
-        // Write time
-        #[cfg_attr(feature = "stm32l0x1", allow(unused_unsafe))]
-        self.rtc.tr.write(|w|
-            // Safe, as `Instant` verifies that its fields are valid.
-            unsafe {
-                w
-                    // 24-hour format
-                    .pm().clear_bit()
-                    // Hour tens
-                    .ht().bits(instant.hour / 10)
-                    // Hour units
-                    .hu().bits(instant.hour % 10)
-                    // Minute tens
-                    .mnt().bits(instant.minute / 10)
-                    // Minute units
-                    .mnu().bits(instant.minute % 10)
-                    // Second tens
-                    .st().bits(instant.second / 10)
-                    // Second units
-                    .su().bits(instant.second % 10)
-            }
-        );
+            // Write date
+            #[cfg_attr(feature = "stm32l0x1", allow(unused_unsafe))]
+            rtc.dr.write(|w|
+                // Safe, as `Instant` verifies that its fields are valid.
+                unsafe {
+                    w
+                        // Year tens
+                        .yt().bits(instant.year / 10)
+                        // Year units
+                        .yu().bits(instant.year % 10)
+                        // Month tens
+                        .mt().bit(instant.month / 10 == 1)
+                        // Month units
+                        .mu().bits(instant.month % 10)
+                        // Date tens
+                        .dt().bits(instant.day / 10)
+                        // Date units
+                        .du().bits(instant.day % 10)
+                }
+            );
 
-        // Write date
-        #[cfg_attr(feature = "stm32l0x1", allow(unused_unsafe))]
-        self.rtc.dr.write(|w|
-            // Safe, as `Instant` verifies that its fields are valid.
-            unsafe {
-                w
-                    // Year tens
-                    .yt().bits(instant.year / 10)
-                    // Year units
-                    .yu().bits(instant.year % 10)
-                    // Month tens
-                    .mt().bit(instant.month / 10 == 1)
-                    // Month units
-                    .mu().bits(instant.month % 10)
-                    // Date tens
-                    .dt().bits(instant.day / 10)
-                    // Date units
-                    .du().bits(instant.day % 10)
-            }
-        );
-
-        // Exit initialization
-        self.rtc.isr.modify(|_, w| w.init().clear_bit());
+            // Exit initialization
+            rtc.isr.modify(|_, w| w.init().clear_bit());
+        })
     }
 
     /// Returns the current date/time
@@ -229,8 +225,10 @@ impl RTC {
             }
         }
 
-        // Clear the RSF flag, to unlock the TR and DR registers.
-        self.rtc.isr.write(|w| w.rsf().set_bit());
+        self.write(|rtc| {
+            // Clear the RSF flag, to unlock the TR and DR registers.
+            rtc.isr.write(|w| w.rsf().set_bit());
+        });
 
         Instant {
             year:  dr.yt().bits()      * 10 + dr.yu().bits(),
@@ -248,13 +246,15 @@ impl RTC {
     /// The interrupts set to `true` in `interrupts` will be enabled. Those set
     /// to false will not be modified.
     pub fn enable_interrupts(&mut self, interrupts: Interrupts) {
-        self.rtc.cr.modify(|_, w| {
-            if interrupts.timestamp { w.tsie().set_bit(); }
-            if interrupts.wakeup_timer { w.wutie().set_bit(); }
-            if interrupts.alarm_b { w.alrbie().set_bit(); }
-            if interrupts.alarm_a { w.alraie().set_bit(); }
-            w
-        });
+        self.write(|rtc| {
+            rtc.cr.modify(|_, w| {
+                if interrupts.timestamp { w.tsie().set_bit(); }
+                if interrupts.wakeup_timer { w.wutie().set_bit(); }
+                if interrupts.alarm_b { w.alrbie().set_bit(); }
+                if interrupts.alarm_a { w.alraie().set_bit(); }
+                w
+            });
+        })
     }
 
     /// Disable interrupts
@@ -262,20 +262,42 @@ impl RTC {
     /// The interrupts set to `true` in `interrupts` will be disabled. Those set
     /// to false will not be modified.
     pub fn disable_interrupts(&mut self, interrupts: Interrupts) {
-        self.rtc.cr.modify(|_, w| {
-            if interrupts.timestamp { w.tsie().clear_bit(); }
-            if interrupts.wakeup_timer { w.wutie().clear_bit(); }
-            if interrupts.alarm_b { w.alrbie().clear_bit(); }
-            if interrupts.alarm_a { w.alraie().clear_bit(); }
-            w
-        });
+        self.write(|rtc| {
+            rtc.cr.modify(|_, w| {
+                if interrupts.timestamp { w.tsie().clear_bit(); }
+                if interrupts.wakeup_timer { w.wutie().clear_bit(); }
+                if interrupts.alarm_b { w.alrbie().clear_bit(); }
+                if interrupts.alarm_a { w.alraie().clear_bit(); }
+                w
+            });
+        })
     }
 
     /// Access the wakeup timer
     pub fn wakeup_timer(&mut self) -> WakeupTimer {
         WakeupTimer {
-            rtc: &mut self.rtc,
+            rtc: self,
         }
+    }
+
+    fn write<F, R>(&mut self, f: F) -> R
+        where F: FnOnce(&pac::RTC) -> R
+    {
+        // Disable write protection.
+        // This is safe, as we're only writin the correct and expected values.
+        #[cfg_attr(feature = "stm32l0x1", allow(unused_unsafe))]
+        self.rtc.wpr.write(|w| unsafe { w.key().bits(0xca) });
+        #[cfg_attr(feature = "stm32l0x1", allow(unused_unsafe))]
+        self.rtc.wpr.write(|w| unsafe { w.key().bits(0x53) });
+
+        let result = f(&self.rtc);
+
+        // Re-enable write protection.
+        // This is safe, as the field accepts the full range of 8-bit values.
+        #[cfg_attr(feature = "stm32l0x1", allow(unused_unsafe))]
+        self.rtc.wpr.write(|w| unsafe { w.key().bits(0xff) });
+
+        result
     }
 }
 
@@ -432,7 +454,7 @@ impl Default for Interrupts {
 
 /// The RTC wakeup timer
 pub struct WakeupTimer<'r> {
-    rtc: &'r mut pac::RTC,
+    rtc: &'r mut RTC,
 }
 
 impl timer::Periodic for WakeupTimer<'_> {}
@@ -458,34 +480,36 @@ impl timer::CountDown for WakeupTimer<'_> {
         // Can't panic, as the error type is `Void`.
         self.cancel().unwrap();
 
-        // Set the wakeup delay
-        #[cfg_attr(feature = "stm32l0x1", allow(unused_unsafe))]
-        self.rtc.wutr.write(|w|
-            // Write the lower 16 bits of `delay`. The 17th bit is taken care of
-            // via WUCKSEL in CR (see below).
-            // This is safe, as the field accepts a full 16 bit value.
-            unsafe { w.wut().bits(delay as u16) }
-        );
-        // This is safe, as we're only writing valid bit patterns.
-        self.rtc.cr.modify(|_, w| {
-            if delay & 0x1_00_00 != 0 {
-                unsafe { w.wucksel().bits(0b110); }
-            }
-            else {
-                unsafe { w.wucksel().bits(0b100); }
-            }
+        self.rtc.write(|rtc| {
+            // Set the wakeup delay
+            #[cfg_attr(feature = "stm32l0x1", allow(unused_unsafe))]
+            rtc.wutr.write(|w|
+                // Write the lower 16 bits of `delay`. The 17th bit is taken
+                // care of via WUCKSEL in CR (see below).
+                // This is safe, as the field accepts a full 16 bit value.
+                unsafe { w.wut().bits(delay as u16) }
+            );
+            // This is safe, as we're only writing valid bit patterns.
+            rtc.cr.modify(|_, w| {
+                if delay & 0x1_00_00 != 0 {
+                    unsafe { w.wucksel().bits(0b110); }
+                }
+                else {
+                    unsafe { w.wucksel().bits(0b100); }
+                }
 
-            // Enable wakeup timer
-            w.wute().set_bit()
+                // Enable wakeup timer
+                w.wute().set_bit()
+            });
         });
 
         // Let's wait for WUTFS to clear. Otherwise we might run into a race
         // condition, if the user calls this method again really quickly.
-        while self.rtc.isr.read().wutwf().bit_is_set() {}
+        while self.rtc.rtc.isr.read().wutwf().bit_is_set() {}
     }
 
     fn wait(&mut self) -> nb::Result<(), Void> {
-        if self.rtc.isr.read().wutf().bit_is_set() {
+        if self.rtc.rtc.isr.read().wutf().bit_is_set() {
             return Ok(())
         }
 
@@ -497,25 +521,29 @@ impl timer::Cancel for WakeupTimer<'_> {
     type Error = Void;
 
     fn cancel(&mut self) -> Result<(), Self::Error> {
-        // Disable the wakeup timer
-        self.rtc.cr.modify(|_, w| w.wute().clear_bit());
+        self.rtc.write(|rtc| {
+            // Disable the wakeup timer
+            rtc.cr.modify(|_, w| w.wute().clear_bit());
 
-        // Wait until we're allowed to update the wakeup timer configuration
-        while self.rtc.isr.read().wutwf().bit_is_clear() {}
+            // Wait until we're allowed to update the wakeup timer configuration
+            while rtc.isr.read().wutwf().bit_is_clear() {}
 
-        // Clear wakeup timer flag
-        self.rtc.isr.modify(|_, w| w.wutf().clear_bit());
+            // Clear wakeup timer flag
+            rtc.isr.modify(|_, w| w.wutf().clear_bit());
+            // while self.rtc.isr.read().wutf().bit_is_set() {}
 
-        // According to the reference manual, section 26.7.4, the WUTF flag must
-        // be cleared at least 1.5 RTCCLK periods "before WUTF is set to 1
-        // again". If that's true, we're on the safe side, because we use
-        // ck_spre as the clock for this timer, which we've scaled to 1 Hz.
-        //
-        // I have the sneaking suspicion though that this is a typo, and the
-        // quote in the previous paragraph actually tries to refer to WUTE
-        // instead of WUTF. In that case, this might be a bug, so if you're
-        // seeing something weird, adding a busy loop of some length here would
-        // be a good start of your investigation.
+            // According to the reference manual, section 26.7.4, the WUTF flag
+            // must be cleared at least 1.5 RTCCLK periods "before WUTF is set
+            // to 1 again". If that's true, we're on the safe side, because we
+            // use ck_spre as the clock for this timer, which we've scaled to 1
+            // Hz.
+            //
+            // I have the sneaking suspicion though that this is a typo, and the
+            // quote in the previous paragraph actually tries to refer to WUTE
+            // instead of WUTF. In that case, this might be a bug, so if you're
+            // seeing something weird, adding a busy loop of some length here
+            // would be a good start of your investigation.
+        });
 
         Ok(())
     }
