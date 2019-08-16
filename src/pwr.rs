@@ -62,6 +62,14 @@ impl PWR {
             config,
         }
     }
+
+    /// Returns a struct that can be used to enter Standby mode
+    pub fn standby_mode<'r>(&'r mut self, scb: &'r mut SCB) -> StandbyMode<'r> {
+        StandbyMode {
+            pwr: &mut self.0,
+            scb,
+        }
+    }
 }
 
 
@@ -204,4 +212,39 @@ pub struct StopModeConfig {
     /// - Programmable voltage detector (PVD)
     /// - Internal temperature sensor
     pub ultra_low_power: bool,
+}
+
+
+/// Standby mode
+///
+/// You can get an instance of this struct by calling [`PWR::standby_mode`].
+///
+/// The `PowerMode` implementation of this type will block until something wakes
+/// the microcontroller up again. Please make sure to configure an interrupt, or
+/// it could block forever. Once woken up, the method will not return. Instead,
+/// the microcontroller will reset.
+pub struct StandbyMode<'r> {
+    pwr: &'r mut pac::PWR,
+    scb: &'r mut SCB,
+}
+
+impl PowerMode for StandbyMode<'_> {
+    fn enter(&mut self) {
+        // Configure Standby mode
+        self.scb.set_sleepdeep();
+        self.pwr.cr.modify(|_, w|
+            w
+                // Clear WUF
+                .cwuf().set_bit()
+                // Standby mode
+                .pdds().standby_mode()
+        );
+
+        // Wait for WUF to be cleared
+        while self.pwr.csr.read().wuf().bit_is_set() {}
+
+        // Enter Standby mode
+        asm::dsb();
+        asm::wfi();
+    }
 }
