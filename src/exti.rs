@@ -6,8 +6,6 @@ use crate::pac::{
     EXTI,
 };
 use crate::pwr::PowerMode;
-use crate::rcc;
-use crate::rcc::Rcc;
 use crate::syscfg::SYSCFG;
 
 use cortex_m::{
@@ -31,7 +29,6 @@ pub enum TriggerEdge {
 pub trait ExtiExt {
     fn listen(
         &self,
-        rcc: &mut Rcc,
         syscfg: &mut SYSCFG,
         port: gpio::Port,
         line: u8,
@@ -52,7 +49,6 @@ pub fn line_is_triggered(reg: u32, line: u8) -> bool {
 impl ExtiExt for EXTI {
     fn listen(
         &self,
-        rcc: &mut Rcc,
         syscfg: &mut SYSCFG,
         port: gpio::Port,
         line: u8,
@@ -60,10 +56,6 @@ impl ExtiExt for EXTI {
     ) {
         assert!(line <= 22);
         assert_ne!(line, 18);
-
-        // ensure that the SYSCFG peripheral is powered on
-        // SYSCFG is necessary to change which PORT is routed to EXTIn
-        rcc.enable(rcc::Peripheral::SYSCFG);
 
         // translate port into bit values for EXTIn registers
         let port_bm = match port {
