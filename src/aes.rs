@@ -347,7 +347,7 @@ pub trait Mode {
     fn select(&self, _: &mut cr::W);
 }
 
-impl Mode {
+impl dyn Mode {
     /// Use this with [`AES::enable`] to encrypt using ECB
     pub fn ecb_encrypt() -> ECB<Encrypt> {
         ECB(Encrypt)
