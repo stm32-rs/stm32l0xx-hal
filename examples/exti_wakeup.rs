@@ -15,6 +15,7 @@ use stm32l0xx_hal::{
         PWR,
     },
     rcc::Config,
+    syscfg::SYSCFG,
 };
 
 
@@ -37,12 +38,11 @@ fn main() -> ! {
     let mut led    = gpiob.pb6.into_push_pull_output();
 
     #[cfg(feature = "stm32l0x1")]
-    let mut syscfg = dp.SYSCFG;
+    let mut syscfg = SYSCFG::new(dp.SYSCFG, &mut rcc);
     #[cfg(feature = "stm32l0x2")]
-    let mut syscfg = dp.SYSCFG_COMP;
+    let mut syscfg = SYSCFG::new(dp.SYSCFG_COMP, &mut rcc);
 
     exti.listen(
-        &mut rcc,
         &mut syscfg,
         button.port,
         button.i,

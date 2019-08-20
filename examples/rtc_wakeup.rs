@@ -18,6 +18,7 @@ use stm32l0xx_hal::{
         Instant,
         RTC,
     },
+    syscfg::SYSCFG,
 };
 
 
@@ -42,9 +43,9 @@ fn main() -> ! {
     let mut pwr  = PWR::new(dp.PWR, &mut rcc);
 
     #[cfg(feature = "stm32l0x1")]
-    let mut syscfg = dp.SYSCFG;
+    let mut syscfg = SYSCFG::new(dp.SYSCFG, &mut rcc);
     #[cfg(feature = "stm32l0x2")]
-    let mut syscfg = dp.SYSCFG_COMP;
+    let mut syscfg = SYSCFG::new(dp.SYSCFG_COMP, &mut rcc);
 
     let instant = Instant::new()
         .set_year(19)
@@ -68,7 +69,6 @@ fn main() -> ! {
         .. rtc::Interrupts::default()
     });
     exti.listen(
-        &mut rcc,
         &mut syscfg,
         gpio::Port::PA, // argument ignored; next argument is not a GPIO line
         exti_line,

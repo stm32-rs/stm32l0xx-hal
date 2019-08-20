@@ -170,41 +170,6 @@ pub struct Rcc {
     pub(crate) rb: RCC,
 }
 
-pub enum Peripheral {
-    // CRS,
-    // DAC,
-    // I2C1,
-    // I2C2,
-    // I2C3,
-    // LPTIME1,
-    // LPUART1,
-    // PWREN,
-    // SPI2EN,
-    // TIM2EN,
-    // TIM3EN,
-    // USART2,
-    // USART4,
-    // USART5,
-    // USB,
-    // ADC,
-    // DBG,
-    // MIFI,
-    // SPI,
-    SYSCFG,
-    // TIM21,
-    // TIM22,
-    // UART1
-}
-
-impl Rcc {
-    pub fn enable(&self, p: Peripheral) {
-        match p {
-            Peripheral::SYSCFG => {
-                self.rb.apb2enr.modify(|_, w| w.syscfgen().bit(true));
-            }
-        }
-    }
-}
 
 /// Extension trait that freezes the `RCC` peripheral with provided clocks configuration
 pub trait RccExt {

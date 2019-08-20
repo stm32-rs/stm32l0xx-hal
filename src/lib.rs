@@ -32,6 +32,9 @@ pub mod rcc;
 pub mod rtc;
 pub mod serial;
 pub mod spi;
+pub mod syscfg;
 pub mod time;
 pub mod timer;
+#[cfg(feature = "stm32l0x2")]
+pub mod usb;
 pub mod watchdog;

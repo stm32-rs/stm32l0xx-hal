@@ -6,17 +6,13 @@ use crate::pac::{
     EXTI,
 };
 use crate::pwr::PowerMode;
-use crate::rcc;
-use crate::rcc::Rcc;
+use crate::syscfg::SYSCFG;
 
 use cortex_m::{
     interrupt,
     peripheral::NVIC,
 };
-#[cfg(feature = "stm32l0x1")]
-use stm32l0::stm32l0x1::SYSCFG as syscfg_comp;
-#[cfg(feature = "stm32l0x2")]
-use stm32l0::stm32l0x2::SYSCFG_COMP as syscfg_comp;
+
 
 pub enum Interrupt {
     exti0_1,
@@ -33,8 +29,7 @@ pub enum TriggerEdge {
 pub trait ExtiExt {
     fn listen(
         &self,
-        rcc: &mut Rcc,
-        syscfg: &mut syscfg_comp,
+        syscfg: &mut SYSCFG,
         port: gpio::Port,
         line: u8,
         edge: TriggerEdge,
@@ -54,18 +49,13 @@ pub fn line_is_triggered(reg: u32, line: u8) -> bool {
 impl ExtiExt for EXTI {
     fn listen(
         &self,
-        rcc: &mut Rcc,
-        syscfg: &mut syscfg_comp,
+        syscfg: &mut SYSCFG,
         port: gpio::Port,
         line: u8,
         edge: TriggerEdge,
     ) {
         assert!(line <= 22);
         assert_ne!(line, 18);
-
-        // ensure that the SYSCFG peripheral is powered on
-        // SYSCFG is necessary to change which PORT is routed to EXTIn
-        rcc.enable(rcc::Peripheral::SYSCFG);
 
         // translate port into bit values for EXTIn registers
         let port_bm = match port {
@@ -87,7 +77,7 @@ impl ExtiExt for EXTI {
         unsafe {
             match line {
                 0 | 1 | 2 | 3 => {
-                    syscfg.exticr1.modify(|_, w| match line {
+                    syscfg.syscfg.exticr1.modify(|_, w| match line {
                         0 => w.exti0().bits(port_bm),
                         1 => w.exti1().bits(port_bm),
                         2 => w.exti2().bits(port_bm),
@@ -98,7 +88,7 @@ impl ExtiExt for EXTI {
                 4 | 5 | 6 | 7 => {
                     // no need to assert that PH is not port,
                     // since line is assert on port above
-                    syscfg.exticr2.modify(|_, w| match line {
+                    syscfg.syscfg.exticr2.modify(|_, w| match line {
                         4 => w.exti4().bits(port_bm),
                         5 => w.exti5().bits(port_bm),
                         6 => w.exti6().bits(port_bm),
@@ -107,7 +97,7 @@ impl ExtiExt for EXTI {
                     });
                 }
                 8 | 9 | 10 | 11 => {
-                    syscfg.exticr3.modify(|_, w| match line {
+                    syscfg.syscfg.exticr3.modify(|_, w| match line {
                         8 => w.exti8().bits(port_bm),
                         9 => w.exti9().bits(port_bm),
                         10 => w.exti10().bits(port_bm),
@@ -116,7 +106,7 @@ impl ExtiExt for EXTI {
                     });
                 }
                 12 | 13 | 14 | 15 => {
-                    syscfg.exticr4.modify(|_, w| match line {
+                    syscfg.syscfg.exticr4.modify(|_, w| match line {
                         12 => w.exti12().bits(port_bm),
                         13 => w.exti13().bits(port_bm),
                         14 => w.exti14().bits(port_bm),
