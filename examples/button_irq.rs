@@ -15,6 +15,7 @@ use stm32l0xx_hal::{
     pac::{self, interrupt, Interrupt, EXTI},
     prelude::*,
     rcc::Config,
+    syscfg::SYSCFG,
 };
 
 static INT: Mutex<RefCell<Option<EXTI>>> = Mutex::new(RefCell::new(None));
@@ -39,9 +40,9 @@ fn main() -> ! {
     let button = gpiob.pb2.into_pull_up_input();
 
     #[cfg(feature = "stm32l0x1")]
-    let mut syscfg = dp.SYSCFG;
+    let mut syscfg = SYSCFG::new(dp.SYSCFG);
     #[cfg(feature = "stm32l0x2")]
-    let mut syscfg = dp.SYSCFG_COMP;
+    let mut syscfg = SYSCFG::new(dp.SYSCFG_COMP);
 
     // Configure the external interrupt on the falling edge for the pin 0.
     let exti = dp.EXTI;

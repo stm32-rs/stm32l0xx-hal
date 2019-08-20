@@ -32,6 +32,7 @@ pub mod rcc;
 pub mod rtc;
 pub mod serial;
 pub mod spi;
+pub mod syscfg;
 pub mod time;
 pub mod timer;
 pub mod watchdog;

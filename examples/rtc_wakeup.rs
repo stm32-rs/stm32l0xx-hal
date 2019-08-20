@@ -18,6 +18,7 @@ use stm32l0xx_hal::{
         Instant,
         RTC,
     },
+    syscfg::SYSCFG,
 };
 
 
@@ -42,9 +43,9 @@ fn main() -> ! {
     let mut pwr  = PWR::new(dp.PWR, &mut rcc);
 
     #[cfg(feature = "stm32l0x1")]
-    let mut syscfg = dp.SYSCFG;
+    let mut syscfg = SYSCFG::new(dp.SYSCFG);
     #[cfg(feature = "stm32l0x2")]
-    let mut syscfg = dp.SYSCFG_COMP;
+    let mut syscfg = SYSCFG::new(dp.SYSCFG_COMP);
 
     let instant = Instant::new()
         .set_year(19)

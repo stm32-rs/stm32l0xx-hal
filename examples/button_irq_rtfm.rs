@@ -6,7 +6,14 @@
 extern crate panic_halt;
 
 use rtfm::app;
-use stm32l0xx_hal::{exti::TriggerEdge, gpio::*, pac, prelude::*, rcc::Config};
+use stm32l0xx_hal::{
+    exti::TriggerEdge,
+    gpio::*,
+    pac,
+    prelude::*,
+    rcc::Config,
+    syscfg::SYSCFG,
+};
 
 #[app(device = stm32l0xx_hal::pac)]
 const APP: () = {
@@ -29,9 +36,9 @@ const APP: () = {
         let button = gpiob.pb2.into_pull_up_input();
 
         #[cfg(feature = "stm32l0x1")]
-        let mut syscfg = device.SYSCFG;
+        let mut syscfg = SYSCFG::new(device.SYSCFG);
         #[cfg(feature = "stm32l0x2")]
-        let mut syscfg = device.SYSCFG_COMP;
+        let mut syscfg = SYSCFG::new(device.SYSCFG_COMP);
 
         // Configure the external interrupt on the falling edge for the pin 0.
         let exti = device.EXTI;
