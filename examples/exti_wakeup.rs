@@ -29,7 +29,6 @@ fn main() -> ! {
     let mut exti  = dp.EXTI;
     let mut pwr   = PWR::new(dp.PWR, &mut rcc);
     let mut delay = cp.SYST.delay(rcc.clocks);
-    let mut nvic  = cp.NVIC;
     let mut scb   = cp.SCB;
 
     // Those are the user button and blue LED on the B-L072Z-LRWAN1 Discovery
@@ -59,7 +58,6 @@ fn main() -> ! {
                     ultra_low_power: true,
                 },
             ),
-            &mut nvic,
         );
 
         led.set_high().unwrap();
