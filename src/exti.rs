@@ -169,7 +169,7 @@ impl ExtiExt for EXTI {
     /// # Panics
     ///
     /// Panics, if `line` is not between 0 and 15 (inclusive).
-    fn wait_for_irq<M>(&mut self, line: u8, mut power_mode: M, nvic: &mut NVIC)
+    fn wait_for_irq<M>(&mut self, line: u8, mut power_mode: M, _nvic: &mut NVIC)
         where M: PowerMode
     {
         let interrupt = match line {
@@ -183,13 +183,13 @@ impl ExtiExt for EXTI {
         // This construct allows us to wait for the interrupt without having to
         // define an interrupt handler.
         interrupt::free(|_| {
-            nvic.enable(interrupt);
+            unsafe { NVIC::unmask(interrupt); }
 
             power_mode.enter();
 
             self.clear_irq(line);
             NVIC::unpend(interrupt);
-            nvic.disable(interrupt);
+            NVIC::mask(interrupt);
         });
     }
 }
