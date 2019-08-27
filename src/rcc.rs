@@ -170,7 +170,6 @@ pub struct Rcc {
     pub(crate) rb: RCC,
 }
 
-
 /// Extension trait that freezes the `RCC` peripheral with provided clocks configuration
 pub trait RccExt {
     fn freeze(self, config: Config) -> Rcc;
@@ -184,7 +183,7 @@ impl RccExt for RCC {
                 // Set MSI range
                 #[cfg(feature = "stm32l0x1")]
                 self.icscr.write(|w| w.msirange().bits(range));
-                #[cfg(feature = "stm32l0x2")]
+                #[cfg(any(feature = "stm32l0x2", feature = "stm32l0x3"))]
                 self.icscr.write(|w| unsafe { w.msirange().bits(range) });
 
                 // Enable MSI

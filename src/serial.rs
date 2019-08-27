@@ -13,28 +13,19 @@ use nb::block;
 #[cfg(feature = "stm32l0x1")]
 pub use crate::pac::LPUART1;
 
-#[cfg(feature = "stm32l0x2")]
+#[cfg(any(feature = "stm32l0x2", feature = "stm32l0x3"))]
 use core::{
-    ops::{
-        Deref,
-        DerefMut,
-    },
+    ops::{Deref, DerefMut},
     pin::Pin,
 };
 
-#[cfg(feature = "stm32l0x2")]
-use as_slice::{
-    AsMutSlice,
-    AsSlice,
-};
+#[cfg(any(feature = "stm32l0x2", feature = "stm32l0x3"))]
+use as_slice::{AsMutSlice, AsSlice};
 
-#[cfg(feature = "stm32l0x2")]
+#[cfg(any(feature = "stm32l0x2", feature = "stm32l0x3"))]
 pub use crate::{
     dma,
-    gpio::gpiob::{
-        PB6,
-        PB7,
-    },
+    gpio::gpiob::{PB6, PB7},
     pac::USART1,
 };
 
@@ -170,14 +161,13 @@ impl_pins!(
     USART2,  PA9, PA10, AF4;
 );
 
-#[cfg(feature = "stm32l0x2")]
+#[cfg(any(feature = "stm32l0x2", feature = "stm32l0x3"))]
 impl_pins!(
     USART1, PA9,  PA10, AF4;
     USART1, PB6,  PB7,  AF0;
     USART2, PA2,  PA3,  AF4;
     USART2, PA14, PA15, AF4;
 );
-
 
 /// Serial abstraction
 pub struct Serial<USART> {
@@ -361,7 +351,7 @@ macro_rules! usart {
                 }
             }
 
-            #[cfg(feature = "stm32l0x2")]
+#[cfg(any(feature = "stm32l0x2", feature = "stm32l0x3"))]
             impl Rx<$USARTX> {
                 pub fn read_all<Buffer, Channel>(self,
                     dma:     &mut dma::Handle,
@@ -478,7 +468,7 @@ macro_rules! usart {
                 }
             }
 
-            #[cfg(feature = "stm32l0x2")]
+#[cfg(any(feature = "stm32l0x2", feature = "stm32l0x3"))]
             impl Tx<$USARTX> {
                 pub fn write_all<Buffer, Channel>(self,
                     dma:     &mut dma::Handle,
@@ -522,7 +512,7 @@ usart! {
     USART2: (usart2, apb1enr, usart2en, apb1_clk, Serial2Ext),
 }
 
-#[cfg(feature = "stm32l0x2")]
+#[cfg(any(feature = "stm32l0x2", feature = "stm32l0x3"))]
 usart! {
     USART1: (usart1, apb2enr, usart1en, apb1_clk, Serial1Ext),
     USART2: (usart2, apb1enr, usart2en, apb1_clk, Serial2Ext),

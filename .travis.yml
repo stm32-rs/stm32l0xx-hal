@@ -6,6 +6,7 @@ rust:
 env:
   - MCU=stm32l0x1
   - MCU=stm32l0x2
+  - MCU=stm32l0x3
 matrix:
   allow_failures:
     - rust: nightly

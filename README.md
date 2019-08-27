@@ -16,6 +16,7 @@ Based on the [stm32l1xx-hal](https://github.com/stm32-rs/stm32l1xx-hal) crate by
 
 * __stm32l0x1__
 * __stm32l0x2__
+* __stm32l0x3__
 
 # Build Dependencies
 

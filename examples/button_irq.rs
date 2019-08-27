@@ -41,17 +41,12 @@ fn main() -> ! {
 
     #[cfg(feature = "stm32l0x1")]
     let mut syscfg = SYSCFG::new(dp.SYSCFG, &mut rcc);
-    #[cfg(feature = "stm32l0x2")]
+    #[cfg(any(feature = "stm32l0x2", feature = "stm32l0x3"))]
     let mut syscfg = SYSCFG::new(dp.SYSCFG_COMP, &mut rcc);
 
     // Configure the external interrupt on the falling edge for the pin 0.
     let exti = dp.EXTI;
-    exti.listen(
-        &mut syscfg,
-        button.port,
-        button.i,
-        TriggerEdge::Falling,
-    );
+    exti.listen(&mut syscfg, button.port, button.i, TriggerEdge::Falling);
 
     // Store the external interrupt and LED in mutex reffcells to make them
     // available from the interrupt.

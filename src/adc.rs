@@ -117,7 +117,7 @@ impl Adc {
             .modify(|_, w| w.smp().bits(self.sample_time as u8));
     }
 
-    #[cfg(feature = "stm32l0x2")]
+    #[cfg(any(feature = "stm32l0x2", feature = "stm32l0x3"))]
     fn write_smpr(&mut self) {
         self.rb
             .smpr
@@ -158,8 +158,7 @@ where
             // suppress the warning there.
             #[cfg_attr(feature = "stm32l0x1", allow(unused_unsafe))]
             let w = unsafe { w.res().bits(self.precision as u8) };
-            w
-                .align().bit(self.align == Align::Left)
+            w.align().bit(self.align == Align::Left)
         });
 
         self.write_smpr();
@@ -167,8 +166,7 @@ where
         self.rb.chselr.write(|w|
             // Safe, as long as there are no `Channel` implementations that
             // define invalid values.
-            unsafe { w.bits(0b1 << PIN::channel()) }
-        );
+            unsafe { w.bits(0b1 << PIN::channel()) });
 
         self.rb.isr.modify(|_, w| w.eos().set_bit());
         self.rb.cr.modify(|_, w| w.adstart().set_bit());
@@ -246,34 +244,24 @@ adc_pins! {
     Channel9: (gpiob::PB1<Analog>, 9u8),
 }
 
-#[cfg(
-    all(
-        feature = "stm32l052",
-        any(
-            feature = "lqfp64",
-            feature = "tfbga64",
-        ),
-    )
-)]
+#[cfg(all(feature = "stm32l052", any(feature = "lqfp64", feature = "tfbga64",),))]
 adc_pins! {
     Channel10: (gpioc::PC0<Analog>, 10u8),
     Channel11: (gpioc::PC1<Analog>, 11u8),
     Channel12: (gpioc::PC2<Analog>, 12u8),
 }
 
-#[cfg(
-    all(
-        feature = "stm32l072",
-        any(
-            feature = "lqfp64",
-            feature = "lqfp100",
-            feature = "tfbga64",
-            feature = "ufbga64",
-            feature = "ufbg100",
-            feature = "wlcsp49",
-        ),
-    )
-)]
+#[cfg(all(
+    feature = "stm32l072",
+    any(
+        feature = "lqfp64",
+        feature = "lqfp100",
+        feature = "tfbga64",
+        feature = "ufbga64",
+        feature = "ufbg100",
+        feature = "wlcsp49",
+    ),
+))]
 adc_pins! {
     Channel10: (gpioc::PC0<Analog>, 10u8),
     Channel11: (gpioc::PC1<Analog>, 11u8),
@@ -292,46 +280,30 @@ adc_pins! {
     Channel13: (gpioc::PC3<Analog>, 13u8),
 }
 
-#[cfg(
-    all(
-        feature = "stm32l072",
-        any(
-            feature = "lqfp64",
-            feature = "lqfp100",
-            feature = "ufbg100",
-        ),
-    )
-)]
+#[cfg(all(
+    feature = "stm32l072",
+    any(feature = "lqfp64", feature = "lqfp100", feature = "ufbg100",),
+))]
 adc_pins! {
     Channel13: (gpioc::PC3<Analog>, 13u8),
 }
 
-#[cfg(
-    all(
-        feature = "stm32l052",
-        any(
-            feature = "lqfp64",
-            feature = "tfbga64",
-        ),
-    )
-)]
+#[cfg(all(feature = "stm32l052", any(feature = "lqfp64", feature = "tfbga64",),))]
 adc_pins! {
     Channel14: (gpioc::PC4<Analog>, 14u8),
     Channel15: (gpioc::PC5<Analog>, 15u8),
 }
 
-#[cfg(
-    all(
-        feature = "stm32l072",
-        any(
-            feature = "lqfp64",
-            feature = "lqfp100",
-            feature = "tfbga64",
-            feature = "ufbga64",
-            feature = "ufbg100",
-        ),
-    )
-)]
+#[cfg(all(
+    feature = "stm32l072",
+    any(
+        feature = "lqfp64",
+        feature = "lqfp100",
+        feature = "tfbga64",
+        feature = "ufbga64",
+        feature = "ufbg100",
+    ),
+))]
 adc_pins! {
     Channel14: (gpioc::PC4<Analog>, 14u8),
     Channel15: (gpioc::PC5<Analog>, 15u8),

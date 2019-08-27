@@ -2,19 +2,13 @@
 //!
 //! See STM32L0x2 reference manual, chapter 10.
 
-
-use crate::{
-    pac,
-    rcc::Rcc,
-};
-
+use crate::{pac, rcc::Rcc};
 
 #[cfg(feature = "stm32l0x1")]
 type PacSyscfg = pac::SYSCFG;
 
-#[cfg(feature = "stm32l0x2")]
+#[cfg(any(feature = "stm32l0x2", feature = "stm32l0x3"))]
 type PacSyscfg = pac::SYSCFG_COMP;
-
 
 pub struct SYSCFG {
     pub(crate) syscfg: PacSyscfg,
@@ -29,8 +23,6 @@ impl SYSCFG {
         // Enable SYSCFG peripheral
         rcc.rb.apb2enr.modify(|_, w| w.syscfgen().set_bit());
 
-        SYSCFG {
-            syscfg
-        }
+        SYSCFG { syscfg }
     }
 }
