@@ -8,6 +8,7 @@ use core::ops::DerefMut;
 
 use cortex_m::asm;
 use cortex_m::interrupt::Mutex;
+use cortex_m::peripheral::NVIC;
 use cortex_m_rt::entry;
 use stm32l0xx_hal::{
     exti::TriggerEdge,
@@ -24,7 +25,6 @@ static LED: Mutex<RefCell<Option<gpiob::PB6<Output<PushPull>>>>> = Mutex::new(Re
 #[entry]
 fn main() -> ! {
     let dp = pac::Peripherals::take().unwrap();
-    let cp = cortex_m::Peripherals::take().unwrap();
 
     // Configure the clock.
     let mut rcc = dp.RCC.freeze(Config::hsi16());
@@ -61,8 +61,7 @@ fn main() -> ! {
     });
 
     // Enable the external interrupt in the NVIC.
-    let mut nvic = cp.NVIC;
-    nvic.enable(Interrupt::EXTI2_3);
+    unsafe { NVIC::unmask(Interrupt::EXTI2_3); }
 
     loop {
         asm::wfi();

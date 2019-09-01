@@ -10,6 +10,7 @@ use core::pin::Pin;
 use cortex_m::{
     asm,
     interrupt,
+    peripheral::NVIC
 };
 use cortex_m_rt::entry;
 use stm32l0xx_hal::{
@@ -29,7 +30,6 @@ use stm32l0xx_hal::{
 
 #[entry]
 fn main() -> ! {
-    let mut cp = pac::CorePeripherals::take().unwrap();
     let     dp = pac::Peripherals::take().unwrap();
 
     let mut rcc   = dp.RCC.freeze(Config::hsi16());
@@ -65,7 +65,7 @@ fn main() -> ! {
 
         // Start DMA transfer and wait for it to finish
         let res = interrupt::free(|_| {
-            cp.NVIC.enable(Interrupt::DMA1_CHANNEL4_7);
+            unsafe { NVIC::unmask(Interrupt::DMA1_CHANNEL4_7); }
 
             transfer.enable_interrupts(dma::Interrupts {
                 transfer_error:    true,
@@ -77,7 +77,7 @@ fn main() -> ! {
 
             asm::wfi();
             let res = transfer.wait().unwrap();
-            cp.NVIC.disable(Interrupt::DMA1_CHANNEL4_7);
+            NVIC::mask(Interrupt::DMA1_CHANNEL4_7);
 
             res
         });
@@ -97,7 +97,7 @@ fn main() -> ! {
 
         // Start DMA transfer and wait for it to finish
         let res = interrupt::free(|_| {
-            cp.NVIC.enable(Interrupt::DMA1_CHANNEL4_7);
+            unsafe { NVIC::unmask(Interrupt::DMA1_CHANNEL4_7); }
 
             transfer.enable_interrupts(dma::Interrupts {
                 transfer_error:    true,
@@ -109,7 +109,7 @@ fn main() -> ! {
 
             asm::wfi();
             let res = transfer.wait().unwrap();
-            cp.NVIC.disable(Interrupt::DMA1_CHANNEL4_7);
+            NVIC::mask(Interrupt::DMA1_CHANNEL4_7);
 
             res
         });

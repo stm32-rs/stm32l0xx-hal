@@ -8,6 +8,7 @@ use core::ops::DerefMut;
 
 use cortex_m::asm;
 use cortex_m::interrupt::Mutex;
+use cortex_m::peripheral::NVIC;
 use cortex_m_rt::entry;
 use stm32l0xx_hal::{
     gpio::*,
@@ -23,7 +24,6 @@ static TIMER: Mutex<RefCell<Option<Timer<pac::TIM2>>>> = Mutex::new(RefCell::new
 #[entry]
 fn main() -> ! {
     let dp = pac::Peripherals::take().unwrap();
-    let cp = cortex_m::Peripherals::take().unwrap();
 
     // Configure the clock.
     let mut rcc = dp.RCC.freeze(Config::hsi16());
@@ -47,8 +47,7 @@ fn main() -> ! {
     });
 
     // Enable the timer interrupt in the NVIC.
-    let mut nvic = cp.NVIC;
-    nvic.enable(Interrupt::TIM2);
+    unsafe { NVIC::unmask(Interrupt::TIM2); }
 
     loop {
         asm::wfi();
