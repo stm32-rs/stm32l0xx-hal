@@ -24,7 +24,7 @@ repository = "https://github.com/stm32-rs/stm32l0xx-hal"
 version = "0.2.0"
 
 [package.metadata.docs.rs]
-features = ["stm32l0x1", "stm32l0x2", "rt"]
+features = ["stm32l0x1", "stm32l0x2", "stm32l0x3", "rt"]
 
 [dependencies]
 as-slice = "0.1.0"
@@ -52,7 +52,9 @@ rt = ["stm32l0/rt"]
 # MCUs
 stm32l0x1 = ["stm32l0/stm32l0x1"]
 stm32l0x2 = ["stm32l0/stm32l0x2"]
+stm32l0x3 = ["stm32l0/stm32l0x3"]
 stm32l052 = ["stm32l0x2"]
+stm32l053 = ["stm32l0x3"]
 stm32l062 = ["stm32l0x2"]
 stm32l072 = ["stm32l0x2"]
 stm32l082 = ["stm32l0x2"]

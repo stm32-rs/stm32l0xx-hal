@@ -7,12 +7,32 @@ fn main() {
     // Put the linker script somewhere the linker can find it
     let out = &PathBuf::from(env::var_os("OUT_DIR").unwrap());
 
-    let linker = match (cfg!(feature = "stm32l0x1"), cfg!(feature = "stm32l0x2")) {
-        (false, false) | (true, true) => {
-            panic!("\n\nMust select exactly one package for linker script generation!\nChoices: 'stm32l0x1' or 'stm32l0x2'\n\n");
-        }
-        (true, false) => include_bytes!("memory_l0x1.x").as_ref(),
-        (false, true) => include_bytes!("memory_l0x2.x").as_ref(),
+    let mut feature_count = 0;
+
+    if cfg!(feature = "stm32l0x1") {
+        feature_count += 1;
+    }
+
+    if cfg!(feature = "stm32l0x2") {
+        feature_count += 1;
+    }
+
+    if cfg!(feature = "stm32l0x3") {
+        feature_count += 1;
+    }
+
+    if feature_count != 1 {
+        panic!("\n\nMust select exactly one package for linker script generation!\nChoices: 'stm32l0x1' or 'stm32l0x2' or 'stm32l0x3'\n\n");
+    }
+
+    let linker = if cfg!(feature = "stm32l0x1") {
+        include_bytes!("memory_l0x1.x").as_ref()
+    } else if cfg!(feature = "stm32l0x2") {
+        include_bytes!("memory_l0x2.x").as_ref()
+    } else if cfg!(feature = "stm32l0x3") {
+        include_bytes!("memory_l0x3.x").as_ref()
+    } else {
+        unreachable!();
     };
 
     File::create(out.join("memory.x"))
@@ -24,4 +44,5 @@ fn main() {
     println!("cargo:rerun-if-changed=build.rs");
     println!("cargo:rerun-if-changed=memory_l0x1.x");
     println!("cargo:rerun-if-changed=memory_l0x2.x");
+    println!("cargo:rerun-if-changed=memory_l0x3.x");
 }

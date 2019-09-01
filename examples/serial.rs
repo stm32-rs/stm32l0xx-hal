@@ -27,9 +27,9 @@ fn main() -> ! {
     #[cfg(feature = "stm32l0x1")]
     let rx_pin = gpioa.pa10;
 
-    #[cfg(feature = "stm32l0x2")]
+    #[cfg(any(feature = "stm32l0x2", feature = "stm32l0x3"))]
     let tx_pin = gpioa.pa14;
-    #[cfg(feature = "stm32l0x2")]
+    #[cfg(any(feature = "stm32l0x2", feature = "stm32l0x3"))]
     let rx_pin = gpioa.pa15;
 
     // Configure the serial peripheral.

@@ -4,64 +4,30 @@ use core::ops::Deref;
 use cortex_m::interrupt;
 
 use crate::gpio::gpioa::{PA0, PA1, PA2, PA3};
-use crate::gpio::{AltMode};
+use crate::gpio::AltMode;
 use crate::hal;
-use crate::pac::{
-    tim2,
-    TIM2,
-    TIM3,
-};
+use crate::pac::{tim2, TIM2, TIM3};
 use crate::rcc::Rcc;
 use crate::time::Hertz;
 use cast::{u16, u32};
 
-#[cfg(feature = "stm32l0x2")]
+#[cfg(any(feature = "stm32l0x2", feature = "stm32l0x3"))]
 use crate::gpio::{
-    gpioa::{
-        PA5,
-        PA15,
-    },
-    gpiob::{
-        PB3,
-        PB10,
-        PB11,
-    },
+    gpioa::{PA15, PA5},
+    gpiob::{PB10, PB11, PB3},
 };
 
 #[cfg(any(feature = "stm32l072", feature = "stm32l082"))]
 use crate::gpio::{
-    gpioa::{
-        PA6,
-        PA7,
-    },
-    gpiob::{
-        PB0,
-        PB1,
-        PB4,
-        PB5,
-    },
+    gpioa::{PA6, PA7},
+    gpiob::{PB0, PB1, PB4, PB5},
 };
 
 #[cfg(feature = "stm32l072")]
 use crate::gpio::{
-    gpioc::{
-        PC6,
-        PC7,
-        PC8,
-        PC9,
-    },
-    gpioe::{
-        PE3,
-        PE4,
-        PE5,
-        PE6,
-        PE9,
-        PE10,
-        PE11,
-        PE12,
-    },
+    gpioc::{PC6, PC7, PC8, PC9},
+    gpioe::{PE10, PE11, PE12, PE3, PE4, PE5, PE6, PE9},
 };
-
 
 pub struct Timer<I> {
     _instance: I,
@@ -73,7 +39,8 @@ pub struct Timer<I> {
 }
 
 impl<I> Timer<I>
-    where I: Instance
+where
+    I: Instance,
 {
     pub fn new(timer: I, frequency: Hertz, rcc: &mut Rcc) -> Self {
         timer.enable(rcc);
@@ -98,8 +65,7 @@ impl<I> Timer<I>
     }
 }
 
-
-pub trait Instance: Deref<Target=tim2::RegisterBlock> {
+pub trait Instance: Deref<Target = tim2::RegisterBlock> {
     fn ptr() -> *const tim2::RegisterBlock;
     fn enable(&self, _: &mut Rcc);
     fn clock_frequency(&self, _: &mut Rcc) -> u32;
@@ -140,7 +106,6 @@ impl_instance!(
     TIM2, apb1enr, apb1rstr, tim2en, tim2rst, apb1_clk;
     TIM3, apb1enr, apb1rstr, tim3en, tim3rst, apb1_clk;
 );
-
 
 pub trait Channel {
     fn disable(_: &tim2::RegisterBlock);
@@ -199,53 +164,51 @@ impl_channel!(
     C4, cc4e, ccmr2_output, oc4pe, oc4m, ccr4;
 );
 
-
 pub struct Pwm<I, C, State> {
     channel: PhantomData<C>,
-    timer:   PhantomData<I>,
-    _state:  State,
+    timer: PhantomData<I>,
+    _state: State,
 }
 
 impl<I, C> Pwm<I, C, Unassigned> {
     fn new() -> Self {
         Self {
             channel: PhantomData,
-            timer:   PhantomData,
-            _state:  Unassigned,
+            timer: PhantomData,
+            _state: Unassigned,
         }
     }
 
     pub fn assign<P>(self, pin: P) -> Pwm<I, C, Assigned<P>>
-        where P: Pin<I, C>
+    where
+        P: Pin<I, C>,
     {
         pin.setup();
         Pwm {
             channel: self.channel,
-            timer:   self.timer,
-            _state:  Assigned(pin),
+            timer: self.timer,
+            _state: Assigned(pin),
         }
     }
 }
 
 impl<I, C, P> hal::PwmPin for Pwm<I, C, Assigned<P>>
-    where
-        I: Instance,
-        C: Channel,
+where
+    I: Instance,
+    C: Channel,
 {
     type Duty = u16;
 
     fn disable(&mut self) {
         interrupt::free(|_|
             // Safe, as the read-modify-write within the critical section
-            C::disable(unsafe { &*I::ptr() })
-        )
+            C::disable(unsafe { &*I::ptr() }))
     }
 
     fn enable(&mut self) {
         interrupt::free(|_|
             // Safe, as the read-modify-write within the critical section
-            C::enable(unsafe { &*I::ptr() })
-        )
+            C::enable(unsafe { &*I::ptr() }))
     }
 
     fn get_duty(&self) -> u16 {
@@ -269,7 +232,6 @@ impl<I, C, P> hal::PwmPin for Pwm<I, C, Assigned<P>>
         C::set_duty(unsafe { &*I::ptr() }, duty);
     }
 }
-
 
 pub trait Pin<I, C> {
     fn setup(&self);
@@ -308,7 +270,7 @@ impl_pin!(
     )
 );
 
-#[cfg(feature = "stm32l0x2")]
+#[cfg(any(feature = "stm32l0x2", feature = "stm32l0x3"))]
 impl_pin!(
     TIM2: (
         PA5,  C1, AF5;
@@ -350,7 +312,6 @@ impl_pin!(
         PE6, C4, AF2;
     )
 );
-
 
 /// Indicates that a PWM channel has not been assigned to a pin
 pub struct Unassigned;

@@ -1,5 +1,5 @@
 use crate::gpio::gpioa::*;
-#[cfg(feature = "stm32l0x2")]
+#[cfg(any(feature = "stm32l0x2", feature = "stm32l0x3"))]
 use crate::gpio::gpiob::*;
 
 use crate::gpio::{AltMode, Floating, Input};
@@ -100,7 +100,7 @@ macro_rules! pins {
     }
 }
 
-#[cfg(feature = "stm32l0x2")]
+#[cfg(any(feature = "stm32l0x2", feature = "stm32l0x3"))]
 pins! {
     SPI1:
         SCK: [

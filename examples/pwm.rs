@@ -30,7 +30,7 @@ fn main() -> ! {
     let mut pwm = pwm.channel2.assign(gpioa.pa1);
 
     // This is LD2 on ST's B-L072Z-LRWAN1 development board.
-    #[cfg(feature = "stm32l0x2")]
+    #[cfg(any(feature = "stm32l0x2", feature = "stm32l0x3"))]
     let mut pwm = pwm.channel1.assign(gpioa.pa5);
 
     let max = pwm.get_max_duty();
