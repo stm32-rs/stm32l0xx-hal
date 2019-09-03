@@ -400,7 +400,7 @@ macro_rules! impl_channel {
                     let dma = unsafe { &*pac::DMA1::ptr() };
 
                     if dma.isr.read().$tcif().is_complete() {
-                        if (clear_if_complete){
+                        if clear_if_complete {
                             dma.ifcr.write(|w| w.$ctcif().set_bit());
                             dma.$ccr.modify(|_, w| w.en().disabled());
                         }
