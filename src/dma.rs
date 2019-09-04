@@ -162,9 +162,7 @@ impl<T, C, B> Transfer<T, C, B, Started>
 {
     /// Indicates whether the transfer is still ongoing
     pub fn is_active(&self) -> bool {
-        // passing false means state is unmodified in registers
-        // `wait` can be called after `is_active` returns false
-        self.res.channel.is_active(false)
+        self.res.channel.is_active()
     }
 
     /// Waits for the transfer to finish and returns the owned resources
@@ -181,11 +179,13 @@ impl<T, C, B> Transfer<T, C, B, Started>
             (TransferResources<T, C, B>, Error)
         >
     {
-        while self.res.channel.is_active(true) {
+        while self.res.channel.is_active() {
             if self.res.channel.error_occured() {
                 return Err((self.res, Error));
             }
         }
+
+        self.res.channel.clear_complete_flag();
 
         compiler_fence(Ordering::SeqCst);
 
@@ -268,7 +268,8 @@ pub trait Channel: Sized {
         where Word: SupportedWordSize;
     fn enable_interrupts(&self, interrupts: Interrupts);
     fn start(&self);
-    fn is_active(&self, clear_if_complete: bool) -> bool;
+    fn is_active(&self) -> bool;
+    fn clear_complete_flag(&self);
     fn error_occured(&self) -> bool;
 }
 
@@ -389,9 +390,20 @@ macro_rules! impl_channel {
                     ccr.modify(|_, w| w.en().enabled());
                 }
 
-                // clear_if_complete flag clears the complete state
-                // and disables the channel
-                fn is_active(&self, clear_if_complete: bool) -> bool {
+                fn is_active(&self) -> bool {
+                    // This is safe, for the following reasons:
+                    // - We only do one atomic read of ISR.
+                    let dma = unsafe { &*pac::DMA1::ptr() };
+
+                    if dma.isr.read().$tcif().is_complete() {
+                        false
+                    }
+                    else {
+                        true
+                    }
+                }
+
+                fn clear_complete_flag(&self) {
                     // This is safe, for the following reasons:
                     // - We only do one atomic read of ISR.
                     // - IFCR is a stateless register and we do one atomic
@@ -400,14 +412,8 @@ macro_rules! impl_channel {
                     let dma = unsafe { &*pac::DMA1::ptr() };
 
                     if dma.isr.read().$tcif().is_complete() {
-                        if clear_if_complete {
-                            dma.ifcr.write(|w| w.$ctcif().set_bit());
-                            dma.$ccr.modify(|_, w| w.en().disabled());
-                        }
-                        false
-                    }
-                    else {
-                        true
+                        dma.ifcr.write(|w| w.$ctcif().set_bit());
+                        dma.$ccr.modify(|_, w| w.en().disabled());
                     }
                 }
 
