@@ -135,6 +135,16 @@ macro_rules! timers {
                     self.tim.cr1.modify(|_, w| w.cen().clear_bit());
                     self.tim
                 }
+
+                /// Reset counter
+                pub fn reset(&mut self) {
+                    // pause
+                    self.tim.cr1.modify(|_, w| w.cen().clear_bit());
+                    // reset counter
+                    self.tim.cnt.reset();
+                    // continue
+                    self.tim.cr1.modify(|_, w| w.cen().set_bit());
+                }
             }
 
             impl CountDown for Timer<$TIM> {
