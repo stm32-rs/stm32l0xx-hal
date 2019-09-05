@@ -42,9 +42,9 @@ version = "0.8.0"
 
 [dev-dependencies]
 aligned = "0.3.1"
+heapless = "0.5.0"
 panic-halt = "0.2.0"
 panic-semihosting = "0.5.1"
-
 
 [features]
 # Miscellaneaous features
@@ -115,6 +115,10 @@ required-features = ["stm32l0x2"]
 
 [[example]]
 name = "serial_dma"
+required-features = ["stm32l0x2"]
+
+[[example]]
+name = "serial_dma_async"
 required-features = ["stm32l0x2"]
 
 [[example]]
