@@ -24,7 +24,7 @@ repository = "https://github.com/stm32-rs/stm32l0xx-hal"
 version = "0.3.0"
 
 [package.metadata.docs.rs]
-features = ["stm32l0x1", "stm32l0x2", "stm32l0x3", "rt"]
+features = ["stm32l0x3", "rt"]
 
 [dependencies]
 as-slice = "0.1.0"
