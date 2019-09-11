@@ -25,8 +25,11 @@ use as_slice::{AsMutSlice, AsSlice};
 #[cfg(any(feature = "stm32l0x2", feature = "stm32l0x3"))]
 pub use crate::{
     dma,
-    gpio::gpiob::{PB6, PB7},
-    pac::USART1,
+    gpio::gpiob::*,
+    gpio::gpioc::*,
+    gpio::gpiod::*,
+    gpio::gpioe::*, 
+    pac::{LPUART1, USART1, USART4, USART5},
 };
 
 /// Serial error
@@ -163,10 +166,17 @@ impl_pins!(
 
 #[cfg(any(feature = "stm32l0x2", feature = "stm32l0x3"))]
 impl_pins!(
+    LPUART1, PA2, PA3,  AF6;
     USART1, PA9,  PA10, AF4;
     USART1, PB6,  PB7,  AF0;
     USART2, PA2,  PA3,  AF4;
     USART2, PA14, PA15, AF4;
+    USART2, PD5,  PD6,  AF0;
+    USART4, PA0,  PA1,  AF6;
+    USART4, PC10, PC11, AF6;
+    USART4, PE8,  PE9,  AF6;
+    USART5, PB3,  PB4,  AF6;
+    USART5, PE10, PE11, AF6; 
 );
 
 /// Serial abstraction
@@ -514,8 +524,11 @@ usart! {
 
 #[cfg(any(feature = "stm32l0x2", feature = "stm32l0x3"))]
 usart! {
+    LPUART1: (lpuart1, apb1enr, lpuart1en, apb1_clk, Serial1LpExt),
     USART1: (usart1, apb2enr, usart1en, apb1_clk, Serial1Ext),
     USART2: (usart2, apb1enr, usart2en, apb1_clk, Serial2Ext),
+    USART4: (usart4, apb1enr, usart4en, apb1_clk, Serial4Ext),
+    USART5: (usart5, apb1enr, usart5en, apb1_clk, Serial5Ext), 
 }
 
 impl<USART> fmt::Write for Serial<USART>

@@ -4,7 +4,7 @@ use core::ops::Deref;
 
 use crate::hal::blocking::i2c::{Read, Write, WriteRead};
 
-use crate::gpio::gpioa::{PA10, PA13, PA9};
+use crate::gpio::gpioa::{PA10, PA9};
 use crate::gpio::gpiob::{PB6, PB7};
 use crate::gpio::{AltMode, OpenDrain, Output};
 use crate::pac::{i2c1::RegisterBlock, I2C1};
@@ -13,13 +13,13 @@ use crate::time::Hertz;
 use cast::u8;
 
 #[cfg(feature = "stm32l0x1")]
-use crate::gpio::gpioa::PA4;
+use crate::gpio::gpioa::{PA13, PA4};
 
 #[cfg(any(feature = "stm32l0x2", feature = "stm32l0x3"))]
 use crate::{
     gpio::{
         gpioa::PA8,
-        gpiob::{PB11, PB14, PB4, PB8, PB9},
+        gpiob::{PB10, PB11, PB13, PB14, PB4, PB8, PB9},
         gpioc::{PC0, PC1},
     },
     pac::{I2C2, I2C3},
@@ -364,8 +364,8 @@ i2c!(
         (PB14<Output<OpenDrain>>, AltMode::AF5),
     ],
     scl: [
-        (PA10<Output<OpenDrain>>, AltMode::AF6),
-        (PA13<Output<OpenDrain>>, AltMode::AF5),
+        (PB10<Output<OpenDrain>>, AltMode::AF6),
+        (PB13<Output<OpenDrain>>, AltMode::AF5),
     ],
 );
 

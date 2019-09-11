@@ -517,6 +517,26 @@ gpio!(GPIOC, gpioc, iopcen, PC, [
 ]);
 
 #[cfg(any(feature = "stm32l0x2", feature = "stm32l0x3"))]
+gpio!(GPIOD, gpiod, iopcen, PC, [
+    PD0: (pd0, 0, Input<Floating>),
+    PD1: (pd1, 1, Input<Floating>),
+    PD2: (pd2, 2, Input<Floating>),
+    PD3: (pd3, 3, Input<Floating>),
+    PD4: (pd4, 4, Input<Floating>),
+    PD5: (pd5, 5, Input<Floating>),
+    PD6: (pd6, 6, Input<Floating>),
+    PD7: (pd7, 7, Input<Floating>),
+    PD8: (pd8, 8, Input<Floating>),
+    PD9: (pd9, 9, Input<Floating>),
+    PD10: (pd10, 10, Input<Floating>),
+    PD11: (pd11, 11, Input<Floating>),
+    PD12: (pd12, 12, Input<Floating>),
+    PD13: (pd13, 13, Input<Floating>),
+    PD14: (pd14, 14, Input<Floating>),
+    PD15: (pd15, 15, Input<Floating>),
+]);
+
+#[cfg(any(feature = "stm32l0x2", feature = "stm32l0x3"))]
 gpio!(GPIOE, gpioe, iopeen, PE, [
     PE0:  (pe0,  0,  Input<Floating>),
     PE1:  (pe1,  1,  Input<Floating>),
