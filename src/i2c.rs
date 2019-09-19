@@ -7,7 +7,13 @@ use crate::hal::blocking::i2c::{Read, Write, WriteRead};
 use crate::gpio::gpioa::{PA10, PA9};
 use crate::gpio::gpiob::{PB6, PB7};
 use crate::gpio::{AltMode, OpenDrain, Output};
-use crate::pac::{i2c1::RegisterBlock, I2C1};
+use crate::pac::{
+    i2c1::{
+        RegisterBlock,
+        cr2::RD_WRNW,
+    },
+    I2C1,
+};
 use crate::rcc::Rcc;
 use crate::time::Hertz;
 use cast::u8;
@@ -131,6 +137,22 @@ where
         (self.i2c, self.sda, self.scl)
     }
 
+    fn start_transfer(&mut self, addr: u8, len: usize, direction: RD_WRNW) {
+        self.i2c.cr2.write(|w|
+            w
+                // Start transfer
+                .start().set_bit()
+                // Set number of bytes to transfer
+                .nbytes().bits(len as u8)
+                // Set address to transfer to/from
+                .sadd().bits((addr << 1) as u16)
+                // Set transfer direction
+                .rd_wrn().variant(direction)
+                // End transfer once all bytes have been written
+                .autoend().set_bit()
+        );
+    }
+
     fn send_byte(&self, byte: u8) -> Result<(), Error> {
         // Wait until we're ready for sending
         while self.i2c.isr.read().txe().bit_is_clear() {}
@@ -186,18 +208,7 @@ where
     fn write(&mut self, addr: u8, bytes: &[u8]) -> Result<(), Self::Error> {
         while self.i2c.isr.read().busy().is_busy() {}
 
-        self.i2c.cr2.write(|w| {
-            w.start()
-                .set_bit()
-                .nbytes()
-                .bits(bytes.len() as u8)
-                .sadd()
-                .bits((addr << 1) as u16)
-                .rd_wrn()
-                .clear_bit()
-                .autoend()
-                .set_bit()
-        });
+        self.start_transfer(addr, bytes.len(), RD_WRNW::WRITE);
 
         // Send bytes
         for c in bytes {
@@ -217,19 +228,7 @@ where
     fn read(&mut self, addr: u8, buffer: &mut [u8]) -> Result<(), Self::Error> {
         while self.i2c.isr.read().busy().is_busy() {}
 
-        self.i2c.cr2.write(|w| {
-            w.start()
-                .set_bit()
-                .nbytes()
-                .bits(buffer.len() as u8)
-                .sadd()
-                .bits((addr << 1) as u16)
-                // Request read transfer
-                .rd_wrn()
-                .read()
-                .autoend()
-                .set_bit()
-        });
+        self.start_transfer(addr, buffer.len(), RD_WRNW::READ);
 
         // Receive bytes into buffer
         for c in buffer {
