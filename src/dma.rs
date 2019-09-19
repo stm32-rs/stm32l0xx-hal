@@ -144,7 +144,7 @@ impl<T, C, B> Transfer<T, C, B, Ready>
     /// Start the DMA transfer
     ///
     /// Consumes this instance of `Transfer` and returns a new one, with its
-    /// state changes to indicate that the transfer has been started.
+    /// state changed to indicate that the transfer has been started.
     pub fn start(self) -> Transfer<T, C, B, Started> {
         compiler_fence(Ordering::SeqCst);
 

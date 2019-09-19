@@ -138,7 +138,7 @@ where
         // Push out a byte of data
         self.i2c.txdr.write(|w| w.txdata().bits(byte));
 
-        // While until byte is transferred
+        // Wait until byte is transferred
         loop {
             let isr = self.i2c.isr.read();
             if isr.berr().bit_is_set() {
