@@ -110,6 +110,10 @@ name = "button_irq_rtfm"
 required-features = ["rt"]
 
 [[example]]
+name = "i2c_dma"
+required-features = ["rt","stm32l0x2"]
+
+[[example]]
 name = "rtc"
 required-features = ["stm32l0x2"]
 
