@@ -1,6 +1,9 @@
 //! I2C
 
-use core::ops::Deref;
+use core::{
+    marker::PhantomData,
+    ops::Deref,
+};
 
 use crate::hal::blocking::i2c::{Read, Write, WriteRead};
 
@@ -382,3 +385,16 @@ i2c!(
         (PC0<Output<OpenDrain>>, AltMode::AF7),
     ],
 );
+
+
+/// Token used for DMA transfers
+///
+/// This is an implementation detail. The user doesn't have to deal with this
+/// directly.
+pub struct Tx<I>(PhantomData<I>);
+
+/// Token used for DMA transfers
+///
+/// This is an implementation detail. The user doesn't have to deal with this
+/// directly.
+pub struct Rx<I>(PhantomData<I>);
