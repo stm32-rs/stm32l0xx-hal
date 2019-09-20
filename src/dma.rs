@@ -493,7 +493,10 @@ impl_target!(
     serial::Tx<USART2>, Channel7, 4;
     serial::Rx<USART2>, Channel5, 4;
     serial::Rx<USART2>, Channel6, 4;
+);
 
+#[cfg(feature = "stm32l0x2")]
+impl_target!(
     // I2C1
     i2c::Tx<I2C1>, Channel2, 6;
     i2c::Rx<I2C1>, Channel3, 6;

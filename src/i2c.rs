@@ -1,12 +1,24 @@
 //! I2C
 
+use core::ops::Deref;
+
+#[cfg(feature = "stm32l0x2")]
 use core::{
     marker::PhantomData,
-    ops::Deref,
+    ops::DerefMut,
+    pin::Pin,
+};
+
+#[cfg(feature = "stm32l0x2")]
+use as_slice::{
+    AsSlice,
+    AsMutSlice,
 };
 
 use crate::hal::blocking::i2c::{Read, Write, WriteRead};
 
+#[cfg(feature = "stm32l0x2")]
+use crate::dma;
 use crate::gpio::gpioa::{PA10, PA9};
 use crate::gpio::gpiob::{PB6, PB7};
 use crate::gpio::{AltMode, OpenDrain, Output};
@@ -130,8 +142,15 @@ where
                 .bits(scldel)
         });
 
-        // Enable the peripheral
-        i2c.cr1.write(|w| w.pe().set_bit());
+        i2c.cr1.write(|w|
+            w
+                // Enable DMA reception
+                .rxdmaen().set_bit()
+                // Enable DMA transmission
+                .txdmaen().set_bit()
+                // Enable peripheral
+                .pe().set_bit()
+        );
 
         I2c { i2c, sda, scl }
     }
@@ -185,6 +204,100 @@ where
 
         let value = self.i2c.rxdr.read().rxdata().bits();
         Ok(value)
+    }
+
+    #[cfg(feature = "stm32l0x2")]
+    pub fn write_all<Channel, Buffer>(mut self,
+        dma:     &mut dma::Handle,
+        channel: Channel,
+        address: u8,
+        buffer:  Pin<Buffer>,
+    )
+        -> Transfer<Self, Tx<I>, Channel, Buffer, dma::Ready>
+        where
+            Tx<I>:          dma::Target<Channel>,
+            Channel:        dma::Channel,
+            Buffer:         Deref + 'static,
+            Buffer::Target: AsSlice<Element=u8>,
+    {
+        self.start_transfer(address, buffer.as_slice().len(), RD_WRNW::WRITE);
+
+        // This token represents the transmission capability of I2C and this is
+        // what the `dma::Target` trait is implemented for. It can't be
+        // implemented for `I2c` itself, as that would allow for the user to
+        // pass, for example, a channel that can do I2C RX to `write_all`.
+        //
+        // Theoretically, one could create both `Rx` and `Tx` at the same time,
+        // or create multiple tokens of the same type, and use that to create
+        // multiple simultaneous DMA transfers, which would be wrong and is not
+        // supported by the I2C peripheral. We prevent that by only ever
+        // creating an `Rx` or `Tx` token while we have ownership of `I2c`, and
+        // dropping the token before returning ownership of `I2c` ot the user.
+        let token = Tx(PhantomData);
+
+        // Safe, because we're only taking the address of a register.
+        let address = &unsafe { &*I::ptr() }.txdr as *const _ as u32;
+
+        // Safe, because the trait bounds of this method guarantee that the
+        // buffer can be read from.
+        let transfer = unsafe {
+            dma::Transfer::new(
+                dma,
+                token,
+                channel,
+                buffer,
+                address,
+                dma::Priority::high(),
+                dma::Direction::memory_to_peripheral(),
+            )
+        };
+
+        Transfer {
+            target: self,
+            inner:  transfer,
+        }
+    }
+
+    #[cfg(feature = "stm32l0x2")]
+    pub fn read_all<Channel, Buffer>(mut self,
+        dma:     &mut dma::Handle,
+        channel: Channel,
+        address: u8,
+        buffer:  Pin<Buffer>,
+    )
+        -> Transfer<Self, Rx<I>, Channel, Buffer, dma::Ready>
+        where
+            Rx<I>:          dma::Target<Channel>,
+            Channel:        dma::Channel,
+            Buffer:         DerefMut + 'static,
+            Buffer::Target: AsMutSlice<Element=u8>,
+    {
+        self.start_transfer(address, buffer.as_slice().len(), RD_WRNW::READ);
+
+        // See explanation of tokens in `write_all`.
+        let token = Rx(PhantomData);
+
+        // Safe, because we're only taking the address of a register.
+        let address = &unsafe { &*I::ptr() }.rxdr as *const _ as u32;
+
+        // Safe, because the trait bounds of this method guarantee that the
+        // buffer can be written to.
+        let transfer = unsafe {
+            dma::Transfer::new(
+                dma,
+                token,
+                channel,
+                buffer,
+                address,
+                dma::Priority::high(),
+                dma::Direction::peripheral_to_memory(),
+            )
+        };
+
+        Transfer {
+            target: self,
+            inner:  transfer,
+        }
     }
 }
 
@@ -242,6 +355,7 @@ where
 }
 
 pub trait Instance: Deref<Target = RegisterBlock> {
+    fn ptr() -> *const RegisterBlock;
     fn initialize(&self, rcc: &mut Rcc);
 }
 
@@ -310,6 +424,10 @@ macro_rules! i2c {
         }
 
         impl Instance for $I2CX {
+            fn ptr() -> *const RegisterBlock {
+                $I2CX::ptr()
+            }
+
             fn initialize(&self, rcc: &mut Rcc) {
                 // Enable clock for I2C
                 rcc.rb.apb1enr.modify(|_, w| w.$i2cxen().set_bit());
@@ -391,10 +509,93 @@ i2c!(
 ///
 /// This is an implementation detail. The user doesn't have to deal with this
 /// directly.
+#[cfg(feature = "stm32l0x2")]
 pub struct Tx<I>(PhantomData<I>);
 
 /// Token used for DMA transfers
 ///
 /// This is an implementation detail. The user doesn't have to deal with this
 /// directly.
+#[cfg(feature = "stm32l0x2")]
 pub struct Rx<I>(PhantomData<I>);
+
+
+/// I2C-specific wrapper around [`dma::Transfer`]
+#[cfg(feature = "stm32l0x2")]
+pub struct Transfer<Target, Token, Channel, Buffer, State> {
+    target: Target,
+    inner:  dma::Transfer<Token, Channel, Buffer, State>,
+}
+
+#[cfg(feature = "stm32l0x2")]
+impl<Target, Token, Channel, Buffer>
+    Transfer<Target, Token, Channel, Buffer, dma::Ready>
+    where
+        Token:   dma::Target<Channel>,
+        Channel: dma::Channel,
+{
+    /// Enables the provided interrupts
+    ///
+    /// This setting only affects this transfer. It doesn't affect transfer on
+    /// other channels, or subsequent transfers on the same channel.
+    pub fn enable_interrupts(&mut self, interrupts: dma::Interrupts) {
+        self.inner.enable_interrupts(interrupts);
+    }
+
+    /// Start the DMA transfer
+    ///
+    /// Consumes this instance of `Transfer` and returns a new one, with its
+    /// state changed to indicate that the transfer has been started.
+    pub fn start(self)
+        -> Transfer<Target, Token, Channel, Buffer, dma::Started>
+    {
+        Transfer {
+            target: self.target,
+            inner:  self.inner.start(),
+        }
+    }
+}
+
+#[cfg(feature = "stm32l0x2")]
+impl<Target, Token, Channel, Buffer>
+    Transfer<Target, Token, Channel, Buffer, dma::Started>
+    where
+        Channel: dma::Channel,
+{
+    /// Indicates whether the transfer is still ongoing
+    pub fn is_active(&self) -> bool {
+        self.inner.is_active()
+    }
+
+    /// Waits for the transfer to finish and returns the owned resources
+    ///
+    /// This function will busily wait until the transfer is finished. If you
+    /// don't want this, please call this function only once you know that the
+    /// transfer has finished.
+    ///
+    /// This function will return immediately, if [`Transfer::is_active`]
+    /// returns `false`.
+    pub fn wait(self)
+        -> Result<
+            dma::TransferResources<Target, Channel, Buffer>,
+            (dma::TransferResources<Target, Channel, Buffer>, dma::Error)
+        >
+    {
+        // Need to move `target` out of `self`, otherwise the closure captures
+        // `self` completely.
+        let target = self.target;
+
+        let map_resources = |res: dma::TransferResources<_, _, _>| {
+            dma::TransferResources {
+                target:  target,
+                channel: res.channel,
+                buffer:  res.buffer,
+            }
+        };
+
+        match self.inner.wait() {
+            Ok(res)         => Ok(map_resources(res)),
+            Err((res, err)) => Err((map_resources(res), err)),
+        }
+    }
+}
