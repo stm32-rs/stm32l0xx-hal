@@ -27,9 +27,13 @@ use core::{
 use as_slice::AsSlice;
 
 use crate::{
+    i2c,
     pac::{
         self,
         dma1::ccr1,
+        I2C1,
+        I2C2,
+        I2C3,
         USART1,
         USART2,
     },
@@ -144,7 +148,7 @@ impl<T, C, B> Transfer<T, C, B, Ready>
     /// Start the DMA transfer
     ///
     /// Consumes this instance of `Transfer` and returns a new one, with its
-    /// state changes to indicate that the transfer has been started.
+    /// state changed to indicate that the transfer has been started.
     pub fn start(self) -> Transfer<T, C, B, Started> {
         compiler_fence(Ordering::SeqCst);
 
@@ -476,16 +480,38 @@ macro_rules! impl_target {
     }
 }
 
+// See STM32L0x2 Reference Manual, table 51 (page 267).
 impl_target!(
+    // USART1
     serial::Tx<USART1>, Channel2, 3;
     serial::Tx<USART1>, Channel4, 3;
     serial::Rx<USART1>, Channel3, 3;
     serial::Rx<USART1>, Channel5, 3;
 
+    // USART2
     serial::Tx<USART2>, Channel4, 4;
     serial::Tx<USART2>, Channel7, 4;
     serial::Rx<USART2>, Channel5, 4;
     serial::Rx<USART2>, Channel6, 4;
+);
+
+#[cfg(feature = "stm32l0x2")]
+impl_target!(
+    // I2C1
+    i2c::Tx<I2C1>, Channel2, 6;
+    i2c::Rx<I2C1>, Channel3, 6;
+    i2c::Tx<I2C1>, Channel6, 6;
+    i2c::Rx<I2C1>, Channel7, 6;
+
+    // I2C2
+    i2c::Tx<I2C2>, Channel4, 7;
+    i2c::Rx<I2C2>, Channel5, 7;
+
+    // I2C3
+    i2c::Tx<I2C3>, Channel2, 14;
+    i2c::Rx<I2C3>, Channel3, 14;
+    i2c::Tx<I2C3>, Channel4, 14;
+    i2c::Rx<I2C3>, Channel5, 14;
 );
 
 // See STM32L0x2 Reference Manual, table 51 (page 267).
