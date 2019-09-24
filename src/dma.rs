@@ -104,13 +104,14 @@ impl<T, C, B> Transfer<T, C, B, Ready>
     ///
     /// Panics, if the buffer is not aligned to the word size.
     pub(crate) unsafe fn new<Word>(
-        handle:   &mut Handle,
-        target:   T,
-        channel:  C,
-        buffer:   Pin<B>,
-        address:  u32,
-        priority: Priority,
-        dir:      Direction,
+        handle:    &mut Handle,
+        target:    T,
+        channel:   C,
+        buffer:    Pin<B>,
+        num_words: usize,
+        address:   u32,
+        priority:  Priority,
+        dir:       Direction,
     )
         -> Self
         where
@@ -118,13 +119,14 @@ impl<T, C, B> Transfer<T, C, B, Ready>
             B::Target: Buffer<Word>,
             Word:      SupportedWordSize,
     {
-        assert!(buffer.len() <= u16::max_value() as usize);
+        assert!(buffer.len() >= num_words);
+        assert!(num_words <= u16::max_value() as usize);
         assert_eq!(buffer.as_ptr().align_offset(mem::size_of::<Word>()), 0);
 
         channel.select_target(handle, &target);
         channel.set_peripheral_address(handle, address);
         channel.set_memory_address(handle, buffer.as_ptr() as u32);
-        channel.set_transfer_len(handle, buffer.len() as u16);
+        channel.set_transfer_len(handle, num_words as u16);
         channel.configure::<Word>(handle, priority.0, dir.0);
 
         Transfer {

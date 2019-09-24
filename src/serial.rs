@@ -32,6 +32,9 @@ pub use crate::{
     pac::{LPUART1, USART1, USART4, USART5},
 };
 
+#[cfg(any(feature = "stm32l0x2", feature = "stm32l0x3"))]
+use dma::Buffer;
+
 /// Serial error
 #[derive(Debug)]
 pub enum Error {
@@ -380,6 +383,7 @@ macro_rules! usart {
                     let address =
                         &unsafe { &*$USARTX::ptr() }.rdr as *const _ as u32;
 
+                    let num_words = (*buffer).len();
                     // Safe, because the trait bounds of this method guarantee
                     // that the buffer can be written to.
                     unsafe {
@@ -388,6 +392,40 @@ macro_rules! usart {
                             self,
                             channel,
                             buffer,
+                            num_words,
+                            address,
+                            dma::Priority::high(),
+                            dma::Direction::peripheral_to_memory(),
+                        )
+                    }
+                }
+                pub fn read_some<Buffer, Channel>(self,
+                    dma:     &mut dma::Handle,
+                    buffer:  Pin<Buffer>,
+                    num_words: usize,
+                    channel: Channel,
+                )
+                    -> dma::Transfer<Self, Channel, Buffer, dma::Ready>
+                    where
+                        Self:           dma::Target<Channel>,
+                        Buffer:         DerefMut + 'static,
+                        Buffer::Target: AsMutSlice<Element=u8>,
+                        Channel:        dma::Channel,
+                {
+                    // Safe, because we're only taking the address of a
+                    // register.
+                    let address =
+                        &unsafe { &*$USARTX::ptr() }.rdr as *const _ as u32;
+
+                    // Safe, because the trait bounds of this method guarantee
+                    // that the buffer can be written to.
+                    unsafe {
+                        dma::Transfer::new(
+                            dma,
+                            self,
+                            channel,
+                            buffer,
+                            num_words,
                             address,
                             dma::Priority::high(),
                             dma::Direction::peripheral_to_memory(),
@@ -497,6 +535,7 @@ macro_rules! usart {
                     let address =
                         &unsafe { &*$USARTX::ptr() }.tdr as *const _ as u32;
 
+                    let num_words = (*buffer).len();
                     // Safe, because the trait bounds of this method guarantee
                     // that the buffer can be read from.
                     unsafe {
@@ -505,6 +544,41 @@ macro_rules! usart {
                             self,
                             channel,
                             buffer,
+                            num_words,
+                            address,
+                            dma::Priority::high(),
+                            dma::Direction::memory_to_peripheral(),
+                        )
+                    }
+                }
+
+                pub fn write_some<Buffer, Channel>(self,
+                    dma:     &mut dma::Handle,
+                    buffer:  Pin<Buffer>,
+                    num_words:  usize,
+                    channel: Channel,
+                )
+                    -> dma::Transfer<Self, Channel, Buffer, dma::Ready>
+                    where
+                        Self:           dma::Target<Channel>,
+                        Buffer:         Deref + 'static,
+                        Buffer::Target: AsSlice<Element=u8>,
+                        Channel:        dma::Channel,
+                {
+                    // Safe, because we're only taking the address of a
+                    // register.
+                    let address =
+                        &unsafe { &*$USARTX::ptr() }.tdr as *const _ as u32;
+
+                    // Safe, because the trait bounds of this method guarantee
+                    // that the buffer can be read from.
+                    unsafe {
+                        dma::Transfer::new(
+                            dma,
+                            self,
+                            channel,
+                            buffer,
+                            num_words,
                             address,
                             dma::Priority::high(),
                             dma::Direction::memory_to_peripheral(),
