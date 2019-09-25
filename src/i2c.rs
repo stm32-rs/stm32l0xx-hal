@@ -18,9 +18,10 @@ use as_slice::{
 use crate::hal::blocking::i2c::{Read, Write, WriteRead};
 
 #[cfg(feature = "stm32l0x2")]
-use crate::dma;
-#[cfg(feature = "stm32l0x2")]
-use crate::dma::Buffer;
+use crate::dma::{
+    self,
+    Buffer
+};
 use crate::gpio::gpioa::{PA10, PA9};
 use crate::gpio::gpiob::{PB6, PB7};
 use crate::gpio::{AltMode, OpenDrain, Output};
@@ -209,7 +210,7 @@ where
     }
 
     #[cfg(feature = "stm32l0x2")]
-    pub fn write_all<Channel, Buffer>(mut self,
+    pub fn write_all<Channel, Buffer>(self,
         dma:     &mut dma::Handle,
         channel: Channel,
         address: u8,
@@ -222,44 +223,8 @@ where
             Buffer:         Deref + 'static,
             Buffer::Target: AsSlice<Element=u8>,
     {
-        self.start_transfer(address, buffer.as_slice().len(), RD_WRNW::WRITE);
-
-        // This token represents the transmission capability of I2C and this is
-        // what the `dma::Target` trait is implemented for. It can't be
-        // implemented for `I2c` itself, as that would allow for the user to
-        // pass, for example, a channel that can do I2C RX to `write_all`.
-        //
-        // Theoretically, one could create both `Rx` and `Tx` at the same time,
-        // or create multiple tokens of the same type, and use that to create
-        // multiple simultaneous DMA transfers, which would be wrong and is not
-        // supported by the I2C peripheral. We prevent that by only ever
-        // creating an `Rx` or `Tx` token while we have ownership of `I2c`, and
-        // dropping the token before returning ownership of `I2c` ot the user.
-        let token = Tx(PhantomData);
-
-        // Safe, because we're only taking the address of a register.
-        let address = &unsafe { &*I::ptr() }.txdr as *const _ as u32;
-
         let num_words = buffer.len();
-        // Safe, because the trait bounds of this method guarantee that the
-        // buffer can be read from.
-        let transfer = unsafe {
-            dma::Transfer::new(
-                dma,
-                token,
-                channel,
-                buffer,
-                num_words,
-                address,
-                dma::Priority::high(),
-                dma::Direction::memory_to_peripheral(),
-            )
-        };
-
-        Transfer {
-            target: self,
-            inner:  transfer,
-        }
+        self.write_some(dma, channel, address, buffer, num_words)
     }
 
     #[cfg(feature = "stm32l0x2")]
@@ -318,7 +283,7 @@ where
     }
 
     #[cfg(feature = "stm32l0x2")]
-    pub fn read_all<Channel, Buffer>(mut self,
+    pub fn read_all<Channel, Buffer>(self,
         dma:     &mut dma::Handle,
         channel: Channel,
         address: u8,
@@ -331,34 +296,8 @@ where
             Buffer:         DerefMut + 'static,
             Buffer::Target: AsMutSlice<Element=u8>,
     {
-        self.start_transfer(address, buffer.as_slice().len(), RD_WRNW::READ);
-
-        // See explanation of tokens in `write_all`.
-        let token = Rx(PhantomData);
-
-        // Safe, because we're only taking the address of a register.
-        let address = &unsafe { &*I::ptr() }.rxdr as *const _ as u32;
-
         let num_words = buffer.len();
-        // Safe, because the trait bounds of this method guarantee that the
-        // buffer can be written to.
-        let transfer = unsafe {
-            dma::Transfer::new(
-                dma,
-                token,
-                channel,
-                buffer,
-                num_words,
-                address,
-                dma::Priority::high(),
-                dma::Direction::peripheral_to_memory(),
-            )
-        };
-
-        Transfer {
-            target: self,
-            inner:  transfer,
-        }
+        self.read_some(dma, channel, address, buffer, num_words)
     }
 
     #[cfg(feature = "stm32l0x2")]

@@ -378,27 +378,10 @@ macro_rules! usart {
                         Buffer::Target: AsMutSlice<Element=u8>,
                         Channel:        dma::Channel,
                 {
-                    // Safe, because we're only taking the address of a
-                    // register.
-                    let address =
-                        &unsafe { &*$USARTX::ptr() }.rdr as *const _ as u32;
-
                     let num_words = (*buffer).len();
-                    // Safe, because the trait bounds of this method guarantee
-                    // that the buffer can be written to.
-                    unsafe {
-                        dma::Transfer::new(
-                            dma,
-                            self,
-                            channel,
-                            buffer,
-                            num_words,
-                            address,
-                            dma::Priority::high(),
-                            dma::Direction::peripheral_to_memory(),
-                        )
-                    }
+                    self.read_some(dma, buffer, num_words, channel)
                 }
+
                 pub fn read_some<Buffer, Channel>(self,
                     dma:     &mut dma::Handle,
                     buffer:  Pin<Buffer>,
@@ -530,26 +513,8 @@ macro_rules! usart {
                         Buffer::Target: AsSlice<Element=u8>,
                         Channel:        dma::Channel,
                 {
-                    // Safe, because we're only taking the address of a
-                    // register.
-                    let address =
-                        &unsafe { &*$USARTX::ptr() }.tdr as *const _ as u32;
-
                     let num_words = (*buffer).len();
-                    // Safe, because the trait bounds of this method guarantee
-                    // that the buffer can be read from.
-                    unsafe {
-                        dma::Transfer::new(
-                            dma,
-                            self,
-                            channel,
-                            buffer,
-                            num_words,
-                            address,
-                            dma::Priority::high(),
-                            dma::Direction::memory_to_peripheral(),
-                        )
-                    }
+                    self.write_some(dma, buffer, num_words, channel)
                 }
 
                 pub fn write_some<Buffer, Channel>(self,
