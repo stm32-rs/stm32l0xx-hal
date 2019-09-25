@@ -595,6 +595,8 @@ impl<Target, Channel, Buffer> Transfer<Target, Channel, Buffer, dma::Ready>
     )
         -> Self
     {
+        let num_words = buffer.as_slice().len() / 4;
+
         let transfer = dma::Transfer::new(
             dma,
             target,
@@ -603,8 +605,9 @@ impl<Target, Channel, Buffer> Transfer<Target, Channel, Buffer, dma::Ready>
             // this should be fine.
             Pin::new(dma::PtrBuffer {
                 ptr: buffer.as_slice().as_ptr() as *const u32,
-                len: buffer.as_slice().len() / 4,
+                len: num_words
             }),
+            num_words,
             address,
             priority,
             dir,

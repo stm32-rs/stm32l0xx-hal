@@ -32,6 +32,9 @@ pub use crate::{
     pac::{LPUART1, USART1, USART4, USART5},
 };
 
+#[cfg(any(feature = "stm32l0x2", feature = "stm32l0x3"))]
+use dma::Buffer;
+
 /// Serial error
 #[derive(Debug)]
 pub enum Error {
@@ -375,6 +378,23 @@ macro_rules! usart {
                         Buffer::Target: AsMutSlice<Element=u8>,
                         Channel:        dma::Channel,
                 {
+                    let num_words = (*buffer).len();
+                    self.read_some(dma, buffer, num_words, channel)
+                }
+
+                pub fn read_some<Buffer, Channel>(self,
+                    dma:     &mut dma::Handle,
+                    buffer:  Pin<Buffer>,
+                    num_words: usize,
+                    channel: Channel,
+                )
+                    -> dma::Transfer<Self, Channel, Buffer, dma::Ready>
+                    where
+                        Self:           dma::Target<Channel>,
+                        Buffer:         DerefMut + 'static,
+                        Buffer::Target: AsMutSlice<Element=u8>,
+                        Channel:        dma::Channel,
+                {
                     // Safe, because we're only taking the address of a
                     // register.
                     let address =
@@ -388,6 +408,7 @@ macro_rules! usart {
                             self,
                             channel,
                             buffer,
+                            num_words,
                             address,
                             dma::Priority::high(),
                             dma::Direction::peripheral_to_memory(),
@@ -492,6 +513,23 @@ macro_rules! usart {
                         Buffer::Target: AsSlice<Element=u8>,
                         Channel:        dma::Channel,
                 {
+                    let num_words = (*buffer).len();
+                    self.write_some(dma, buffer, num_words, channel)
+                }
+
+                pub fn write_some<Buffer, Channel>(self,
+                    dma:     &mut dma::Handle,
+                    buffer:  Pin<Buffer>,
+                    num_words:  usize,
+                    channel: Channel,
+                )
+                    -> dma::Transfer<Self, Channel, Buffer, dma::Ready>
+                    where
+                        Self:           dma::Target<Channel>,
+                        Buffer:         Deref + 'static,
+                        Buffer::Target: AsSlice<Element=u8>,
+                        Channel:        dma::Channel,
+                {
                     // Safe, because we're only taking the address of a
                     // register.
                     let address =
@@ -505,6 +543,7 @@ macro_rules! usart {
                             self,
                             channel,
                             buffer,
+                            num_words,
                             address,
                             dma::Priority::high(),
                             dma::Direction::memory_to_peripheral(),
