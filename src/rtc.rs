@@ -469,13 +469,15 @@ impl timer::CountDown for WakeupTimer<'_> {
     ///
     /// # Panics
     ///
-    /// The `delay` argument supports 17 bits. Panics, if a value larger than
-    /// 17 bits is passed.
+    /// The `delay` argument must be in the range `1 <= delay <= 2^17`.
+    /// Panics, if `delay` is outside of that range.
     fn start<T>(&mut self, delay: T)
         where T: Into<Self::Time>
     {
         let delay = delay.into();
-        assert!(delay < 2^17);
+        assert!(1 <= delay && delay <= 2^17);
+
+        let delay = delay - 1;
 
         // Can't panic, as the error type is `Void`.
         self.cancel().unwrap();
