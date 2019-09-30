@@ -41,6 +41,32 @@ impl PWR {
         Self(pwr)
     }
 
+    /// Switch voltage range of internal regulator
+    ///
+    /// Please note that switching Vcore has consequences, so please make sure
+    /// you know what you're doing. See STM32L0x2 reference manual, sections
+    /// 6.1.3 and following.
+    pub fn switch_vcore_range(&mut self, range: VcoreRange) {
+        // The STM32L0x2 reference manual, section 6.1.5 describes the procedure
+        // being followed here.
+
+        while self.0.csr.read().vosf().bit_is_set() {}
+
+        // Safe, as `VcoreRange` only provides valid bit patterns.
+        self.0.cr.modify(|_, w| unsafe { w.vos().bits(range as u8) });
+
+        while self.0.csr.read().vosf().bit_is_set() {}
+    }
+
+    /// Returns currently configured internal regulator voltage range
+    pub fn get_vcore_range(&mut self) -> VcoreRange {
+        let vos = self.0.cr.read().vos().bits();
+
+        // Shouldn't panic, as reading the field from the register should always
+        // return a valid value.
+        VcoreRange::from_bits(vos)
+    }
+
     /// Returns a struct that can be used to enter Sleep mode
     pub fn sleep_mode<'r>(&'r mut self, scb: &'r mut SCB) -> SleepMode<'r> {
         SleepMode {
@@ -69,6 +95,39 @@ impl PWR {
         StandbyMode {
             pwr: &mut self.0,
             scb,
+        }
+    }
+}
+
+
+/// Voltage range selection for internal voltage regulator
+///
+/// Used as an argument for [`PWR::switch_vcore_range`].
+#[repr(u8)]
+pub enum VcoreRange {
+    /// Range 1 (1.8 V)
+    Range1 = 0b01,
+
+    /// Range 2 (1.5 V)
+    Range2 = 0b10,
+
+    /// Range 3 (1.2 V)
+    Range3 = 0b11,
+}
+
+impl VcoreRange {
+    /// Creates a `VcoreRange` instance from a bit pattern
+    ///
+    /// # Panics
+    ///
+    /// Panics, if an invalid value is passed. See STM32L0x2 reference manual,
+    /// section 6.4.1 (documentation of VOS field) for valid values.
+    pub fn from_bits(bits: u8) -> Self {
+        match bits {
+            0b01 => VcoreRange::Range1,
+            0b10 => VcoreRange::Range2,
+            0b11 => VcoreRange::Range3,
+            bits => panic!("Bits don't represent valud Vcore range: {}", bits),
         }
     }
 }
