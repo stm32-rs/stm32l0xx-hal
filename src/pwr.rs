@@ -11,6 +11,7 @@ use cortex_m::{
 use crate::{
     pac,
     rcc::{
+        Clocks,
         ClockSrc,
         PLLSource,
         Rcc,
@@ -65,6 +66,47 @@ impl PWR {
         // Shouldn't panic, as reading the field from the register should always
         // return a valid value.
         VcoreRange::from_bits(vos)
+    }
+
+    /// Enters low-power run mode
+    ///
+    /// Please note that there are some restrictions placed on low-power run
+    /// mode. Please refer to the STM32L0x2 reference manual, section 6.3.4 for
+    /// more information.
+    ///
+    /// # Panics
+    ///
+    /// To enter low-power run mode, the system clock frequency should not
+    /// exceed the MSI frequency range 1 (131.072 kHz). This method will panic,
+    /// if that is the case.
+    pub fn enter_low_power_run_mode(&mut self, clocks: Clocks) {
+        // This follows the procedure laid out in the STM32L0x2 reference
+        // manual, section 6.3.4.
+
+        // Panic, if system clock frequency is outside of allowed range. See
+        // STM32L0x1/STM32L0x2/STM32L0x3 reference manuals, sections 6.3.4 and
+        // 7.2.3.
+        assert!(clocks.sys_clk().0 <= 131_072);
+
+        self.switch_vcore_range(VcoreRange::Range2);
+
+        // First set LPSDSR, then LPRUN, to go into low-power run mode. See
+        // STM32L0x2 reference manual, section 6.4.1.
+        self.set_lpsdsr();
+        self.0.cr.modify(|_, w| w.lprun().set_bit());
+    }
+
+    /// Exit low-power run mode
+    ///
+    /// Please note that entering low-power run mode sets Vcore to range 2. This
+    /// method will not switch Vcore again, so please make sure to restore the
+    /// previous Vcore setting again, if you want to do so. See
+    /// [`PWR::switch_vcore_range`]/[`PRW::get_vcore_range`] for more info.
+    pub fn exit_low_power_run_mode(&mut self) {
+        // First reset LPRUN, then LPSDSR. See STM32L0x2 reference manual,
+        // section 6.4.1.
+        self.0.cr.modify(|_, w| w.lprun().clear_bit());
+        self.clear_lpsdsr();
     }
 
     /// Returns a struct that can be used to enter Sleep mode
