@@ -122,6 +122,22 @@ impl PWR {
             scb,
         }
     }
+
+    /// Private method to set LPSDSR
+    fn set_lpsdsr(&mut self) {
+        #[cfg(feature = "stm32l0x1")]
+        self.0.cr.modify(|_, w| w.lpsdsr().low_power_mode());
+        #[cfg(any(feature = "stm32l0x2", feature = "stm32l0x3"))]
+        self.0.cr.modify(|_, w| w.lpds().set_bit());
+    }
+
+    /// Private method to clear LPSDSR
+    fn clear_lpsdsr(&mut self) {
+        #[cfg(feature = "stm32l0x1")]
+        self.0.cr.modify(|_, w| w.lpsdsr().main_mode());
+        #[cfg(any(feature = "stm32l0x2", feature = "stm32l0x3"))]
+        self.0.cr.modify(|_, w| w.lpds().clear_bit());
+    }
 }
 
 
@@ -181,11 +197,7 @@ pub struct SleepMode<'r> {
 
 impl PowerMode for SleepMode<'_> {
     fn enter(&mut self) {
-        #[cfg(feature = "stm32l0x1")]
-        self.pwr.0.cr.modify(|_, w| w.lpsdsr().main_mode());
-        #[cfg(any(feature = "stm32l0x2", feature = "stm32l0x3"))]
-        self.pwr.0.cr.modify(|_, w| w.lpds().clear_bit());
-
+        self.pwr.clear_lpsdsr();
         self.scb.clear_sleepdeep();
 
         asm::dsb();
@@ -217,11 +229,7 @@ impl PowerMode for LowPowerSleepMode<'_> {
         let old_vcore = self.pwr.get_vcore_range();
         self.pwr.switch_vcore_range(VcoreRange::Range2);
 
-        #[cfg(feature = "stm32l0x1")]
-        self.pwr.0.cr.modify(|_, w| w.lpsdsr().low_power_mode());
-        #[cfg(any(feature = "stm32l0x2", feature = "stm32l0x3"))]
-        self.pwr.0.cr.modify(|_, w| w.lpds().set_bit());
-
+        self.pwr.set_lpsdsr();
         self.scb.clear_sleepdeep();
 
         asm::dsb();
