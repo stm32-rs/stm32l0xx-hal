@@ -24,9 +24,10 @@ pub struct PWR(pac::PWR);
 impl PWR {
     /// Create an instance of the PWR API
     pub fn new(pwr: pac::PWR, rcc: &mut Rcc) -> Self {
-        // Reset peripheral
-        rcc.rb.apb1rstr.modify(|_, w| w.pwrrst().set_bit());
-        rcc.rb.apb1rstr.modify(|_, w| w.pwrrst().clear_bit());
+        // Peripheral is not being reset here. First, there's no type state here
+        // that would require any specific configuration. Second, there are
+        // specific requirements that make resetting the peripheral complicated.
+        // See STM32L0x2 reference manual, section 6.4.1 (VOS field).
 
         // Enable peripheral clock
         rcc.rb.apb1enr.modify(|_, w| w.pwren().set_bit());
