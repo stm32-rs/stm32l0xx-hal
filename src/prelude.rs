@@ -2,6 +2,7 @@ pub use embedded_hal::{
     prelude::*,
     digital::v2::*,
     adc::OneShot as _,
+    timer::Cancel as _,
     watchdog::{
         Watchdog as _,
         WatchdogEnable as _,

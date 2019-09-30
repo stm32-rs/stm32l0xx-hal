@@ -453,6 +453,18 @@ impl Default for Interrupts {
 
 
 /// The RTC wakeup timer
+///
+/// This timer can be used in two ways:
+/// 1. Continually call `wait` until it returns `Ok(())`.
+/// 2. Set up the RTC interrupt.
+///
+/// If you use an interrupt, you should still call `wait` once, after the
+/// interrupt fired. This should return `Ok(())` immediately. Doing this will
+/// reset the timer flag. If you don't do this, the interrupt will not fire
+/// again, if you go to sleep.
+///
+/// You don't need to call `wait`, if you call `cancel`, as that also resets the
+/// flag. Restarting the timer by calling `start` will also reset the flag.
 pub struct WakeupTimer<'r> {
     rtc: &'r mut RTC,
 }
@@ -469,13 +481,15 @@ impl timer::CountDown for WakeupTimer<'_> {
     ///
     /// # Panics
     ///
-    /// The `delay` argument supports 17 bits. Panics, if a value larger than
-    /// 17 bits is passed.
+    /// The `delay` argument must be in the range `1 <= delay <= 2^17`.
+    /// Panics, if `delay` is outside of that range.
     fn start<T>(&mut self, delay: T)
         where T: Into<Self::Time>
     {
         let delay = delay.into();
-        assert!(delay < 2^17);
+        assert!(1 <= delay && delay <= 2^17);
+
+        let delay = delay - 1;
 
         // Can't panic, as the error type is `Void`.
         self.cancel().unwrap();
@@ -535,7 +549,6 @@ impl timer::Cancel for WakeupTimer<'_> {
 
             // Clear wakeup timer flag
             rtc.isr.modify(|_, w| w.wutf().clear_bit());
-            // while self.rtc.isr.read().wutf().bit_is_set() {}
 
             // According to the reference manual, section 26.7.4, the WUTF flag
             // must be cleared at least 1.5 RTCCLK periods "before WUTF is set
