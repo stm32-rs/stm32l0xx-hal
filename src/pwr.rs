@@ -70,7 +70,7 @@ impl PWR {
     /// Returns a struct that can be used to enter Sleep mode
     pub fn sleep_mode<'r>(&'r mut self, scb: &'r mut SCB) -> SleepMode<'r> {
         SleepMode {
-            pwr: &mut self.0,
+            pwr: self,
             scb,
         }
     }
@@ -108,7 +108,7 @@ impl PWR {
         -> StopMode<'r>
     {
         StopMode {
-            pwr: &mut self.0,
+            pwr: self,
             scb,
             rcc,
             config,
@@ -118,7 +118,7 @@ impl PWR {
     /// Returns a struct that can be used to enter Standby mode
     pub fn standby_mode<'r>(&'r mut self, scb: &'r mut SCB) -> StandbyMode<'r> {
         StandbyMode {
-            pwr: &mut self.0,
+            pwr: self,
             scb,
         }
     }
@@ -175,16 +175,16 @@ pub trait PowerMode {
 ///
 /// Please note that entering Sleep mode may change the SCB configuration.
 pub struct SleepMode<'r> {
-    pwr: &'r mut pac::PWR,
+    pwr: &'r mut PWR,
     scb: &'r mut SCB,
 }
 
 impl PowerMode for SleepMode<'_> {
     fn enter(&mut self) {
         #[cfg(feature = "stm32l0x1")]
-        self.pwr.cr.modify(|_, w| w.lpsdsr().main_mode());
+        self.pwr.0.cr.modify(|_, w| w.lpsdsr().main_mode());
         #[cfg(any(feature = "stm32l0x2", feature = "stm32l0x3"))]
-        self.pwr.cr.modify(|_, w| w.lpds().clear_bit());
+        self.pwr.0.cr.modify(|_, w| w.lpds().clear_bit());
 
         self.scb.clear_sleepdeep();
 
@@ -253,7 +253,7 @@ impl PowerMode for LowPowerSleepMode<'_> {
 /// that might require special handling. This is explained in the STM32L0x2
 /// Reference Manual, section 6.3.9.
 pub struct StopMode<'r> {
-    pwr:    &'r mut pac::PWR,
+    pwr:    &'r mut PWR,
     scb:    &'r mut SCB,
     rcc:    &'r mut Rcc,
     config: StopModeConfig,
@@ -308,7 +308,7 @@ impl PowerMode for StopMode<'_> {
         );
 
         // Configure Stop mode
-        self.pwr.cr.modify(|_, w|
+        self.pwr.0.cr.modify(|_, w|
             w
                 // Ultra-low-power mode
                 .ulp().bit(self.config.ultra_low_power)
@@ -321,7 +321,7 @@ impl PowerMode for StopMode<'_> {
         );
 
         // Wait for WUF to be cleared
-        while self.pwr.csr.read().wuf().bit_is_set() {}
+        while self.pwr.0.csr.read().wuf().bit_is_set() {}
 
         // Enter Stop mode
         asm::dsb();
@@ -355,7 +355,7 @@ pub struct StopModeConfig {
 /// it could block forever. Once woken up, the method will not return. Instead,
 /// the microcontroller will reset.
 pub struct StandbyMode<'r> {
-    pwr: &'r mut pac::PWR,
+    pwr: &'r mut PWR,
     scb: &'r mut SCB,
 }
 
@@ -363,7 +363,7 @@ impl PowerMode for StandbyMode<'_> {
     fn enter(&mut self) {
         // Configure Standby mode
         self.scb.set_sleepdeep();
-        self.pwr.cr.modify(|_, w|
+        self.pwr.0.cr.modify(|_, w|
             w
                 // Clear WUF
                 .cwuf().set_bit()
@@ -372,7 +372,7 @@ impl PowerMode for StandbyMode<'_> {
         );
 
         // Wait for WUF to be cleared
-        while self.pwr.csr.read().wuf().bit_is_set() {}
+        while self.pwr.0.csr.read().wuf().bit_is_set() {}
 
         // Enter Standby mode
         asm::dsb();
