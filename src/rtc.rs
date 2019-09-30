@@ -453,6 +453,18 @@ impl Default for Interrupts {
 
 
 /// The RTC wakeup timer
+///
+/// This timer can be used in two ways:
+/// 1. Continually call `wait` until it returns `Ok(())`.
+/// 2. Set up the RTC interrupt.
+///
+/// If you use an interrupt, you should still call `wait` once, after the
+/// interrupt fired. This should return `Ok(())` immediately. Doing this will
+/// reset the timer flag. If you don't do this, the interrupt will not fire
+/// again, if you go to sleep.
+///
+/// You don't need to call `wait`, if you call `cancel`, as that also resets the
+/// flag. Restarting the timer by calling `start` will also reset the flag.
 pub struct WakeupTimer<'r> {
     rtc: &'r mut RTC,
 }
