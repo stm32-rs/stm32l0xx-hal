@@ -549,7 +549,6 @@ impl timer::Cancel for WakeupTimer<'_> {
 
             // Clear wakeup timer flag
             rtc.isr.modify(|_, w| w.wutf().clear_bit());
-            // while self.rtc.isr.read().wutf().bit_is_set() {}
 
             // According to the reference manual, section 26.7.4, the WUTF flag
             // must be cleared at least 1.5 RTCCLK periods "before WUTF is set
