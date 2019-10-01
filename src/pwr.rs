@@ -70,6 +70,31 @@ impl PWR {
     /// Returns a struct that can be used to enter Sleep mode
     pub fn sleep_mode<'r>(&'r mut self, scb: &'r mut SCB) -> SleepMode<'r> {
         SleepMode {
+            pwr: &mut self.0,
+            scb,
+        }
+    }
+
+    /// Returns a struct that can be used to enter low-power sleep mode
+    ///
+    /// # Panics
+    ///
+    /// To enter low-power sleep mode, the system clock frequency should not
+    /// exceed the MSI frequency range 1 (131.072 kHz). This method will panic,
+    /// if that is the case.
+    pub fn low_power_sleep_mode<'r>(&'r mut self,
+        scb: &'r mut SCB,
+        rcc: &mut Rcc,
+    )
+        -> LowPowerSleepMode<'r>
+    {
+        // Panic, if system clock frequency is outside of allowed range. See
+        // STM32L0x1/STM32L0x2/STM32L0x3 reference manuals, sections 6.3.8 and
+        // 7.2.3.
+        assert!(rcc.clocks.sys_clk().0 <= 131_072);
+
+        LowPowerSleepMode {
+            pwr: self,
             scb,
         }
     }
@@ -150,14 +175,60 @@ pub trait PowerMode {
 ///
 /// Please note that entering Sleep mode may change the SCB configuration.
 pub struct SleepMode<'r> {
+    pwr: &'r mut pac::PWR,
     scb: &'r mut SCB,
 }
 
 impl PowerMode for SleepMode<'_> {
     fn enter(&mut self) {
+        #[cfg(feature = "stm32l0x1")]
+        self.pwr.cr.modify(|_, w| w.lpsdsr().main_mode());
+        #[cfg(any(feature = "stm32l0x2", feature = "stm32l0x3"))]
+        self.pwr.cr.modify(|_, w| w.lpds().clear_bit());
+
         self.scb.clear_sleepdeep();
+
         asm::dsb();
         asm::wfi();
+    }
+}
+
+
+/// Low-power sleep mode
+///
+/// You can get an instance of this struct by calling
+/// [`PWR::low_power_sleep_mode`].
+///
+/// The `PowerMode` implementation of this type will block until something wakes
+/// the microcontroller up again. Please make sure to configure an interrupt, or
+/// it could block forever.
+///
+/// Please note that entering low-power sleep mode may change the SCB
+/// configuration.
+pub struct LowPowerSleepMode<'r> {
+    pwr: &'r mut PWR,
+    scb: &'r mut SCB,
+}
+
+impl PowerMode for LowPowerSleepMode<'_> {
+    fn enter(&mut self) {
+        // Switch Vcore to range 2. This is required to enter low-power sleep
+        // mode, according to the reference manual, section 6.3.8.
+        let old_vcore = self.pwr.get_vcore_range();
+        self.pwr.switch_vcore_range(VcoreRange::Range2);
+
+        #[cfg(feature = "stm32l0x1")]
+        self.pwr.0.cr.modify(|_, w| w.lpsdsr().low_power_mode());
+        #[cfg(any(feature = "stm32l0x2", feature = "stm32l0x3"))]
+        self.pwr.0.cr.modify(|_, w| w.lpds().set_bit());
+
+        self.scb.clear_sleepdeep();
+
+        asm::dsb();
+        asm::wfi();
+
+        // Switch back to previous voltage range.
+        self.pwr.switch_vcore_range(old_vcore);
     }
 }
 
