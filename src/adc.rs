@@ -99,6 +99,12 @@ impl Adc<Ready> {
     pub fn set_precision(&mut self, precision: Precision) {
         self.precision = precision;
     }
+}
+
+impl<State> Adc<State> {
+    pub fn release(self) -> ADC {
+        self.rb
+    }
 
     fn power_up(&mut self) {
         self.rb.isr.modify(|_, w| w.adrdy().set_bit());
@@ -116,12 +122,6 @@ impl Adc<Ready> {
         self.rb
             .smpr
             .modify(|_, w| w.smp().bits(self.sample_time as u8));
-    }
-}
-
-impl<State> Adc<State> {
-    pub fn release(self) -> ADC {
-        self.rb
     }
 }
 
