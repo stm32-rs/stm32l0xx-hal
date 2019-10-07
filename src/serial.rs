@@ -498,6 +498,7 @@ macro_rules! usart {
                             address,
                             dma::Priority::high(),
                             dma::Direction::peripheral_to_memory(),
+                            false,
                         )
                     }
                 }
@@ -609,6 +610,7 @@ macro_rules! usart {
                             address,
                             dma::Priority::high(),
                             dma::Direction::memory_to_peripheral(),
+                            false,
                         )
                     }
                 }

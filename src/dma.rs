@@ -112,6 +112,7 @@ impl<T, C, B> Transfer<T, C, B, Ready>
         address:   u32,
         priority:  Priority,
         dir:       Direction,
+        circular:  bool,
     )
         -> Self
         where
@@ -127,7 +128,7 @@ impl<T, C, B> Transfer<T, C, B, Ready>
         channel.set_peripheral_address(handle, address);
         channel.set_memory_address(handle, buffer.as_ptr() as u32);
         channel.set_transfer_len(handle, num_words as u16);
-        channel.configure::<Word>(handle, priority.0, dir.0);
+        channel.configure::<Word>(handle, priority.0, dir.0, circular);
 
         Transfer {
             res: TransferResources {
@@ -270,6 +271,7 @@ pub trait Channel: Sized {
         _:        &mut Handle,
         priority: cr::PL_A,
         dir:      cr::DIR_A,
+        circular: bool,
     )
         where Word: SupportedWordSize;
     fn enable_interrupts(&self, interrupts: Interrupts);
@@ -337,6 +339,7 @@ macro_rules! impl_channel {
                     handle:   &mut Handle,
                     priority: cr::PL_A,
                     dir:      cr::DIR_A,
+                    circular: bool,
                 )
                     where Word: SupportedWordSize
                 {
@@ -354,8 +357,8 @@ macro_rules! impl_channel {
                             .minc().enabled()
                             // Don't increment peripheral pointer
                             .pinc().disabled()
-                            // Circular mode disabled
-                            .circ().disabled()
+                            // Circular mode
+                            .circ().bit(circular)
                             // Data transfer direction
                             .dir().variant(dir)
                             // Disable interrupts
