@@ -27,6 +27,7 @@ use core::{
 use as_slice::AsSlice;
 
 use crate::{
+    adc,
     i2c,
     pac::{
         self,
@@ -471,6 +472,10 @@ macro_rules! impl_target {
 
 // See STM32L0x2 Reference Manual, table 51 (page 267).
 impl_target!(
+    // ADC
+    adc::DmaToken, Channel1, 0;
+    adc::DmaToken, Channel2, 0;
+
     // USART1
     serial::Tx<USART1>, Channel2, 3;
     serial::Tx<USART1>, Channel4, 3;

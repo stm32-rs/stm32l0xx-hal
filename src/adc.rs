@@ -193,6 +193,13 @@ where
 pub struct Ready;
 
 
+/// Used for DMA transfers
+///
+/// This is an internal implementation detail. It is only public because it
+/// leaks out of a public API in the form of a `where` clause.
+pub struct DmaToken(());
+
+
 macro_rules! int_adc {
     ($($Chan:ident: ($chan:expr, $en:ident)),+ $(,)*) => {
         $(
