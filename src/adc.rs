@@ -62,14 +62,15 @@ pub enum SampleTime {
 }
 
 /// Analog to Digital converter interface
-pub struct Adc {
+pub struct Adc<State> {
     rb: ADC,
     sample_time: SampleTime,
     align: Align,
     precision: Precision,
+    _state: State,
 }
 
-impl Adc {
+impl Adc<Ready> {
     pub fn new(adc: ADC, rcc: &mut Rcc) -> Self {
         // Enable ADC clocks
         rcc.rb.apb2enr.modify(|_, w| w.adcen().set_bit());
@@ -80,6 +81,7 @@ impl Adc {
             sample_time: SampleTime::T_1_5,
             align: Align::Right,
             precision: Precision::B_12,
+            _state: Ready,
         }
     }
 
@@ -122,19 +124,19 @@ impl Adc {
 }
 
 pub trait AdcExt {
-    fn constrain(self, rcc: &mut Rcc) -> Adc;
+    fn constrain(self, rcc: &mut Rcc) -> Adc<Ready>;
 }
 
 impl AdcExt for ADC {
-    fn constrain(self, rcc: &mut Rcc) -> Adc {
+    fn constrain(self, rcc: &mut Rcc) -> Adc<Ready> {
         Adc::new(self, rcc)
     }
 }
 
-impl<WORD, PIN> OneShot<Adc, WORD, PIN> for Adc
+impl<WORD, PIN> OneShot<Adc<Ready>, WORD, PIN> for Adc<Ready>
 where
     WORD: From<u16>,
-    PIN: Channel<Adc, ID = u8>,
+    PIN: Channel<Adc<Ready>, ID = u8>,
 {
     type Error = ();
 
@@ -173,6 +175,11 @@ where
     }
 }
 
+
+/// Indicates that the ADC peripheral is ready
+pub struct Ready;
+
+
 macro_rules! int_adc {
     ($($Chan:ident: ($chan:expr, $en:ident)),+ $(,)*) => {
         $(
@@ -183,16 +190,16 @@ macro_rules! int_adc {
                     Self {}
                 }
 
-                pub fn enable(&mut self, adc: &mut Adc) {
+                pub fn enable(&mut self, adc: &mut Adc<Ready>) {
                     adc.rb.ccr.modify(|_, w| w.$en().set_bit());
                 }
 
-                pub fn disable(&mut self, adc: &mut Adc) {
+                pub fn disable(&mut self, adc: &mut Adc<Ready>) {
                     adc.rb.ccr.modify(|_, w| w.$en().clear_bit());
                 }
             }
 
-            impl Channel<Adc> for $Chan {
+            impl Channel<Adc<Ready>> for $Chan {
                 type ID = u8;
 
                 fn channel() -> u8 {
@@ -206,7 +213,7 @@ macro_rules! int_adc {
 macro_rules! adc_pins {
     ($($Chan:ty: ($pin:ty, $chan:expr)),+ $(,)*) => {
         $(
-            impl Channel<Adc> for $pin {
+            impl Channel<Adc<Ready>> for $pin {
                 type ID = u8;
 
                 fn channel() -> u8 { $chan }
