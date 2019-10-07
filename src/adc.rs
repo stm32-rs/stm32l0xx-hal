@@ -9,6 +9,17 @@ use crate::{
 };
 
 
+pub trait AdcExt {
+    fn constrain(self, rcc: &mut Rcc) -> Adc<Ready>;
+}
+
+impl AdcExt for ADC {
+    fn constrain(self, rcc: &mut Rcc) -> Adc<Ready> {
+        Adc::new(self, rcc)
+    }
+}
+
+
 /// ADC Result Alignment
 #[derive(PartialEq)]
 pub enum Align {
@@ -127,17 +138,6 @@ impl<State> Adc<State> {
         self.rb
             .smpr
             .modify(|_, w| w.smp().bits(self.sample_time as u8));
-    }
-}
-
-
-pub trait AdcExt {
-    fn constrain(self, rcc: &mut Rcc) -> Adc<Ready>;
-}
-
-impl AdcExt for ADC {
-    fn constrain(self, rcc: &mut Rcc) -> Adc<Ready> {
-        Adc::new(self, rcc)
     }
 }
 
