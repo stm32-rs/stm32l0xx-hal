@@ -117,11 +117,14 @@ impl Adc<Ready> {
             .smpr
             .modify(|_, w| w.smp().bits(self.sample_time as u8));
     }
+}
 
+impl<State> Adc<State> {
     pub fn release(self) -> ADC {
         self.rb
     }
 }
+
 
 pub trait AdcExt {
     fn constrain(self, rcc: &mut Rcc) -> Adc<Ready>;
