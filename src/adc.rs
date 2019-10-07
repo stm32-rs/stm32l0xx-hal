@@ -1,8 +1,13 @@
 //! # Analog to Digital converter
-use crate::gpio::*;
-use crate::hal::adc::{Channel, OneShot};
-use crate::pac::ADC;
-use crate::rcc::Rcc;
+
+
+use crate::{
+    gpio::*,
+    hal::adc::{Channel, OneShot},
+    pac::ADC,
+    rcc::Rcc,
+};
+
 
 /// ADC Result Alignment
 #[derive(PartialEq)]
