@@ -134,22 +134,10 @@ impl<State> Adc<State> {
         while self.rb.cr.read().aden().bit_is_set() {}
     }
 
-    fn write_smpr(&mut self) {
-        self.rb
-            .smpr
-            .modify(|_, w| w.smp().bits(self.sample_time as u8));
-    }
-}
-
-impl<WORD, PIN> OneShot<Adc<Ready>, WORD, PIN> for Adc<Ready>
-where
-    WORD: From<u16>,
-    PIN: Channel<Adc<Ready>, ID = u8>,
-{
-    type Error = ();
-
-    fn read(&mut self, _pin: &mut PIN) -> nb::Result<WORD, Self::Error> {
-        self.power_up();
+    fn configure<Chan>(&mut self, _channel: &Chan)
+        where
+            Chan: Channel<Adc<Ready>, ID=u8>,
+    {
         self.rb.cfgr1.modify(|_, w| {
             // Safe, as `self.precision` is of type `Precision`, which defines
             // only valid values.
@@ -160,15 +148,32 @@ where
             w.align().bit(self.align == Align::Left)
         });
 
-        self.write_smpr();
+        self.rb
+            .smpr
+            .modify(|_, w| w.smp().bits(self.sample_time as u8));
 
         self.rb.chselr.write(|w|
             // Safe, as long as there are no `Channel` implementations that
             // define invalid values.
-            unsafe { w.bits(0b1 << PIN::channel()) });
+            unsafe { w.bits(0b1 << Chan::channel()) }
+        );
 
         self.rb.isr.modify(|_, w| w.eos().set_bit());
         self.rb.cr.modify(|_, w| w.adstart().set_bit());
+    }
+}
+
+impl<WORD, PIN> OneShot<Adc<Ready>, WORD, PIN> for Adc<Ready>
+where
+    WORD: From<u16>,
+    PIN: Channel<Adc<Ready>, ID = u8>,
+{
+    type Error = ();
+
+    fn read(&mut self, pin: &mut PIN) -> nb::Result<WORD, Self::Error> {
+        self.power_up();
+        self.configure(pin);
+
         while self.rb.isr.read().eos().bit_is_clear() {}
 
         let res = self.rb.dr.read().bits() as u16;
