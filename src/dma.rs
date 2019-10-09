@@ -203,6 +203,22 @@ impl<T, C, B> Transfer<T, C, B, Started>
 
         Ok(self.res)
     }
+
+    /// Returns some transfer state
+    ///
+    /// The number of items to transfer, the half transfer flag, and the
+    /// transfer completed flag.
+    pub(crate) fn state(&self) -> (u16, bool, bool) {
+        self.res.channel.transfer_state()
+    }
+
+    /// Clears the half transfer and transfer complete flags
+    ///
+    /// Be careful when calling this, as it can confuse the other methods. This
+    /// method is designed to manage circular transfers only.
+    pub(crate) fn clear_flags(&self) {
+        self.res.channel.clear_flags()
+    }
 }
 
 
@@ -280,6 +296,8 @@ pub trait Channel: Sized {
     fn is_active(&self) -> bool;
     fn clear_complete_flag(&self);
     fn error_occured(&self) -> bool;
+    fn transfer_state(&self) -> (u16, bool, bool);
+    fn clear_flags(&self);
 }
 
 macro_rules! impl_channel {
@@ -289,8 +307,10 @@ macro_rules! impl_channel {
             $field:ident,
             $chfield:ident,
             $cxs:ident,
+            $htif:ident,
             $tcif:ident,
             $teif:ident,
+            $chtif:ident,
             $ctcif:ident,
             $cteif:ident;
         )*
@@ -433,6 +453,32 @@ macro_rules! impl_channel {
                         false
                     }
                 }
+
+                fn transfer_state(&self) -> (u16, bool, bool) {
+                    // Safe, as we're only doing atomic reads.
+                    let dma = unsafe { &*pac::DMA1::ptr() };
+
+                    let isr = dma.isr.read();
+
+                    let data_remaining = dma.$chfield.ndtr.read().ndt().bits();
+
+                    let half_transfer     = isr.$htif().is_half();
+                    let transfer_complete = isr.$tcif().is_complete();
+
+                    (data_remaining, half_transfer, transfer_complete)
+                }
+
+                fn clear_flags(&self) {
+                    // Safe, as we're only doing an atomic write to a stateless
+                    // register.
+                    let dma = unsafe { &*pac::DMA1::ptr() };
+
+                    dma.ifcr.write(|w|
+                        w
+                            .$chtif().clear()
+                            .$ctcif().clear()
+                    );
+                }
             }
         )*
     }
@@ -440,19 +486,19 @@ macro_rules! impl_channel {
 
 impl_channel!(
     Channel1, channel1, ch1,
-        c1s, tcif1, teif1, ctcif1, cteif1;
+        c1s, htif1, tcif1, teif1, chtif1, ctcif1, cteif1;
     Channel2, channel2, ch2,
-        c2s, tcif2, teif2, ctcif2, cteif2;
+        c2s, htif2, tcif2, teif2, chtif2, ctcif2, cteif2;
     Channel3, channel3, ch3,
-        c3s, tcif3, teif3, ctcif3, cteif3;
+        c3s, htif3, tcif3, teif3, chtif3, ctcif3, cteif3;
     Channel4, channel4, ch4,
-        c4s, tcif4, teif4, ctcif4, cteif4;
+        c4s, htif4, tcif4, teif4, chtif4, ctcif4, cteif4;
     Channel5, channel5, ch5,
-        c5s, tcif5, teif5, ctcif5, cteif5;
+        c5s, htif5, tcif5, teif5, chtif5, ctcif5, cteif5;
     Channel6, channel6, ch6,
-        c6s, tcif6, teif6, ctcif6, cteif6;
+        c6s, htif6, tcif6, teif6, chtif6, ctcif6, cteif6;
     Channel7, channel7, ch7,
-        c7s, tcif7, teif7, ctcif7, cteif7;
+        c7s, htif7, tcif7, teif7, chtif7, ctcif7, cteif7;
 );
 
 
