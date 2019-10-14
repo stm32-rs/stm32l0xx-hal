@@ -5,6 +5,8 @@ use crate::gpio::gpiob::*;
 use crate::gpio::{AltMode, Floating, Input};
 use crate::hal;
 use crate::pac::SPI1;
+#[cfg(any(feature = "stm32l0x2", feature = "stm32l0x3"))]
+use crate::pac::SPI2;
 use crate::rcc::Rcc;
 use crate::time::Hertz;
 use core::ptr;
@@ -119,6 +121,23 @@ pins! {
             [PA7<Input<Floating>>, AltMode::AF0],
             [PA12<Input<Floating>>, AltMode::AF0],
             [PB5<Input<Floating>>, AltMode::AF0]
+        ]
+}
+
+#[cfg(any(feature = "stm32l0x2", feature = "stm32l0x3"))]
+pins! {
+    SPI2:
+        SCK: [
+            [NoSck, None],
+            [PB13<Input<Floating>>, AltMode::AF0]
+        ]
+        MISO: [
+            [NoMiso, None],
+            [PB14<Input<Floating>>, AltMode::AF0]
+        ]
+        MOSI: [
+            [NoMosi, None],
+            [PB15<Input<Floating>>, AltMode::AF0]
         ]
 }
 
@@ -290,6 +309,12 @@ macro_rules! spi {
     }
 }
 
+#[cfg(feature = "stm32l0x1")]
 spi! {
     SPI1: (spi1, apb2enr, spi1en, apb2_clk),
+}
+
+#[cfg(any(feature = "stm32l0x2", feature = "stm32l0x3"))]
+spi! {
+    SPI2: (spi2, apb1enr, spi2en, apb1_clk),
 }
