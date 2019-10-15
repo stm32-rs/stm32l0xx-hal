@@ -309,7 +309,6 @@ macro_rules! spi {
     }
 }
 
-#[cfg(feature = "stm32l0x1")]
 spi! {
     SPI1: (spi1, apb2enr, spi1en, apb2_clk),
 }
