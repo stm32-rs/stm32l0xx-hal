@@ -170,6 +170,8 @@ impl_pins!(
 #[cfg(any(feature = "stm32l0x2", feature = "stm32l0x3"))]
 impl_pins!(
     LPUART1, PA2, PA3,  AF6;
+    LPUART1, PB10, PB11,  AF4;
+    LPUART1, PB11, PB10,  AF7;
     USART1, PA9,  PA10, AF4;
     USART1, PB6,  PB7,  AF0;
     USART2, PA2,  PA3,  AF4;
