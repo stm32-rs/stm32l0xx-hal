@@ -29,9 +29,9 @@ use crate::pac::{
     i2c1::{
         RegisterBlock,
         cr2::RD_WRNW,
-    },
-    I2C1,
+    }
 };
+pub use crate::pac::I2C1;
 use crate::rcc::Rcc;
 use crate::time::Hertz;
 use cast::u8;
