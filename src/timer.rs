@@ -172,7 +172,11 @@ macro_rules! timers {
                         }
                     );
 
+                    // Load prescaler value and reset its counter.
+                    // Setting URS makes sure no interrupt is generated.
                     self.tim.cr1.modify(|_, w| w.urs().set_bit());
+                    self.tim.egr.write(|w| w.ug().set_bit());
+
                     self.tim.cr1.modify(|_, w| w.cen().set_bit());
                 }
 
