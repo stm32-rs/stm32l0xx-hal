@@ -25,24 +25,27 @@ fn main() {
         panic!("\n\nMust select exactly one package for linker script generation!\nChoices: 'stm32l0x1' or 'stm32l0x2' or 'stm32l0x3'\n\n");
     }
 
-    let linker = if cfg!(feature = "stm32l0x1") {
-        include_bytes!("memory_l0x1.x").as_ref()
-    } else if cfg!(feature = "stm32l0x2") {
-        include_bytes!("memory_l0x2.x").as_ref()
-    } else if cfg!(feature = "stm32l0x3") {
-        include_bytes!("memory_l0x3.x").as_ref()
-    } else {
-        unreachable!();
-    };
+    if !cfg!(feature = "disable-linker-script") {
+        let linker = if cfg!(feature = "stm32l0x1") {
+            include_bytes!("memory_l0x1.x").as_ref()
+        } else if cfg!(feature = "stm32l0x2") {
+            include_bytes!("memory_l0x2.x").as_ref()
+        } else if cfg!(feature = "stm32l0x3") {
+            include_bytes!("memory_l0x3.x").as_ref()
+        } else {
+            unreachable!();
+        };
 
-    File::create(out.join("memory.x"))
-        .unwrap()
-        .write_all(linker)
-        .unwrap();
-    println!("cargo:rustc-link-search={}", out.display());
+        File::create(out.join("memory.x"))
+            .unwrap()
+            .write_all(linker)
+            .unwrap();
+        println!("cargo:rustc-link-search={}", out.display());
+
+        println!("cargo:rerun-if-changed=memory_l0x1.x");
+        println!("cargo:rerun-if-changed=memory_l0x2.x");
+        println!("cargo:rerun-if-changed=memory_l0x3.x");
+    }
 
     println!("cargo:rerun-if-changed=build.rs");
-    println!("cargo:rerun-if-changed=memory_l0x1.x");
-    println!("cargo:rerun-if-changed=memory_l0x2.x");
-    println!("cargo:rerun-if-changed=memory_l0x3.x");
 }
