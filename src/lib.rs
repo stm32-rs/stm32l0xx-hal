@@ -33,6 +33,8 @@ pub mod prelude;
 pub mod pwm;
 pub mod pwr;
 pub mod rcc;
+#[cfg(any(feature = "stm32l0x2", feature = "stm32l0x3"))]
+pub mod rng;
 pub mod rtc;
 pub mod serial;
 pub mod spi;

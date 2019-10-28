@@ -115,6 +115,10 @@ name = "i2c_dma"
 required-features = ["rt","stm32l0x2"]
 
 [[example]]
+name = "rng"
+required-features = ["rt","stm32l0x2"]
+
+[[example]]
 name = "rtc"
 required-features = ["stm32l0x2"]
 
