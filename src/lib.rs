@@ -33,6 +33,7 @@ pub mod prelude;
 pub mod pwm;
 pub mod pwr;
 pub mod rcc;
+pub mod rng;
 pub mod rtc;
 pub mod serial;
 pub mod spi;
