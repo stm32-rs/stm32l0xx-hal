@@ -31,37 +31,7 @@ use crate::{
 /// initialization. After calling this method, you need `stm32-usbd` to actually
 /// do anything useful with the USB peripheral.
 pub fn init(rcc: &mut Rcc, syscfg: &mut SYSCFG, crs: pac::CRS) {
-    // Reset CRS peripheral
-    rcc.rb.apb1rstr.modify(|_, w| w.crsrst().set_bit());
-    rcc.rb.apb1rstr.modify(|_, w| w.crsrst().clear_bit());
-
-    // Enable CRS peripheral
-    rcc.rb.apb1enr.modify(|_, w| w.crsen().set_bit());
-
-    // Initialize CRS
-    crs.cfgr.write(|w|
-        // Select LSE as synchronization source
-        unsafe { w.syncsrc().bits(0b01) }
-    );
-    crs.cr.write(|w|
-        w
-            .autotrimen().set_bit()
-            .cen().set_bit()
-    );
-
-    // Enable VREFINT reference for HSI48 oscillator
-    syscfg.syscfg.cfgr3.modify(|_, w|
-        w
-            .enref_rc48mhz().set_bit()
-            .en_bgap().set_bit()
-    );
-
-    // Select HSI48 as USB clock
-    rcc.rb.ccipr.modify(|_, w| w.hsi48msel().set_bit());
-
-    // Enable dedicated USB clock
-    rcc.rb.crrcr.modify(|_, w| w.hsi48on().set_bit());
-    while rcc.rb.crrcr.read().hsi48rdy().bit_is_clear() {};
+    rcc.enable48_mhz(syscfg, crs);
 
     // Reset USB peripheral
     rcc.rb.apb1rstr.modify(|_, w| w.usbrst().set_bit());

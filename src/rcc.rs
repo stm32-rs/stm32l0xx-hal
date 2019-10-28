@@ -1,4 +1,5 @@
-use crate::pac::RCC;
+use crate::pac::{RCC, CRS};
+use crate::syscfg::SYSCFG;
 use crate::time::{Hertz, U32Ext};
 
 /// System clock mux source
@@ -170,6 +171,42 @@ pub struct Rcc {
     pub(crate) rb: RCC,
 }
 
+impl Rcc {
+    pub fn enable48_mhz(&mut self, syscfg: &mut SYSCFG, crs: CRS) {
+     // Reset CRS peripheral
+        self.rb.apb1rstr.modify(|_, w| w.crsrst().set_bit());
+        self.rb.apb1rstr.modify(|_, w| w.crsrst().clear_bit());
+
+        // Enable CRS peripheral
+        self.rb.apb1enr.modify(|_, w| w.crsen().set_bit());
+
+        // Initialize CRS
+        crs.cfgr.write(|w|
+            // Select LSE as synchronization source
+            unsafe { w.syncsrc().bits(0b01) }
+        );
+        crs.cr.write(|w|
+            w
+                .autotrimen().set_bit()
+                .cen().set_bit()
+        );
+
+        // Enable VREFINT reference for HSI48 oscillator
+        syscfg.syscfg.cfgr3.modify(|_, w|
+            w
+                .enref_rc48mhz().set_bit()
+                .en_bgap().set_bit()
+        );
+
+        // Select HSI48 as USB clock
+        self.rb.ccipr.modify(|_, w| w.hsi48msel().set_bit());
+
+        // Enable dedicated USB clock
+        self.rb.crrcr.modify(|_, w| w.hsi48on().set_bit());
+        while self.rb.crrcr.read().hsi48rdy().bit_is_clear() {};
+    }
+}
+
 /// Extension trait that freezes the `RCC` peripheral with provided clocks configuration
 pub trait RccExt {
     fn freeze(self, config: Config) -> Rcc;
@@ -310,6 +347,7 @@ impl RccExt for RCC {
 
         Rcc { rb: self, clocks }
     }
+
 }
 
 /// Frozen clock frequencies
