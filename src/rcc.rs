@@ -1,6 +1,13 @@
 use crate::pac::RCC;
 use crate::time::{Hertz, U32Ext};
 
+#[cfg(any(feature = "stm32l0x2", feature = "stm32l0x3"))]
+use crate::{
+    pac::CRS,
+    syscfg::SYSCFG,
+};
+
+
 /// System clock mux source
 #[derive(Clone, Copy)]
 pub enum ClockSrc {
@@ -170,6 +177,45 @@ pub struct Rcc {
     pub(crate) rb: RCC,
 }
 
+#[cfg(any(feature = "stm32l0x2", feature = "stm32l0x3"))]
+impl Rcc {
+    pub fn enable_hsi48(&mut self, syscfg: &mut SYSCFG, crs: CRS) -> HSI48 {
+        // Reset CRS peripheral
+        self.rb.apb1rstr.modify(|_, w| w.crsrst().set_bit());
+        self.rb.apb1rstr.modify(|_, w| w.crsrst().clear_bit());
+
+        // Enable CRS peripheral
+        self.rb.apb1enr.modify(|_, w| w.crsen().set_bit());
+
+        // Initialize CRS
+        crs.cfgr.write(|w|
+            // Select LSE as synchronization source
+            unsafe { w.syncsrc().bits(0b01) }
+        );
+        crs.cr.write(|w|
+            w
+                .autotrimen().set_bit()
+                .cen().set_bit()
+        );
+
+        // Enable VREFINT reference for HSI48 oscillator
+        syscfg.syscfg.cfgr3.modify(|_, w|
+            w
+                .enref_rc48mhz().set_bit()
+                .en_bgap().set_bit()
+        );
+
+        // Select HSI48 as USB clock
+        self.rb.ccipr.modify(|_, w| w.hsi48msel().set_bit());
+
+        // Enable dedicated USB clock
+        self.rb.crrcr.modify(|_, w| w.hsi48on().set_bit());
+        while self.rb.crrcr.read().hsi48rdy().bit_is_clear() {};
+
+        HSI48(())
+    }
+}
+
 /// Extension trait that freezes the `RCC` peripheral with provided clocks configuration
 pub trait RccExt {
     fn freeze(self, config: Config) -> Rcc;
@@ -310,6 +356,7 @@ impl RccExt for RCC {
 
         Rcc { rb: self, clocks }
     }
+
 }
 
 /// Frozen clock frequencies
@@ -362,3 +409,10 @@ impl Clocks {
         self.apb2_tim_clk
     }
 }
+
+
+/// Token that exists only, if the HSI48 clock has been enabled
+///
+/// You can get an instance of this struct by calling [`Rcc::enable_hsi48`].
+#[derive(Clone, Copy)]
+pub struct HSI48(());
