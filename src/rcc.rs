@@ -230,7 +230,7 @@ impl RccExt for RCC {
                 #[cfg(feature = "stm32l0x1")]
                 self.icscr.write(|w| w.msirange().bits(range));
                 #[cfg(any(feature = "stm32l0x2", feature = "stm32l0x3"))]
-                self.icscr.write(|w| unsafe { w.msirange().bits(range) });
+                self.icscr.write(|w| w.msirange().bits(range));
 
                 // Enable MSI
                 self.cr.write(|w| w.msion().set_bit());

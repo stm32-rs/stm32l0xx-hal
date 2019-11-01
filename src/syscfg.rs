@@ -4,11 +4,7 @@
 
 use crate::{pac, rcc::Rcc};
 
-#[cfg(feature = "stm32l0x1")]
 type PacSyscfg = pac::SYSCFG;
-
-#[cfg(any(feature = "stm32l0x2", feature = "stm32l0x3"))]
-type PacSyscfg = pac::SYSCFG_COMP;
 
 pub struct SYSCFG {
     pub(crate) syscfg: PacSyscfg,
