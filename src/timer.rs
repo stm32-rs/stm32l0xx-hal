@@ -1,9 +1,6 @@
 //! Timers
 use crate::hal::timer::{CountDown, Periodic};
-#[cfg(feature = "stm32l0x1")]
 use crate::pac::{TIM2, TIM21, TIM22, TIM3};
-#[cfg(any(feature = "stm32l0x2", feature = "stm32l0x3"))]
-use crate::pac::{TIM2, TIM21, TIM3};
 use crate::rcc::{Clocks, Rcc};
 use crate::time::Hertz;
 use cast::{u16, u32};
@@ -195,17 +192,9 @@ macro_rules! timers {
     }
 }
 
-#[cfg(feature = "stm32l0x1")]
 timers! {
     TIM2: (tim2, tim2en, tim2rst, apb1enr, apb1rstr, apb1_tim_clk),
     TIM3: (tim3, tim3en, tim3rst, apb1enr, apb1rstr, apb1_tim_clk),
     TIM21: (tim21, tim21en, tim21rst, apb2enr, apb2rstr, apb2_tim_clk),
     TIM22: (tim22, tim22en, tim22rst, apb2enr, apb2rstr, apb2_tim_clk),
-}
-#[cfg(any(feature = "stm32l0x2", feature = "stm32l0x3"))]
-timers! {
-    TIM2: (tim2, tim2en, tim2rst, apb1enr, apb1rstr, apb1_tim_clk),
-    TIM3: (tim3, tim3en, tim3rst, apb1enr, apb1rstr, apb1_tim_clk),
-    TIM21: (tim21, tim21en, tim21rst, apb2enr, apb2rstr, apb2_tim_clk),
-    //TODO: figure out why I had to remove TIM22 from stm32l0x2 (lthiery)
 }
