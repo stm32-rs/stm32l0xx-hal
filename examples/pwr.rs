@@ -44,10 +44,7 @@ fn main() -> ! {
 
     let mut led = gpiob.pb2.into_push_pull_output().downgrade();
 
-    #[cfg(feature = "stm32l0x1")]
     let mut syscfg = SYSCFG::new(dp.SYSCFG, &mut rcc);
-    #[cfg(any(feature = "stm32l0x2", feature = "stm32l0x3"))]
-    let mut syscfg = SYSCFG::new(dp.SYSCFG_COMP, &mut rcc);
 
     let instant = Instant::new()
         .set_year(19)

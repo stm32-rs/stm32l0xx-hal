@@ -32,10 +32,7 @@ fn main() -> ! {
     let mut exti = dp.EXTI;
     let mut pwr = PWR::new(dp.PWR, &mut rcc);
 
-    #[cfg(feature = "stm32l0x1")]
     let mut syscfg = SYSCFG::new(dp.SYSCFG, &mut rcc);
-    #[cfg(any(feature = "stm32l0x2", feature = "stm32l0x3"))]
-    let mut syscfg = SYSCFG::new(dp.SYSCFG_COMP, &mut rcc);
 
     let instant = Instant::new()
         .set_year(19)

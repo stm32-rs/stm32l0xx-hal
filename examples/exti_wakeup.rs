@@ -29,10 +29,7 @@ fn main() -> ! {
     let button = gpiob.pb2.into_floating_input();
     let mut led = gpiob.pb6.into_push_pull_output();
 
-    #[cfg(feature = "stm32l0x1")]
     let mut syscfg = SYSCFG::new(dp.SYSCFG, &mut rcc);
-    #[cfg(any(feature = "stm32l0x2", feature = "stm32l0x3"))]
-    let mut syscfg = SYSCFG::new(dp.SYSCFG_COMP, &mut rcc);
 
     exti.listen(
         &mut syscfg,

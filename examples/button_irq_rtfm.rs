@@ -28,10 +28,7 @@ const APP: () = {
         // Configure PB2 as input.
         let button = gpiob.pb2.into_pull_up_input();
 
-        #[cfg(feature = "stm32l0x1")]
         let mut syscfg = SYSCFG::new(device.SYSCFG, &mut rcc);
-        #[cfg(any(feature = "stm32l0x2", feature = "stm32l0x3"))]
-        let mut syscfg = SYSCFG::new(device.SYSCFG_COMP, &mut rcc);
 
         // Configure the external interrupt on the falling edge for the pin 0.
         let exti = device.EXTI;
