@@ -10,7 +10,7 @@
 //
 // This should be removed once there are any STM32L0x2 modules making use of
 // DMA.
-#![cfg_attr(not(feature = "stm32l082"), allow(unused, unused_macros))]
+#![cfg_attr(not(feature = "stm32l082"), allow(dead_code, unused_imports))]
 
 
 use core::{
@@ -341,17 +341,11 @@ macro_rules! impl_channel {
                     where Word: SupportedWordSize
                 {
                     handle.dma.$chfield.cr.write(|w| {
-                        // Safe, as the enum we use should only provide valid
-                        // bit patterns.
-                        let w = unsafe {
-                            w
-                                // Word size in memory
-                                .msize().variant(Word::size())
-                                // Word size in peripheral
-                                .psize().variant(Word::size())
-                        };
-
                         w
+                            // Word size in memory
+                            .msize().variant(Word::size())
+                            // Word size in peripheral
+                            .psize().variant(Word::size())
                             // Memory-to-memory mode disabled
                             .mem2mem().disabled()
                             // Priority level
