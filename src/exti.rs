@@ -34,6 +34,10 @@ pub fn line_is_triggered(reg: u32, line: u8) -> bool {
 }
 
 impl ExtiExt for EXTI {
+    // `port`, `line` and `edge` are almost always constants, so make sure they can be
+    // constant-propagated by marking the function as `#[inline]`. This saves ~600 Bytes in some
+    // simple apps (eg. the `pwr.rs` example).
+    #[inline]
     fn listen(&self, syscfg: &mut SYSCFG, port: gpio::Port, line: u8, edge: TriggerEdge) {
         assert!(line <= 22);
         assert_ne!(line, 18);
