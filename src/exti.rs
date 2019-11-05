@@ -35,8 +35,7 @@ pub fn line_is_triggered(reg: u32, line: u8) -> bool {
 
 impl ExtiExt for EXTI {
     fn listen(&self, syscfg: &mut SYSCFG, port: gpio::Port, line: u8, edge: TriggerEdge) {
-        assert!(line <= 22);
-        assert_ne!(line, 18);
+        assert_line_valid(line);
 
         // translate port into bit values for EXTIn registers
         let port_bm = match port {
@@ -116,8 +115,7 @@ impl ExtiExt for EXTI {
     }
 
     fn unlisten(&self, line: u8) {
-        assert!(line <= 22);
-        assert_ne!(line, 18);
+        assert_line_valid(line);
 
         bb::clear(&self.rtsr, line);
         bb::clear(&self.ftsr, line);
@@ -125,8 +123,7 @@ impl ExtiExt for EXTI {
     }
 
     fn pend_interrupt(&self, line: u8) {
-        assert!(line <= 22);
-        assert_ne!(line, 18);
+        assert_line_valid(line);
 
         bb::set(&self.swier, line);
     }
@@ -136,8 +133,7 @@ impl ExtiExt for EXTI {
     }
 
     fn clear_irq(&self, line: u8) {
-        assert!(line <= 22);
-        assert_ne!(line, 18);
+        assert_line_valid(line);
 
         self.pr.modify(|_, w| unsafe { w.bits(0b1 << line) });
     }
@@ -157,7 +153,14 @@ impl ExtiExt for EXTI {
             0..=1 => pac::Interrupt::EXTI0_1,
             2..=3 => pac::Interrupt::EXTI2_3,
             4..=15 => pac::Interrupt::EXTI4_15,
-            20 => pac::Interrupt::RTC,
+            16 => pac::Interrupt::PVD,
+            17 | 19 | 20 => pac::Interrupt::RTC,  // also LSE CSS
+            21 | 22 => pac::Interrupt::ADC_COMP,
+            23 => pac::Interrupt::I2C1,
+            25 => pac::Interrupt::USART1,
+            26 => pac::Interrupt::USART2,
+            28 => pac::Interrupt::AES_RNG_LPUART1,
+            29 => pac::Interrupt::LPTIM1,
             line => panic!("Line {} not supported", line),
         };
 
@@ -173,4 +176,13 @@ impl ExtiExt for EXTI {
             NVIC::mask(interrupt);
         });
     }
+}
+
+fn assert_line_valid(line: u8) {
+    assert!(line <= 29);
+    assert_ne!(line, 27);
+
+    // Line 18 is used by the USB peripheral. On the l0x1, it is reserved.
+    #[cfg(feature = "stm32l0x1")]
+    assert_ne!(line, 18);
 }
