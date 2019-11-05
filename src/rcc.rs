@@ -93,6 +93,7 @@ pub struct Config {
 }
 
 impl Default for Config {
+    #[inline]
     fn default() -> Config {
         Config {
             mux: ClockSrc::MSI(MSIRange::default()),
@@ -104,26 +105,31 @@ impl Default for Config {
 }
 
 impl Config {
+    #[inline]
     pub fn clock_src(mut self, mux: ClockSrc) -> Self {
         self.mux = mux;
         self
     }
 
+    #[inline]
     pub fn ahb_pre(mut self, pre: AHBPrescaler) -> Self {
         self.ahb_pre = pre;
         self
     }
 
+    #[inline]
     pub fn apb1_pre(mut self, pre: APBPrescaler) -> Self {
         self.apb1_pre = pre;
         self
     }
 
+    #[inline]
     pub fn apb2_pre(mut self, pre: APBPrescaler) -> Self {
         self.apb2_pre = pre;
         self
     }
 
+    #[inline]
     pub fn hsi16() -> Config {
         Config {
             mux: ClockSrc::HSI16,
@@ -133,6 +139,7 @@ impl Config {
         }
     }
 
+    #[inline]
     pub fn msi(range: MSIRange) -> Config {
         Config {
             mux: ClockSrc::MSI(range),
@@ -142,6 +149,7 @@ impl Config {
         }
     }
 
+    #[inline]
     pub fn pll(pll_src: PLLSource, pll_mul: PLLMul, pll_div: PLLDiv) -> Config {
         Config {
             mux: ClockSrc::PLL(pll_src, pll_mul, pll_div),
@@ -151,6 +159,7 @@ impl Config {
         }
     }
 
+    #[inline]
     pub fn hse<T>(freq: T) -> Config
     where
         T: Into<Hertz>,
@@ -176,6 +185,10 @@ pub trait RccExt {
 }
 
 impl RccExt for RCC {
+    // `cfgr` is almost always a constant, so make sure it can be constant-propagated properly by
+    // marking this function and all `Config` constructors and setters as `#[inline]`.
+    // This saves ~900 Bytes for the `pwr.rs` example.
+    #[inline]
     fn freeze(self, cfgr: Config) -> Rcc {
         let (sys_clk, sw_bits) = match cfgr.mux {
             ClockSrc::MSI(range) => {
