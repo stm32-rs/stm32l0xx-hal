@@ -1,4 +1,4 @@
-#![no_std]
+#![cfg_attr(not(test), no_std)]
 #![allow(non_camel_case_types)]
 
 #[cfg(not(any(feature = "stm32l0x1", feature = "stm32l0x2", feature = "stm32l0x3")))]
@@ -27,6 +27,7 @@ pub mod dma;
 pub mod exti;
 pub mod gpio;
 pub mod i2c;
+pub mod lptim;
 pub mod prelude;
 pub mod pwm;
 pub mod pwr;
