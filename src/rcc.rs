@@ -201,8 +201,8 @@ impl Rcc {
         // Enable VREFINT reference for HSI48 oscillator
         syscfg.syscfg.cfgr3.modify(|_, w|
             w
-                .enref_rc48mhz().set_bit()
-                .en_bgap().set_bit()
+                .enref_hsi48().set_bit()
+                .en_vrefint().set_bit()
         );
 
         // Select HSI48 as USB clock

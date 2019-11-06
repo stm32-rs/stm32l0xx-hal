@@ -14,7 +14,7 @@ fn main() -> ! {
     let dp = pac::Peripherals::take().unwrap();
 
     let mut rcc = dp.RCC.freeze(Config::hsi16());
-    let mut syscfg = SYSCFG::new(dp.SYSCFG_COMP, &mut rcc);
+    let mut syscfg = SYSCFG::new(dp.SYSCFG, &mut rcc);
 
     // constructor initializes 48 MHz clock that RNG requires
     // Initialize 48 MHz clock and RNG
