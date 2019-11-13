@@ -46,6 +46,8 @@ heapless = "0.5.0"
 panic-halt = "0.2.0"
 panic-semihosting = "0.5.1"
 cortex-m-rtfm = "0.4.3"
+usb-device = "0.2.3"
+usbd-serial = "0.1.0"
 
 [features]
 # Miscellaneaous features
@@ -142,3 +144,7 @@ required-features = ["rt"]
 [[example]]
 name = "adc_pwm"
 required-features = ["stm32l0x1"]
+
+[[example]]
+name = "usb_serial"
+required-features = ["rt", "stm32l0x2", "stm32-usbd"]
