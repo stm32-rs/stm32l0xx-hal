@@ -47,7 +47,7 @@ fn main() -> ! {
     let mut led = gpiob.pb2.into_push_pull_output().downgrade();
 
     let mut syscfg = SYSCFG::new(dp.SYSCFG, &mut rcc);
-    let mut lptim = LpTimer::init_periodic(dp.LPTIM, &mut rcc, ClockSrc::Lse);
+    let mut lptim = LpTimer::init_periodic(dp.LPTIM, &mut pwr, &mut rcc, ClockSrc::Lse);
 
     let exti_line = 29; // LPTIM1 wakeup
 

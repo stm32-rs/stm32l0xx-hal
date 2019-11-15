@@ -3,6 +3,7 @@
 use crate::hal;
 use crate::pac::LPTIM;
 use crate::rcc::Rcc;
+use crate::pwr::PWR;
 use crate::time::{Hertz, MicroSeconds};
 use cast::{u32, u64};
 use core::marker::PhantomData;
@@ -90,8 +91,8 @@ impl LpTimer<Periodic> {
     /// Initializes the Low-Power Timer in periodic mode.
     ///
     /// The timer needs to be started by calling `.start(freq)`.
-    pub fn init_periodic(lptim: LPTIM, rcc: &mut Rcc, clk: ClockSrc) -> Self {
-        Self::init(lptim, rcc, clk)
+    pub fn init_periodic(lptim: LPTIM, pwr: &mut PWR, rcc: &mut Rcc, clk: ClockSrc) -> Self {
+        Self::init(lptim, pwr, rcc, clk)
     }
 }
 
@@ -99,13 +100,17 @@ impl LpTimer<OneShot> {
     /// Initializes the Low-Power Timer in one-shot mode.
     ///
     /// The timer needs to be started by calling `.start(freq)`.
-    pub fn init_oneshot(lptim: LPTIM, rcc: &mut Rcc, clk: ClockSrc) -> Self {
-        Self::init(lptim, rcc, clk)
+    pub fn init_oneshot(lptim: LPTIM, pwr: &mut PWR, rcc: &mut Rcc, clk: ClockSrc) -> Self {
+        Self::init(lptim, pwr, rcc, clk)
     }
 }
 
 impl<M: CountMode> LpTimer<M> {
-    fn init(lptim: LPTIM, rcc: &mut Rcc, clk: ClockSrc) -> Self {
+    fn init(lptim: LPTIM, pwr: &mut PWR, rcc: &mut Rcc, clk: ClockSrc) -> Self {
+        // `pwr` is not used. It is used as a marker that guarantees that `PWR.CR` is set so this
+        // function can set the `RCC.LSEON` bit, which is otherwise write protected.
+        let _ = pwr;
+
         // Enable selected clock and determine its frequency
         let input_freq = match clk {
             ClockSrc::Apb1 => rcc.clocks.apb1_clk(),    // always enabled
