@@ -517,7 +517,7 @@ gpio!(GPIOC, gpioc, iopcen, PC, [
 ]);
 
 #[cfg(any(feature = "stm32l0x2", feature = "stm32l0x3"))]
-gpio!(GPIOD, gpiod, iopcen, PC, [
+gpio!(GPIOD, gpiod, iopden, PD, [
     PD0: (pd0, 0, Input<Floating>),
     PD1: (pd1, 1, Input<Floating>),
     PD2: (pd2, 2, Input<Floating>),
