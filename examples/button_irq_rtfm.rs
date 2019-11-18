@@ -35,7 +35,7 @@ const APP: () = {
 
         // Configure the external interrupt on the falling edge for the pin 0.
         let exti = device.EXTI;
-        exti.listen(&mut syscfg, button.port, button.i, TriggerEdge::Falling);
+        exti.listen(&mut syscfg, button.port(), button.pin_number(), TriggerEdge::Falling);
 
         // Return the initialised resources.
         init::LateResources {

@@ -36,14 +36,14 @@ fn main() -> ! {
 
     exti.listen(
         &mut syscfg,
-        button.port,
-        button.i,
+        button.port(),
+        button.pin_number(),
         exti::TriggerEdge::Falling,
     );
 
     loop {
         exti.wait_for_irq(
-            button.i,
+            button.pin_number(),
             pwr.stop_mode(
                 &mut scb,
                 &mut rcc,

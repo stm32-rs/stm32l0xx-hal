@@ -46,7 +46,7 @@ fn main() -> ! {
 
     // Configure the external interrupt on the falling edge for the pin 0.
     let exti = dp.EXTI;
-    exti.listen(&mut syscfg, button.port, button.i, TriggerEdge::Falling);
+    exti.listen(&mut syscfg, button.port(), button.pin_number(), TriggerEdge::Falling);
 
     // Store the external interrupt and LED in mutex reffcells to make them
     // available from the interrupt.

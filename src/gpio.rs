@@ -118,9 +118,7 @@ macro_rules! gpio {
                     Parts {
                         $(
                             $pxi: $PXi {
-                                 i: $i,
-                                port: Port::$PXx,
-                                _mode: PhantomData
+                                _mode: PhantomData,
                             },
                         )+
                     }
@@ -129,9 +127,20 @@ macro_rules! gpio {
 
             /// Partially erased pin
             pub struct $PXx<MODE> {
-                pub i: u8,
-                pub port: Port,
+                i: u8,
                 _mode: PhantomData<MODE>,
+            }
+
+            impl<MODE> $PXx<MODE> {
+                /// Returns the port this pin is part of.
+                pub fn port(&self) -> Port {
+                    Port::$PXx
+                }
+
+                /// Returns this pin's number inside its port.
+                pub fn pin_number(&self) -> u8 {
+                    self.i
+                }
             }
 
             impl<MODE> OutputPin for $PXx<Output<MODE>> {
@@ -198,9 +207,19 @@ macro_rules! gpio {
             $(
                 /// Pin
                 pub struct $PXi<MODE> {
-                    pub i: u8,
-                    pub port: Port,
                     _mode: PhantomData<MODE>,
+                }
+
+                impl<MODE> $PXi<MODE> {
+                    /// Returns the port this pin is part of.
+                    pub fn port(&self) -> Port {
+                        Port::$PXx
+                    }
+
+                    /// Returns this pin's number inside its port.
+                    pub fn pin_number(&self) -> u8 {
+                        $i
+                    }
                 }
 
                 impl<MODE> $PXi<MODE> {
@@ -218,8 +237,6 @@ macro_rules! gpio {
                             })
                         };
                         $PXi {
-                             i: $i,
-                            port: Port::$PXx,
                             _mode: PhantomData
                         }
                     }
@@ -238,8 +255,6 @@ macro_rules! gpio {
                             })
                         };
                         $PXi {
-                             i: $i,
-                            port: Port::$PXx,
                             _mode: PhantomData
                         }
                     }
@@ -258,8 +273,6 @@ macro_rules! gpio {
                             })
                         };
                         $PXi {
-                             i: $i,
-                            port: Port::$PXx,
                             _mode: PhantomData
                         }
                     }
@@ -278,8 +291,6 @@ macro_rules! gpio {
                             });
                         }
                         $PXi {
-                             i: $i,
-                            port: Port::$PXx,
                             _mode: PhantomData
                         }
                     }
@@ -301,8 +312,6 @@ macro_rules! gpio {
                             })
                         };
                         $PXi {
-                             i: $i,
-                            port: Port::$PXx,
                             _mode: PhantomData
                         }
                     }
@@ -324,8 +333,6 @@ macro_rules! gpio {
                             })
                         };
                         $PXi {
-                             i: $i,
-                            port: Port::$PXx,
                             _mode: PhantomData
                         }
                     }
@@ -372,7 +379,6 @@ macro_rules! gpio {
                     pub fn downgrade(self) -> $PXx<Output<MODE>> {
                         $PXx {
                             i: $i,
-                            port: Port::$PXx,
                             _mode: self._mode,
                         }
                     }
@@ -433,7 +439,6 @@ macro_rules! gpio {
                     pub fn downgrade(self) -> $PXx<Input<MODE>> {
                         $PXx {
                             i: $i,
-                            port: Port::$PXx,
                             _mode: self._mode,
                         }
                     }
