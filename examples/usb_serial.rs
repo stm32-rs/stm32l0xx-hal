@@ -6,7 +6,7 @@ extern crate panic_semihosting;
 
 use cortex_m_rt::entry;
 use stm32l0xx_hal::usb::{Peripheral, UsbBus};
-use stm32l0xx_hal::{pac, prelude::*, rcc};
+use stm32l0xx_hal::{pac, prelude::*, rcc, syscfg::SYSCFG};
 use usb_device::prelude::*;
 use usbd_serial::{SerialPort, USB_CLASS_CDC};
 
@@ -15,6 +15,8 @@ fn main() -> ! {
     let dp = pac::Peripherals::take().unwrap();
 
     let mut rcc = dp.RCC.freeze(rcc::Config::hsi16());
+    let mut syscfg = SYSCFG::new(dp.SYSCFG_COMP, &mut rcc);
+    rcc.enable_hsi48(&mut syscfg, dp.CRS);
 
     let gpioa = dp.GPIOA.split(&mut rcc);
 

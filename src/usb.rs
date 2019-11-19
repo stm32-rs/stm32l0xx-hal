@@ -45,9 +45,9 @@ unsafe impl UsbPeripheral for Peripheral {
     }
 
     fn startup_delay() {
-        // There is a chip specific startup delay. For STM32F103xx it's 1µs and this should wait for
+        // There is a chip specific startup delay. For STM32L0x2/x3 it's 1µs and this should wait for
         // at least that long.
-        cortex_m::asm::delay(72);
+        cortex_m::asm::delay(32);
     }
 }
 
