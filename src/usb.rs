@@ -1,5 +1,7 @@
 //! Interface to the USB peripheral
 //!
+//! Requires the `stm32-usbd` feature.
+//!
 //! As USB seems to work mostly the same across all STM32 MCUs, there is a
 //! single crate that supports USB for these MCUs:
 //! [`stm32-usbd`](https://crates.io/crates/stm32-usbd)
