@@ -79,12 +79,6 @@ pub enum Port {
     PH,
 }
 
-/// Error type used by the GPIO trait impls.
-///
-/// GPIO operations cannot fail, so this is uninhabited.
-#[derive(Debug)]
-pub enum Error {}
-
 macro_rules! gpio {
     ($GPIOX:ident, $gpiox:ident, $iopxenr:ident, $PXx:ident, [
         $($PXi:ident: ($pxi:ident, $i:expr, $MODE:ty),)+
@@ -144,7 +138,7 @@ macro_rules! gpio {
             }
 
             impl<MODE> OutputPin for $PXx<Output<MODE>> {
-                type Error = super::Error;
+                type Error = void::Void;
 
                 fn set_high(&mut self) -> Result<(), Self::Error> {
                     // NOTE(unsafe) atomic write to a stateless register
@@ -175,7 +169,7 @@ macro_rules! gpio {
             impl<MODE> toggleable::Default for $PXx<Output<MODE>> {}
 
             impl<MODE> InputPin for $PXx<Output<MODE>> {
-                type Error = super::Error;
+                type Error = void::Void;
 
                 fn is_high(&self) -> Result<bool, Self::Error> {
                     let is_high = !self.is_low()?;
@@ -190,7 +184,7 @@ macro_rules! gpio {
             }
 
             impl<MODE> InputPin for $PXx<Input<MODE>> {
-                type Error = super::Error;
+                type Error = void::Void;
 
                 fn is_high(&self) -> Result<bool, Self::Error> {
                     let is_high = !self.is_low()?;
@@ -385,7 +379,7 @@ macro_rules! gpio {
                 }
 
                 impl<MODE> OutputPin for $PXi<Output<MODE>> {
-                    type Error = super::Error;
+                    type Error = void::Void;
 
                     fn set_high(&mut self) -> Result<(), Self::Error> {
                         // NOTE(unsafe) atomic write to a stateless register
@@ -417,7 +411,7 @@ macro_rules! gpio {
                 impl<MODE> toggleable::Default for $PXi<Output<MODE>> {}
 
                 impl<MODE> InputPin for $PXi<Output<MODE>> {
-                    type Error = super::Error;
+                    type Error = void::Void;
 
                     fn is_high(&self) -> Result<bool, Self::Error> {
                         let is_high = !self.is_low()?;
@@ -445,8 +439,7 @@ macro_rules! gpio {
                 }
 
                 impl<MODE> InputPin for $PXi<Input<MODE>> {
-
-                    type Error = super::Error;
+                    type Error = void::Void;
 
                     fn is_high(&self) -> Result<bool, Self::Error> {
                         let is_high = !self.is_low()?;
