@@ -42,6 +42,7 @@ pub struct Output<MODE> {
 pub struct PushPull;
 
 /// GPIO Pin speed selection
+#[derive(Debug, Copy, Clone, PartialEq, Eq)]
 pub enum Speed {
     Low = 0,
     Medium = 1,
@@ -62,14 +63,14 @@ pub(crate) enum AltMode {
 }
 
 #[cfg(feature = "stm32l0x1")]
-#[derive(Copy, Clone)]
+#[derive(Copy, Clone, Debug, PartialEq, Eq)]
 pub enum Port {
     PA,
     PB,
 }
 
 #[cfg(any(feature = "stm32l0x2", feature = "stm32l0x3"))]
-#[derive(Copy, Clone)]
+#[derive(Copy, Clone, Debug, PartialEq, Eq)]
 pub enum Port {
     PA,
     PB,
