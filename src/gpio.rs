@@ -42,6 +42,7 @@ pub struct Output<MODE> {
 pub struct PushPull;
 
 /// GPIO Pin speed selection
+#[derive(Debug, Copy, Clone, PartialEq, Eq)]
 pub enum Speed {
     Low = 0,
     Medium = 1,
@@ -62,14 +63,14 @@ pub(crate) enum AltMode {
 }
 
 #[cfg(feature = "stm32l0x1")]
-#[derive(Copy, Clone)]
+#[derive(Copy, Clone, Debug, PartialEq, Eq)]
 pub enum Port {
     PA,
     PB,
 }
 
 #[cfg(any(feature = "stm32l0x2", feature = "stm32l0x3"))]
-#[derive(Copy, Clone)]
+#[derive(Copy, Clone, Debug, PartialEq, Eq)]
 pub enum Port {
     PA,
     PB,
@@ -77,11 +78,6 @@ pub enum Port {
     PD,
     PE,
     PH,
-}
-
-#[derive(Debug)]
-pub enum Error {
-    Foo,
 }
 
 macro_rules! gpio {
@@ -117,9 +113,7 @@ macro_rules! gpio {
                     Parts {
                         $(
                             $pxi: $PXi {
-                                 i: $i,
-                                port: Port::$PXx,
-                                _mode: PhantomData
+                                _mode: PhantomData,
                             },
                         )+
                     }
@@ -128,21 +122,32 @@ macro_rules! gpio {
 
             /// Partially erased pin
             pub struct $PXx<MODE> {
-                pub i: u8,
-                pub port: Port,
+                i: u8,
                 _mode: PhantomData<MODE>,
             }
 
-            impl<MODE> OutputPin for $PXx<Output<MODE>> {
-                type Error = ();
+            impl<MODE> $PXx<MODE> {
+                /// Returns the port this pin is part of.
+                pub fn port(&self) -> Port {
+                    Port::$PXx
+                }
 
-                fn set_high(&mut self) -> Result<(), ()> {
+                /// Returns this pin's number inside its port.
+                pub fn pin_number(&self) -> u8 {
+                    self.i
+                }
+            }
+
+            impl<MODE> OutputPin for $PXx<Output<MODE>> {
+                type Error = void::Void;
+
+                fn set_high(&mut self) -> Result<(), Self::Error> {
                     // NOTE(unsafe) atomic write to a stateless register
                     unsafe { (*$GPIOX::ptr()).bsrr.write(|w| w.bits(1 << self.i)) };
                     Ok(())
                 }
 
-                fn set_low(&mut self) -> Result<(), ()> {
+                fn set_low(&mut self) -> Result<(), Self::Error> {
                     // NOTE(unsafe) atomic write to a stateless register
                     unsafe { (*$GPIOX::ptr()).bsrr.write(|w| w.bits(1 << (self.i + 16))) };
                     Ok(())
@@ -150,12 +155,12 @@ macro_rules! gpio {
             }
 
             impl<MODE> StatefulOutputPin for $PXx<Output<MODE>> {
-                fn is_set_high(&self) -> Result<bool, ()> {
+                fn is_set_high(&self) -> Result<bool, Self::Error> {
                     let is_high = self.is_set_low()?;
                     Ok(is_high)
                 }
 
-                fn is_set_low(&self) -> Result<bool, ()> {
+                fn is_set_low(&self) -> Result<bool, Self::Error> {
                     // NOTE(unsafe) atomic read with no side effects
                     let is_low = unsafe { (*$GPIOX::ptr()).odr.read().bits() & (1 << self.i) == 0 };
                     Ok(is_low)
@@ -165,14 +170,14 @@ macro_rules! gpio {
             impl<MODE> toggleable::Default for $PXx<Output<MODE>> {}
 
             impl<MODE> InputPin for $PXx<Output<MODE>> {
-                type Error = ();
+                type Error = void::Void;
 
-                fn is_high(&self) -> Result<bool, ()> {
+                fn is_high(&self) -> Result<bool, Self::Error> {
                     let is_high = !self.is_low()?;
                     Ok(is_high)
                 }
 
-                fn is_low(&self) -> Result<bool, ()> {
+                fn is_low(&self) -> Result<bool, Self::Error> {
                     // NOTE(unsafe) atomic read with no side effects
                     let is_low = unsafe { (*$GPIOX::ptr()).idr.read().bits() & (1 << self.i) == 0 };
                     Ok(is_low)
@@ -180,14 +185,14 @@ macro_rules! gpio {
             }
 
             impl<MODE> InputPin for $PXx<Input<MODE>> {
-                type Error = ();
+                type Error = void::Void;
 
-                fn is_high(&self) -> Result<bool, ()> {
+                fn is_high(&self) -> Result<bool, Self::Error> {
                     let is_high = !self.is_low()?;
                     Ok(is_high)
                 }
 
-                fn is_low(&self) -> Result<bool, ()> {
+                fn is_low(&self) -> Result<bool, Self::Error> {
                     // NOTE(unsafe) atomic read with no side effects
                     let is_low = unsafe { (*$GPIOX::ptr()).idr.read().bits() & (1 << self.i) == 0 };
                     Ok(is_low)
@@ -197,9 +202,19 @@ macro_rules! gpio {
             $(
                 /// Pin
                 pub struct $PXi<MODE> {
-                    pub i: u8,
-                    pub port: Port,
                     _mode: PhantomData<MODE>,
+                }
+
+                impl<MODE> $PXi<MODE> {
+                    /// Returns the port this pin is part of.
+                    pub fn port(&self) -> Port {
+                        Port::$PXx
+                    }
+
+                    /// Returns this pin's number inside its port.
+                    pub fn pin_number(&self) -> u8 {
+                        $i
+                    }
                 }
 
                 impl<MODE> $PXi<MODE> {
@@ -217,8 +232,6 @@ macro_rules! gpio {
                             })
                         };
                         $PXi {
-                             i: $i,
-                            port: Port::$PXx,
                             _mode: PhantomData
                         }
                     }
@@ -237,8 +250,6 @@ macro_rules! gpio {
                             })
                         };
                         $PXi {
-                             i: $i,
-                            port: Port::$PXx,
                             _mode: PhantomData
                         }
                     }
@@ -257,8 +268,6 @@ macro_rules! gpio {
                             })
                         };
                         $PXi {
-                             i: $i,
-                            port: Port::$PXx,
                             _mode: PhantomData
                         }
                     }
@@ -277,8 +286,6 @@ macro_rules! gpio {
                             });
                         }
                         $PXi {
-                             i: $i,
-                            port: Port::$PXx,
                             _mode: PhantomData
                         }
                     }
@@ -300,8 +307,6 @@ macro_rules! gpio {
                             })
                         };
                         $PXi {
-                             i: $i,
-                            port: Port::$PXx,
                             _mode: PhantomData
                         }
                     }
@@ -323,8 +328,6 @@ macro_rules! gpio {
                             })
                         };
                         $PXi {
-                             i: $i,
-                            port: Port::$PXx,
                             _mode: PhantomData
                         }
                     }
@@ -371,22 +374,21 @@ macro_rules! gpio {
                     pub fn downgrade(self) -> $PXx<Output<MODE>> {
                         $PXx {
                             i: $i,
-                            port: Port::$PXx,
                             _mode: self._mode,
                         }
                     }
                 }
 
                 impl<MODE> OutputPin for $PXi<Output<MODE>> {
-                    type Error = ();
+                    type Error = void::Void;
 
-                    fn set_high(&mut self) -> Result<(), ()> {
+                    fn set_high(&mut self) -> Result<(), Self::Error> {
                         // NOTE(unsafe) atomic write to a stateless register
                         unsafe { (*$GPIOX::ptr()).bsrr.write(|w| w.bits(1 << $i)) };
                         Ok(())
                     }
 
-                    fn set_low(&mut self) -> Result<(), ()> {
+                    fn set_low(&mut self) -> Result<(), Self::Error> {
                         // NOTE(unsafe) atomic write to a stateless register
                         unsafe { (*$GPIOX::ptr()).bsrr.write(|w| w.bits(1 << ($i + 16))) };
                         Ok(())
@@ -395,12 +397,12 @@ macro_rules! gpio {
 
                 impl<MODE> StatefulOutputPin for $PXi<Output<MODE>> {
 
-                    fn is_set_high(&self) -> Result<bool, ()> {
+                    fn is_set_high(&self) -> Result<bool, Self::Error> {
                         let is_set_high = !self.is_set_low()?;
                         Ok(is_set_high)
                     }
 
-                    fn is_set_low(&self) -> Result<bool, ()> {
+                    fn is_set_low(&self) -> Result<bool, Self::Error> {
                         // NOTE(unsafe) atomic read with no side effects
                         let is_set_low = unsafe { (*$GPIOX::ptr()).odr.read().bits() & (1 << $i) == 0 };
                         Ok(is_set_low)
@@ -410,14 +412,14 @@ macro_rules! gpio {
                 impl<MODE> toggleable::Default for $PXi<Output<MODE>> {}
 
                 impl<MODE> InputPin for $PXi<Output<MODE>> {
-                    type Error = ();
+                    type Error = void::Void;
 
-                    fn is_high(&self) -> Result<bool, ()> {
+                    fn is_high(&self) -> Result<bool, Self::Error> {
                         let is_high = !self.is_low()?;
                         Ok(is_high)
                     }
 
-                    fn is_low(&self) -> Result<bool, ()> {
+                    fn is_low(&self) -> Result<bool, Self::Error> {
                         // NOTE(unsafe) atomic read with no side effects
                         let is_low = unsafe { (*$GPIOX::ptr()).idr.read().bits() & (1 << $i) == 0 };
                         Ok(is_low)
@@ -432,22 +434,20 @@ macro_rules! gpio {
                     pub fn downgrade(self) -> $PXx<Input<MODE>> {
                         $PXx {
                             i: $i,
-                            port: Port::$PXx,
                             _mode: self._mode,
                         }
                     }
                 }
 
                 impl<MODE> InputPin for $PXi<Input<MODE>> {
+                    type Error = void::Void;
 
-                    type Error = ();
-
-                    fn is_high(&self) -> Result<bool, ()> {
+                    fn is_high(&self) -> Result<bool, Self::Error> {
                         let is_high = !self.is_low()?;
                         Ok(is_high)
                     }
 
-                    fn is_low(&self) -> Result<bool, ()> {
+                    fn is_low(&self) -> Result<bool, Self::Error> {
                         // NOTE(unsafe) atomic read with no side effects
                         let is_low = unsafe { (*$GPIOX::ptr()).idr.read().bits() & (1 << $i) == 0 };
                         Ok(is_low)
@@ -517,7 +517,7 @@ gpio!(GPIOC, gpioc, iopcen, PC, [
 ]);
 
 #[cfg(any(feature = "stm32l0x2", feature = "stm32l0x3"))]
-gpio!(GPIOD, gpiod, iopcen, PC, [
+gpio!(GPIOD, gpiod, iopden, PD, [
     PD0: (pd0, 0, Input<Floating>),
     PD1: (pd1, 1, Input<Floating>),
     PD2: (pd2, 2, Input<Floating>),
