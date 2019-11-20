@@ -34,6 +34,7 @@ pub fn line_is_triggered(reg: u32, line: u8) -> bool {
 }
 
 impl ExtiExt for EXTI {
+
     // `port` and `line` are almost always constants, so make sure they can get constant-propagated
     // by inlining the method. Saves ~600 Bytes in the `lptim.rs` example.
     #[inline]

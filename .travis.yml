@@ -5,8 +5,8 @@ rust:
   - nightly
 env:
   - MCU=stm32l0x1
-  - MCU=stm32l0x2
-  - MCU=stm32l0x3
+  - MCU=stm32l0x2 FEATURES=stm32-usbd
+  - MCU=stm32l0x3 FEATURES=stm32-usbd
 matrix:
   allow_failures:
     - rust: nightly
@@ -47,4 +47,4 @@ matrix:
 before_script:
   - rustup target add thumbv6m-none-eabi
 script:
-  - RUSTFLAGS="-D warnings" cargo build --release --examples --features="rt $MCU $PACKAGE"
+  - RUSTFLAGS="-D warnings" cargo build --release --examples --features="rt $MCU $PACKAGE $FEATURES"
