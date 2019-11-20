@@ -10,7 +10,7 @@
 //
 // This should be removed once there are any STM32L0x2 modules making use of
 // DMA.
-#![cfg_attr(not(feature = "stm32l082"), allow(unused, unused_macros))]
+#![cfg_attr(not(feature = "stm32l082"), allow(dead_code, unused_imports))]
 
 
 use core::{
@@ -30,7 +30,7 @@ use crate::{
     i2c,
     pac::{
         self,
-        dma1::ccr1,
+        dma1::ch::cr,
         I2C1,
         I2C2,
         I2C3,
@@ -222,37 +222,37 @@ impl<T, C, B> fmt::Debug for TransferResources<T, C, B> {
 
 
 /// The priority of the DMA transfer
-pub struct Priority(ccr1::PLW);
+pub struct Priority(cr::PL_A);
 
 impl Priority {
     pub fn low() -> Self {
-        Self(ccr1::PLW::LOW)
+        Self(cr::PL_A::LOW)
     }
 
     pub fn medium() -> Self {
-        Self(ccr1::PLW::MEDIUM)
+        Self(cr::PL_A::MEDIUM)
     }
 
     pub fn high() -> Self {
-        Self(ccr1::PLW::HIGH)
+        Self(cr::PL_A::HIGH)
     }
 
     pub fn very_high() -> Self {
-        Self(ccr1::PLW::VERYHIGH)
+        Self(cr::PL_A::VERYHIGH)
     }
 }
 
 
 /// The direction of the DMA transfer
-pub(crate) struct Direction(ccr1::DIRW);
+pub(crate) struct Direction(cr::DIR_A);
 
 impl Direction {
     pub fn memory_to_peripheral() -> Self {
-        Self(ccr1::DIRW::FROMMEMORY)
+        Self(cr::DIR_A::FROMMEMORY)
     }
 
     pub fn peripheral_to_memory() -> Self {
-        Self(ccr1::DIRW::FROMPERIPHERAL)
+        Self(cr::DIR_A::FROMPERIPHERAL)
     }
 }
 
@@ -268,8 +268,8 @@ pub trait Channel: Sized {
     fn set_transfer_len(&self, _: &mut Handle, len: u16);
     fn configure<Word>(&self,
         _:        &mut Handle,
-        priority: ccr1::PLW,
-        dir:      ccr1::DIRW,
+        priority: cr::PL_A,
+        dir:      cr::DIR_A,
     )
         where Word: SupportedWordSize;
     fn enable_interrupts(&self, interrupts: Interrupts);
@@ -284,11 +284,8 @@ macro_rules! impl_channel {
         $(
             $channel:ident,
             $field:ident,
+            $chfield:ident,
             $cxs:ident,
-            $cpar:ident,
-            $cmar:ident,
-            $cndtr:ident,
-            $ccr:ident,
             $tcif:ident,
             $teif:ident,
             $ctcif:ident,
@@ -322,43 +319,37 @@ macro_rules! impl_channel {
                     handle:  &mut Handle,
                     address: u32,
                 ) {
-                    handle.dma.$cpar.write(|w| w.pa().bits(address));
+                    handle.dma.$chfield.par.write(|w| w.pa().bits(address));
                 }
 
                 fn set_memory_address(&self,
                     handle:  &mut Handle,
                     address: u32,
                 ) {
-                    handle.dma.$cmar.write(|w| w.ma().bits(address));
+                    handle.dma.$chfield.mar.write(|w| w.ma().bits(address));
                 }
 
                 fn set_transfer_len(&self, handle: &mut Handle, len: u16) {
-                    handle.dma.$cndtr.write(|w| w.ndt().bits(len));
+                    handle.dma.$chfield.ndtr.write(|w| w.ndt().bits(len));
                 }
 
                 fn configure<Word>(&self,
                     handle:   &mut Handle,
-                    priority: ccr1::PLW,
-                    dir:      ccr1::DIRW,
+                    priority: cr::PL_A,
+                    dir:      cr::DIR_A,
                 )
                     where Word: SupportedWordSize
                 {
-                    handle.dma.$ccr.write(|w| {
-                        // Safe, as the enum we use should only provide valid
-                        // bit patterns.
-                        let w = unsafe {
-                            w
-                                // Word size in memory
-                                .msize().bits(Word::size()._bits())
-                                // Word size in peripheral
-                                .psize().bits(Word::size()._bits())
-                        };
-
+                    handle.dma.$chfield.cr.write(|w| {
                         w
+                            // Word size in memory
+                            .msize().variant(Word::size())
+                            // Word size in peripheral
+                            .psize().variant(Word::size())
                             // Memory-to-memory mode disabled
                             .mem2mem().disabled()
                             // Priority level
-                            .pl().bits(priority._bits())
+                            .pl().variant(priority)
                             // Increment memory pointer
                             .minc().enabled()
                             // Don't increment peripheral pointer
@@ -366,7 +357,7 @@ macro_rules! impl_channel {
                             // Circular mode disabled
                             .circ().disabled()
                             // Data transfer direction
-                            .dir().bit(dir._bits())
+                            .dir().variant(dir)
                             // Disable interrupts
                             .teie().disabled()
                             .htie().disabled()
@@ -377,7 +368,7 @@ macro_rules! impl_channel {
                 fn enable_interrupts(&self, interrupts: Interrupts) {
                     // Safe, because we're only accessing a register that this
                     // channel has exclusive access to.
-                    let ccr = &unsafe { &*pac::DMA1::ptr() }.$ccr;
+                    let ccr = &unsafe { &*pac::DMA1::ptr() }.$chfield.cr;
 
                     ccr.modify(|_, w|
                         w
@@ -390,7 +381,7 @@ macro_rules! impl_channel {
                 fn start(&self) {
                     // Safe, because we're only accessing a register that this
                     // channel has exclusive access to.
-                    let ccr = &unsafe { &*pac::DMA1::ptr() }.$ccr;
+                    let ccr = &unsafe { &*pac::DMA1::ptr() }.$chfield.cr;
 
                     // Start transfer
                     ccr.modify(|_, w| w.en().enabled());
@@ -419,7 +410,7 @@ macro_rules! impl_channel {
 
                     if dma.isr.read().$tcif().is_complete() {
                         dma.ifcr.write(|w| w.$ctcif().set_bit());
-                        dma.$ccr.modify(|_, w| w.en().disabled());
+                        dma.$chfield.cr.modify(|_, w| w.en().disabled());
                     }
                 }
 
@@ -444,27 +435,20 @@ macro_rules! impl_channel {
 }
 
 impl_channel!(
-    Channel1, channel1,
-        c1s, cpar1, cmar1, cndtr1, ccr1,
-        tcif1, teif1, ctcif1, cteif1;
-    Channel2, channel2,
-        c2s, cpar2, cmar2, cndtr2, ccr2,
-        tcif2, teif2, ctcif2, cteif2;
-    Channel3, channel3,
-        c3s, cpar3, cmar3, cndtr3, ccr3,
-        tcif3, teif3, ctcif3, cteif3;
-    Channel4, channel4,
-        c4s, cpar4, cmar4, cndtr4, ccr4,
-        tcif4, teif4, ctcif4, cteif4;
-    Channel5, channel5,
-        c5s, cpar5, cmar5, cndtr5, ccr5,
-        tcif5, teif5, ctcif5, cteif5;
-    Channel6, channel6,
-        c6s, cpar6, cmar6, cndtr6, ccr6,
-        tcif6, teif6, ctcif6, cteif6;
-    Channel7, channel7,
-        c7s, cpar7, cmar7, cndtr7, ccr7,
-        tcif7, teif7, ctcif7, cteif7;
+    Channel1, channel1, ch1,
+        c1s, tcif1, teif1, ctcif1, cteif1;
+    Channel2, channel2, ch2,
+        c2s, tcif2, teif2, ctcif2, cteif2;
+    Channel3, channel3, ch3,
+        c3s, tcif3, teif3, ctcif3, cteif3;
+    Channel4, channel4, ch4,
+        c4s, tcif4, teif4, ctcif4, cteif4;
+    Channel5, channel5, ch5,
+        c5s, tcif5, teif5, ctcif5, cteif5;
+    Channel6, channel6, ch6,
+        c6s, tcif6, teif6, ctcif6, cteif6;
+    Channel7, channel7, ch7,
+        c7s, tcif7, teif7, ctcif7, cteif7;
 );
 
 
@@ -580,24 +564,24 @@ impl<Word> Buffer<Word> for PtrBuffer<Word> {
 
 
 pub trait SupportedWordSize {
-    fn size() -> ccr1::MSIZEW;
+    fn size() -> cr::MSIZE_A;
 }
 
 impl SupportedWordSize for u8 {
-    fn size() -> ccr1::MSIZEW {
-        ccr1::MSIZEW::BITS8
+    fn size() -> cr::MSIZE_A {
+        cr::MSIZE_A::BITS8
     }
 }
 
 impl SupportedWordSize for u16 {
-    fn size() -> ccr1::MSIZEW {
-        ccr1::MSIZEW::BITS16
+    fn size() -> cr::MSIZE_A {
+        cr::MSIZE_A::BITS16
     }
 }
 
 impl SupportedWordSize for u32 {
-    fn size() -> ccr1::MSIZEW {
-        ccr1::MSIZEW::BITS32
+    fn size() -> cr::MSIZE_A {
+        cr::MSIZE_A::BITS32
     }
 }
 

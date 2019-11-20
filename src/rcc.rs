@@ -210,8 +210,8 @@ impl Rcc {
         // Enable VREFINT reference for HSI48 oscillator
         syscfg.syscfg.cfgr3.modify(|_, w|
             w
-                .enref_rc48mhz().set_bit()
-                .en_bgap().set_bit()
+                .enref_hsi48().set_bit()
+                .en_vrefint().set_bit()
         );
 
         // Select HSI48 as USB clock
@@ -240,10 +240,7 @@ impl RccExt for RCC {
             ClockSrc::MSI(range) => {
                 let range = range as u8;
                 // Set MSI range
-                #[cfg(feature = "stm32l0x1")]
                 self.icscr.write(|w| w.msirange().bits(range));
-                #[cfg(any(feature = "stm32l0x2", feature = "stm32l0x3"))]
-                self.icscr.write(|w| unsafe { w.msirange().bits(range) });
 
                 // Enable MSI
                 self.cr.write(|w| w.msion().set_bit());

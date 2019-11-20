@@ -110,20 +110,10 @@ impl Adc {
         while self.rb.cr.read().aden().bit_is_set() {}
     }
 
-    #[cfg(feature = "stm32l0x1")]
     fn write_smpr(&mut self) {
         self.rb
             .smpr
             .modify(|_, w| w.smp().bits(self.sample_time as u8));
-    }
-
-    #[cfg(any(feature = "stm32l0x2", feature = "stm32l0x3"))]
-    fn write_smpr(&mut self) {
-        self.rb
-            .smpr
-            // Safe, because `self.sample_time` is of type `SampleTime`, which
-            // defines only valid values.
-            .modify(|_, w| unsafe { w.smpr().bits(self.sample_time as u8) });
     }
 
     pub fn release(self) -> ADC {
@@ -156,8 +146,7 @@ where
             //
             // The `bits` method is not unsafe on STM32L0x1, so we need to
             // suppress the warning there.
-            #[cfg_attr(feature = "stm32l0x1", allow(unused_unsafe))]
-            let w = unsafe { w.res().bits(self.precision as u8) };
+            let w = w.res().bits(self.precision as u8);
             w.align().bit(self.align == Align::Left)
         });
 

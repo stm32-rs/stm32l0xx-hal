@@ -60,8 +60,7 @@ impl RTC {
         rcc.rb.csr.modify(|_, w| {
             // Select LSE as RTC clock source.
             // This is safe, as we're writing a valid bit pattern.
-            #[cfg_attr(feature = "stm32l0x1", allow(unused_unsafe))]
-            unsafe { w.rtcsel().bits(0b01); }
+            w.rtcsel().bits(0b01);
 
             w
                 // Enable RTC clock
@@ -141,47 +140,41 @@ impl RTC {
             );
 
             // Write time
-            #[cfg_attr(feature = "stm32l0x1", allow(unused_unsafe))]
             rtc.tr.write(|w|
                 // Safe, as `Instant` verifies that its fields are valid.
-                unsafe {
-                    w
-                        // 24-hour format
-                        .pm().clear_bit()
-                        // Hour tens
-                        .ht().bits(instant.hour / 10)
-                        // Hour units
-                        .hu().bits(instant.hour % 10)
-                        // Minute tens
-                        .mnt().bits(instant.minute / 10)
-                        // Minute units
-                        .mnu().bits(instant.minute % 10)
-                        // Second tens
-                        .st().bits(instant.second / 10)
-                        // Second units
-                        .su().bits(instant.second % 10)
-                }
+                w
+                    // 24-hour format
+                    .pm().clear_bit()
+                    // Hour tens
+                    .ht().bits(instant.hour / 10)
+                    // Hour units
+                    .hu().bits(instant.hour % 10)
+                    // Minute tens
+                    .mnt().bits(instant.minute / 10)
+                    // Minute units
+                    .mnu().bits(instant.minute % 10)
+                    // Second tens
+                    .st().bits(instant.second / 10)
+                    // Second units
+                    .su().bits(instant.second % 10)
             );
 
             // Write date
-            #[cfg_attr(feature = "stm32l0x1", allow(unused_unsafe))]
             rtc.dr.write(|w|
                 // Safe, as `Instant` verifies that its fields are valid.
-                unsafe {
-                    w
-                        // Year tens
-                        .yt().bits(instant.year / 10)
-                        // Year units
-                        .yu().bits(instant.year % 10)
-                        // Month tens
-                        .mt().bit(instant.month / 10 == 1)
-                        // Month units
-                        .mu().bits(instant.month % 10)
-                        // Date tens
-                        .dt().bits(instant.day / 10)
-                        // Date units
-                        .du().bits(instant.day % 10)
-                }
+                w
+                    // Year tens
+                    .yt().bits(instant.year / 10)
+                    // Year units
+                    .yu().bits(instant.year % 10)
+                    // Month tens
+                    .mt().bit(instant.month / 10 == 1)
+                    // Month units
+                    .mu().bits(instant.month % 10)
+                    // Date tens
+                    .dt().bits(instant.day / 10)
+                    // Date units
+                    .du().bits(instant.day % 10)
             );
 
             // Exit initialization
@@ -285,17 +278,14 @@ impl RTC {
     {
         // Disable write protection.
         // This is safe, as we're only writin the correct and expected values.
-        #[cfg_attr(feature = "stm32l0x1", allow(unused_unsafe))]
-        self.rtc.wpr.write(|w| unsafe { w.key().bits(0xca) });
-        #[cfg_attr(feature = "stm32l0x1", allow(unused_unsafe))]
-        self.rtc.wpr.write(|w| unsafe { w.key().bits(0x53) });
+        self.rtc.wpr.write(|w| w.key().bits(0xca));
+        self.rtc.wpr.write(|w| w.key().bits(0x53));
 
         let result = f(&self.rtc);
 
         // Re-enable write protection.
         // This is safe, as the field accepts the full range of 8-bit values.
-        #[cfg_attr(feature = "stm32l0x1", allow(unused_unsafe))]
-        self.rtc.wpr.write(|w| unsafe { w.key().bits(0xff) });
+        self.rtc.wpr.write(|w| w.key().bits(0xff));
 
         result
     }
@@ -496,12 +486,11 @@ impl timer::CountDown for WakeupTimer<'_> {
 
         self.rtc.write(|rtc| {
             // Set the wakeup delay
-            #[cfg_attr(feature = "stm32l0x1", allow(unused_unsafe))]
             rtc.wutr.write(|w|
                 // Write the lower 16 bits of `delay`. The 17th bit is taken
                 // care of via WUCKSEL in CR (see below).
                 // This is safe, as the field accepts a full 16 bit value.
-                unsafe { w.wut().bits(delay as u16) }
+                w.wut().bits(delay as u16)
             );
             // This is safe, as we're only writing valid bit patterns.
             rtc.cr.modify(|_, w| {

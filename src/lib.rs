@@ -21,10 +21,8 @@ pub use crate::pac as stm32;
 mod bb;
 
 pub mod adc;
-#[cfg(any(feature = "stm32l062", feature = "stm32l082"))]
 pub mod aes;
 pub mod delay;
-#[cfg(any(feature = "stm32l0x2", feature = "stm32l0x3"))]
 pub mod dma;
 pub mod exti;
 pub mod gpio;

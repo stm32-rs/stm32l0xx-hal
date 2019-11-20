@@ -28,7 +28,7 @@ use crate::gpio::{AltMode, OpenDrain, Output};
 use crate::pac::{
     i2c1::{
         RegisterBlock,
-        cr2::RD_WRNW,
+        cr2::RD_WRN_A,
     }
 };
 pub use crate::pac::I2C1;
@@ -162,7 +162,7 @@ where
         (self.i2c, self.sda, self.scl)
     }
 
-    fn start_transfer(&mut self, addr: u8, len: usize, direction: RD_WRNW) {
+    fn start_transfer(&mut self, addr: u8, len: usize, direction: RD_WRN_A) {
         self.i2c.cr2.write(|w|
             w
                 // Start transfer
@@ -243,7 +243,7 @@ where
             Buffer::Target: AsSlice<Element=u8>,
     {
         assert!(buffer.len() >= num_words);
-        self.start_transfer(address, buffer.as_slice().len(), RD_WRNW::WRITE);
+        self.start_transfer(address, buffer.as_slice().len(), RD_WRN_A::WRITE);
 
         // This token represents the transmission capability of I2C and this is
         // what the `dma::Target` trait is implemented for. It can't be
@@ -316,7 +316,7 @@ where
             Buffer::Target: AsMutSlice<Element=u8>,
     {
         assert!(buffer.len() >= num_words);
-        self.start_transfer(address, buffer.as_slice().len(), RD_WRNW::READ);
+        self.start_transfer(address, buffer.as_slice().len(), RD_WRN_A::READ);
 
         // See explanation of tokens in `write_all`.
         let token = Rx(PhantomData);
@@ -370,7 +370,7 @@ where
     fn write(&mut self, addr: u8, bytes: &[u8]) -> Result<(), Self::Error> {
         while self.i2c.isr.read().busy().is_busy() {}
 
-        self.start_transfer(addr, bytes.len(), RD_WRNW::WRITE);
+        self.start_transfer(addr, bytes.len(), RD_WRN_A::WRITE);
 
         // Send bytes
         for c in bytes {
@@ -390,7 +390,7 @@ where
     fn read(&mut self, addr: u8, buffer: &mut [u8]) -> Result<(), Self::Error> {
         while self.i2c.isr.read().busy().is_busy() {}
 
-        self.start_transfer(addr, buffer.len(), RD_WRNW::READ);
+        self.start_transfer(addr, buffer.len(), RD_WRN_A::READ);
 
         // Receive bytes into buffer
         for c in buffer {

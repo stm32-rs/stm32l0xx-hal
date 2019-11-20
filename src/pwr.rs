@@ -167,18 +167,12 @@ impl PWR {
 
     /// Private method to set LPSDSR
     fn set_lpsdsr(&mut self) {
-        #[cfg(feature = "stm32l0x1")]
         self.0.cr.modify(|_, w| w.lpsdsr().low_power_mode());
-        #[cfg(any(feature = "stm32l0x2", feature = "stm32l0x3"))]
-        self.0.cr.modify(|_, w| w.lpds().set_bit());
     }
 
     /// Private method to clear LPSDSR
     fn clear_lpsdsr(&mut self) {
-        #[cfg(feature = "stm32l0x1")]
         self.0.cr.modify(|_, w| w.lpsdsr().main_mode());
-        #[cfg(any(feature = "stm32l0x2", feature = "stm32l0x3"))]
-        self.0.cr.modify(|_, w| w.lpds().clear_bit());
     }
 }
 

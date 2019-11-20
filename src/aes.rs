@@ -1,4 +1,7 @@
-//! Interface to the AES peripheral
+//! Interface to the AES peripheral.
+//!
+//! Note that the AES peripheral is only available on some MCUs in the L0/L1/L2
+//! families. Check the datasheet for more information.
 //!
 //! See STM32L0x2 reference manual, chapter 18.
 
@@ -88,7 +91,7 @@ impl AES {
 
             // Configure for stream of bytes
             // Safe, as we write a valid byte pattern.
-            unsafe { w.datatype().bits(0b10) };
+            w.datatype().bits(0b10);
 
             // Enable peripheral
             w.en().set_bit()
@@ -524,7 +527,7 @@ impl Mode for CTR {
 fn derive_key(aes: &aes::RegisterBlock) {
     // Select key derivation mode. This is safe, as we're writing a valid bit
     // pattern.
-    unsafe { aes.cr.modify(|_, w| w.mode().bits(0b01)) };
+    aes.cr.modify(|_, w| w.mode().bits(0b01));
 
     // Enable the peripheral. It will be automatically disabled again once the
     // key has been derived.
