@@ -15,7 +15,7 @@ fn main() -> ! {
     let dp = pac::Peripherals::take().unwrap();
 
     let mut rcc = dp.RCC.freeze(rcc::Config::hsi16());
-    let mut syscfg = SYSCFG::new(dp.SYSCFG_COMP, &mut rcc);
+    let mut syscfg = SYSCFG::new(dp.SYSCFG, &mut rcc);
     rcc.enable_hsi48(&mut syscfg, dp.CRS);
 
     let gpioa = dp.GPIOA.split(&mut rcc);
