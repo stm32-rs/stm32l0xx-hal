@@ -19,10 +19,19 @@ use crate::gpio::gpioa::{PA11, PA12};
 use crate::gpio::{Floating, Input};
 pub use stm32_usbd::UsbBus;
 
-pub struct USB {
-    pub usb: pac::USB,
-    pub pin_dm: PA11<Input<Floating>>,
-    pub pin_dp: PA12<Input<Floating>>,
+
+pub struct USB(());
+
+impl USB {
+    pub fn new(
+        _:   pac::USB,
+        _dm: PA11<Input<Floating>>,
+        _dp: PA12<Input<Floating>>,
+    )
+        -> Self
+    {
+        Self(())
+    }
 }
 
 unsafe impl Sync for USB {}

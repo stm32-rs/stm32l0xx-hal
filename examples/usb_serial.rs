@@ -20,11 +20,7 @@ fn main() -> ! {
 
     let gpioa = dp.GPIOA.split(&mut rcc);
 
-    let usb = USB {
-        usb: dp.USB,
-        pin_dm: gpioa.pa11,
-        pin_dp: gpioa.pa12,
-    };
+    let usb = USB::new(dp.USB, gpioa.pa11, gpioa.pa12);
     let usb_bus = UsbBus::new(usb);
 
     let mut serial = SerialPort::new(&usb_bus);
