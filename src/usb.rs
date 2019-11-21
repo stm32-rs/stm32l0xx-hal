@@ -12,7 +12,10 @@
 //! Please check out the USB examples in the `examples/` directory to see how it
 //! fits together.
 
-use crate::pac::{self, RCC};
+use crate::{
+    pac::{self, RCC},
+    rcc::HSI48,
+};
 use stm32_usbd::UsbPeripheral;
 
 use crate::gpio::gpioa::{PA11, PA12};
@@ -27,6 +30,7 @@ impl USB {
         _:   pac::USB,
         _dm: PA11<Input<Floating>>,
         _dp: PA12<Input<Floating>>,
+        _:   HSI48,
     )
         -> Self
     {

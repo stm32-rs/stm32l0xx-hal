@@ -16,11 +16,11 @@ fn main() -> ! {
 
     let mut rcc = dp.RCC.freeze(rcc::Config::hsi16());
     let mut syscfg = SYSCFG::new(dp.SYSCFG, &mut rcc);
-    rcc.enable_hsi48(&mut syscfg, dp.CRS);
+    let hsi48 = rcc.enable_hsi48(&mut syscfg, dp.CRS);
 
     let gpioa = dp.GPIOA.split(&mut rcc);
 
-    let usb = USB::new(dp.USB, gpioa.pa11, gpioa.pa12);
+    let usb = USB::new(dp.USB, gpioa.pa11, gpioa.pa12, hsi48);
     let usb_bus = UsbBus::new(usb);
 
     let mut serial = SerialPort::new(&usb_bus);
