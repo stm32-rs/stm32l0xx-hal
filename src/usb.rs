@@ -12,23 +12,23 @@
 //! Please check out the USB examples in the `examples/` directory to see how it
 //! fits together.
 
-use crate::stm32::{RCC, USB};
+use crate::pac::{self, RCC};
 use stm32_usbd::UsbPeripheral;
 
 use crate::gpio::gpioa::{PA11, PA12};
 use crate::gpio::{Floating, Input};
 pub use stm32_usbd::UsbBus;
 
-pub struct Peripheral {
-    pub usb: USB,
+pub struct USB {
+    pub usb: pac::USB,
     pub pin_dm: PA11<Input<Floating>>,
     pub pin_dp: PA12<Input<Floating>>,
 }
 
-unsafe impl Sync for Peripheral {}
+unsafe impl Sync for USB {}
 
-unsafe impl UsbPeripheral for Peripheral {
-    const REGISTERS: *const () = USB::ptr() as *const ();
+unsafe impl UsbPeripheral for USB {
+    const REGISTERS: *const () = pac::USB::ptr() as *const ();
     const DP_PULL_UP_FEATURE: bool = true;
     const EP_MEMORY: *const () = 0x4000_6000 as _;
     const EP_MEMORY_SIZE: usize = 1024;
@@ -53,4 +53,4 @@ unsafe impl UsbPeripheral for Peripheral {
     }
 }
 
-pub type UsbBusType = UsbBus<Peripheral>;
+pub type UsbBusType = UsbBus<USB>;
