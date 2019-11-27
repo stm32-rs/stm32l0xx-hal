@@ -160,6 +160,59 @@ impl FLASH {
         })
     }
 
+    /// Writes a half-page (16 words) of Flash  memory
+    ///
+    /// The memory written to must have been erased before, otherwise this
+    /// method will return an error.
+    ///
+    /// # Panics
+    ///
+    /// This method will panic, unless all of the following is true:
+    /// - `address` points to Flash memory
+    /// - `address` is aligned to a half-page boundary (16 words, 64 bytes)
+    /// - `words` has a length of 16
+    pub fn write_flash_half_page(&mut self, address: *mut u32, words: &[u32])
+        -> Result
+    {
+        self.unlock(|self_| {
+            let memory = self_.verify_address(address);
+
+            if !memory.is_flash() {
+                panic!("Address does not point to Flash memory");
+            }
+            if address as u32 & 0x3f != 0 {
+                panic!("Address is not aligned to half-page boundary");
+            }
+            if words.len() != 16 {
+                panic!("`words` is not exactly a half-page of memory");
+            }
+
+            // Wait, while the memory interface is busy.
+            while self_.flash.sr.read().bsy().is_active() {}
+
+            // Enable write operation
+            self_.flash.pecr.modify(|_, w| {
+                // Half-page programming mode
+                w.fprg().set_bit();
+                // Required for mass operations in Flash memory
+                w.prog().set_bit();
+
+                w
+            });
+
+            // Safe, because we've verified the valididty of `address` and the
+            // length `words`.
+            unsafe { write_half_page(address, words.as_ptr()); }
+
+            // Wait for operation to complete
+            while self_.flash.sr.read().bsy().is_active() {}
+
+            self_.check_errors()
+
+            // No need to reset PECR flags, that's done by `unlock`.
+        })
+    }
+
     fn unlock(&mut self, f: impl FnOnce(&mut Self) -> Result) -> Result {
         // Unlock everything that needs unlocking
         self.flash.pekeyr.write(|w| w.pekeyr().bits(0x89ABCDEF));
@@ -258,6 +311,28 @@ pub fn flash_size_in_kb() -> u32 {
     unsafe {
         (0x1FF8_007C as *const u16).read() as u32
     }
+}
+
+
+extern {
+    /// Writes a half-page at the given address
+    ///
+    /// Unfortunately this function had to be implemented in C. No access to
+    /// Flash memory is allowed after the first word has been written, and that
+    /// includes execution of code that is located in Flash. This means the
+    /// function that writes the half-page has to be executed from memory, and
+    /// is not allowed to call any functions that are not located in memory.
+    ///
+    /// Unfortunately I found this impossible to achieve in Rust. I can write
+    /// a Rust function that is located in RAM, using `#[link_section=".data"]`,
+    /// but I failed to write any useful Rust code that doesn't include function
+    /// calls to _something_ that is outside of my control, as so much of Rust's
+    /// functionality is defined in terms of function calls.
+    ///
+    /// I ended up writing it in C, as that was the only solution I could come
+    /// up with that will run on the stable channel (is nightly is acceptable,
+    /// we could use a Rust function with inline assembly).
+    fn write_half_page(address: *mut u32, words: *const u32);
 }
 
 

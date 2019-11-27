@@ -1,5 +1,5 @@
 use std::env;
-use std::fs::File;
+use std::fs::{self, File};
 use std::io::Write;
 use std::path::PathBuf;
 
@@ -48,4 +48,23 @@ fn main() {
     }
 
     println!("cargo:rerun-if-changed=build.rs");
+
+
+    // Copy the binary blog required by the Flash API somewhere the linker can
+    // find it, and tell Cargo to link it.
+
+    let blob_name = "flash";
+    let blob_file = format!("lib{}.a", blob_name);
+    let blob_path = format!("flash-code/{}", blob_file);
+
+    fs::copy(
+        &blob_path,
+        out.join(format!("{}", blob_file)),
+    )
+    .expect("Failed to copy binary blog for Flash API");
+
+    println!("cargo:rustc-link-lib=static={}", blob_name);
+    println!("cargo:rustc-link-search={}", out.display());
+
+    println!("cargo:rerun-if-changed={}", blob_path);
 }

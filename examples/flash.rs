@@ -59,6 +59,19 @@ fn main() -> ! {
         assert_eq!(word, 0);
     }
 
+    let words = [
+        0x0, 0x1, 0x2, 0x3, 0x4, 0x5, 0x6, 0x7,
+        0x8, 0x9, 0xa, 0xb, 0xc, 0xd, 0xe, 0xf,
+    ];
+
+    flash.write_flash_half_page(address, &words)
+        .expect("Failed to write Flash half-page");
+
+    for (i, &expected) in words.iter().enumerate() {
+        let actual = unsafe { *address.offset(i as isize) };
+        assert_eq!(expected, actual);
+    }
+
     // Blink LED to indicate we haven't panicked.
     loop {
         led.set_high().unwrap();
