@@ -14,6 +14,9 @@ use crate::{
 /// The first address of flash memory
 pub const FLASH_START: u32 = 0x0800_0000;
 
+/// The size of a Flash memory page, in bytes
+pub const PAGE_SIZE: u32 = 128;
+
 
 /// Entry point to the non-volatile memory (NVM) API
 pub struct FLASH {
