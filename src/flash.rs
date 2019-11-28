@@ -208,7 +208,7 @@ impl FLASH {
             // caused by an interrupt.
             interrupt::free(|_| {
                 // Safe, because we've verified the valididty of `address` and
-                // the length `words`.
+                // the length of `words`.
                 unsafe { write_half_page(address, words.as_ptr()); }
             });
 
