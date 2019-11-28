@@ -3,6 +3,8 @@
 //! See STM32L0x2 reference manual, chapter 3.
 
 
+use cortex_m::interrupt;
+
 use crate::{
     pac,
     rcc::Rcc,
@@ -200,9 +202,15 @@ impl FLASH {
                 w
             });
 
-            // Safe, because we've verified the valididty of `address` and the
-            // length `words`.
-            unsafe { write_half_page(address, words.as_ptr()); }
+            // We absoluty can't have any access to Flash while preparing the
+            // write, or the process will be interrupted. This includes any
+            // access to the vector table or interrupt handlers that might be
+            // caused by an interrupt.
+            interrupt::free(|_| {
+                // Safe, because we've verified the valididty of `address` and
+                // the length `words`.
+                unsafe { write_half_page(address, words.as_ptr()); }
+            });
 
             // Wait for operation to complete
             while self_.flash.sr.read().bsy().is_active() {}
