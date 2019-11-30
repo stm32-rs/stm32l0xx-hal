@@ -25,6 +25,8 @@ pub mod aes;
 pub mod delay;
 pub mod dma;
 pub mod exti;
+#[cfg(feature = "stm32l0x2")]
+pub mod flash;
 pub mod gpio;
 pub mod i2c;
 pub mod lptim;
