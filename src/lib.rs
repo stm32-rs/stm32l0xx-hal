@@ -15,9 +15,6 @@ pub use stm32l0::stm32l0x2 as pac;
 #[cfg(feature = "stm32l0x3")]
 pub use stm32l0::stm32l0x3 as pac;
 
-pub use crate::pac as device;
-pub use crate::pac as stm32;
-
 mod bb;
 
 pub mod adc;
