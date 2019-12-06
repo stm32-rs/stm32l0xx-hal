@@ -5,7 +5,7 @@ extern crate panic_halt;
 
 use cortex_m_rt::entry;
 use stm32l0xx_hal::{
-    exti, pac,
+    exti::{self, line::{GpioLine, ExtiLine}}, pac,
     prelude::*,
     pwr::{self, PWR},
     rcc::Config,
@@ -31,16 +31,18 @@ fn main() -> ! {
 
     let mut syscfg = SYSCFG::new(dp.SYSCFG, &mut rcc);
 
-    exti.listen(
+    let line = GpioLine::from_raw_line(button.pin_number()).unwrap();
+
+    exti.listen_gpio(
         &mut syscfg,
         button.port(),
-        button.pin_number(),
+        line,
         exti::TriggerEdge::Falling,
     );
 
     loop {
         exti.wait_for_irq(
-            button.pin_number(),
+            line,
             pwr.stop_mode(
                 &mut scb,
                 &mut rcc,

@@ -5,18 +5,23 @@
 extern crate panic_halt;
 
 
-use cortex_m::asm;
+use cortex_m::{asm, peripheral::NVIC};
 use cortex_m_rt::entry;
 use stm32l0xx_hal::{
     prelude::*,
-    exti,
-    gpio::{
+    exti::{
         self,
+        line::ConfigurableLine,
+    },
+    gpio::{
         Output,
         PushPull,
         gpiob::PB,
     },
-    pac,
+    pac::{
+        self,
+        EXTI,
+    },
     pwr::{
         self,
         PWR,
@@ -27,7 +32,6 @@ use stm32l0xx_hal::{
         Instant,
         RTC,
     },
-    syscfg::SYSCFG,
 };
 
 
@@ -44,8 +48,6 @@ fn main() -> ! {
 
     let mut led = gpiob.pb2.into_push_pull_output().downgrade();
 
-    let mut syscfg = SYSCFG::new(dp.SYSCFG, &mut rcc);
-
     let instant = Instant::new()
         .set_year(19)
         .set_month(9)
@@ -56,15 +58,13 @@ fn main() -> ! {
 
     let mut rtc = RTC::new(dp.RTC, &mut rcc, &mut pwr, instant);
 
-    let exti_line = 20; // RTC wakeup timer
+    let exti_line = ConfigurableLine::RtcWakeup;
 
     rtc.enable_interrupts(rtc::Interrupts {
         wakeup_timer: true,
         ..rtc::Interrupts::default()
     });
-    exti.listen(
-        &mut syscfg,
-        gpio::Port::PA, // argument ignored; next argument is not a GPIO line
+    exti.listen_configurable(
         exti_line,
         exti::TriggerEdge::Rising,
     );
@@ -78,8 +78,8 @@ fn main() -> ! {
     // 5 seconds of regular run mode
     timer.start(5u32);
     while let Err(nb::Error::WouldBlock) = timer.wait() {}
-    exti.clear_irq(exti_line);
-    cortex_m::peripheral::NVIC::unpend(pac::Interrupt::RTC);
+    EXTI::unpend(exti_line);
+    NVIC::unpend(pac::Interrupt::RTC);
 
     blink(&mut led);
 
@@ -87,8 +87,8 @@ fn main() -> ! {
     pwr.enter_low_power_run_mode(rcc.clocks);
     while let Err(nb::Error::WouldBlock) = timer.wait() {}
     pwr.exit_low_power_run_mode();
-    exti.clear_irq(exti_line);
-    cortex_m::peripheral::NVIC::unpend(pac::Interrupt::RTC);
+    EXTI::unpend(exti_line);
+    NVIC::unpend(pac::Interrupt::RTC);
 
     blink(&mut led);
 

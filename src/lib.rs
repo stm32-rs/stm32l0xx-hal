@@ -15,8 +15,6 @@ pub use stm32l0::stm32l0x2 as pac;
 #[cfg(feature = "stm32l0x3")]
 pub use stm32l0::stm32l0x3 as pac;
 
-mod bb;
-
 pub mod adc;
 pub mod aes;
 pub mod delay;

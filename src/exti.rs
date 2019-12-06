@@ -1,45 +1,57 @@
-//! External interrupt controller
-use crate::bb;
+//! External interrupt controller (EXTI).
+//!
+//! For convenience, this module reexports the EXTI peripheral from the PAC.
+
+pub mod line;
+
+use self::line::{ExtiLine, GpioLine, ConfigurableLine, DirectLine};
+
 use crate::gpio;
-use crate::pac::{self, EXTI};
 use crate::pwr::PowerMode;
 use crate::syscfg::SYSCFG;
 
 use cortex_m::{interrupt, peripheral::NVIC};
 
-pub enum Interrupt {
-    exti0_1,
-    exti2_3,
-    exti4_15,
-}
+pub use crate::pac::EXTI;
 
+/// Edges that can trigger a configurable interrupt line.
 pub enum TriggerEdge {
+    /// Trigger on rising edges only.
     Rising,
+    /// Trigger on falling edges only.
     Falling,
-    All,
+    /// Trigger on both rising and falling edges.
+    Both,
 }
 
+/// Extension trait providing a high-level API for the EXTI controller.
 pub trait ExtiExt {
-    fn listen(&self, syscfg: &mut SYSCFG, port: gpio::Port, line: u8, edge: TriggerEdge);
-    fn unlisten(&self, line: u8);
-    fn pend_interrupt(&self, line: u8);
-    fn clear_irq(&self, line: u8);
-    fn get_pending_irq(&self) -> u32;
-    fn wait_for_irq<M>(&mut self, line: u8, power_mode: M)
-        where M: PowerMode;
-}
+    fn listen_gpio(&mut self, syscfg: &mut SYSCFG, port: gpio::Port, line: GpioLine, edge: TriggerEdge);
+    fn listen_configurable(&mut self, line: ConfigurableLine, edge: TriggerEdge);
+    fn listen_direct(&mut self, line: DirectLine);
 
-pub fn line_is_triggered(reg: u32, line: u8) -> bool {
-    (reg & (0b1 << line)) != 0
+    fn unlisten<L: ExtiLine>(&mut self, line: L);
+
+    fn pend<L: ExtiLine>(line: L);
+    fn unpend<L: ExtiLine>(line: L);
+    fn is_pending<L: ExtiLine>(line: L) -> bool;
+
+    fn wait_for_irq<L, M>(&mut self, line: L, power_mode: M)
+        where L: ExtiLine, M: PowerMode;
 }
 
 impl ExtiExt for EXTI {
-
+    /// Starts listening to a GPIO interrupt line.
+    ///
+    /// GPIO interrupt lines are "configurable" lines, meaning that the edges
+    /// that should trigger the interrupt can be configured. However, they
+    /// require more setup than ordinary "configurable" lines, which requires
+    /// access to the `SYSCFG` peripheral.
     // `port` and `line` are almost always constants, so make sure they can get constant-propagated
     // by inlining the method. Saves ~600 Bytes in the `lptim.rs` example.
     #[inline]
-    fn listen(&self, syscfg: &mut SYSCFG, port: gpio::Port, line: u8, edge: TriggerEdge) {
-        assert_line_valid(line);
+    fn listen_gpio(&mut self, syscfg: &mut SYSCFG, port: gpio::Port, line: GpioLine, edge: TriggerEdge) {
+        let line = line.raw_line();
 
         // translate port into bit values for EXTIn registers
         let port_bm = match port {
@@ -57,7 +69,7 @@ impl ExtiExt for EXTI {
                 5
             }
         };
-        //self.imr.modify(|r, w| w.bits(r.bits() | bm));
+
         unsafe {
             match line {
                 0 | 1 | 2 | 3 => {
@@ -102,13 +114,13 @@ impl ExtiExt for EXTI {
             };
         }
 
-        let bm: u32 = 0b1 << line;
+        let bm: u32 = 1 << line;
 
         unsafe {
             match edge {
                 TriggerEdge::Rising => self.rtsr.modify(|r, w| w.bits(r.bits() | bm)),
                 TriggerEdge::Falling => self.ftsr.modify(|r, w| w.bits(r.bits() | bm)),
-                TriggerEdge::All => {
+                TriggerEdge::Both => {
                     self.rtsr.modify(|r, w| w.bits(r.bits() | bm));
                     self.ftsr.modify(|r, w| w.bits(r.bits() | bm));
                 }
@@ -118,38 +130,97 @@ impl ExtiExt for EXTI {
         }
     }
 
-    /// Disables the interrupt on `line`.
-    fn unlisten(&self, line: u8) {
-        assert_line_valid(line);
+    /// Starts listening to a configurable interrupt line.
+    ///
+    /// The edges that should trigger the interrupt can be configured with
+    /// `edge`.
+    #[inline]
+    fn listen_configurable(&mut self, line: ConfigurableLine, edge: TriggerEdge) {
+        let bm: u32 = 1 << line.raw_line();
 
-        bb::clear(&self.rtsr, line);
-        bb::clear(&self.ftsr, line);
-        bb::clear(&self.imr, line);
+        unsafe {
+            match edge {
+                TriggerEdge::Rising => self.rtsr.modify(|r, w| w.bits(r.bits() | bm)),
+                TriggerEdge::Falling => self.ftsr.modify(|r, w| w.bits(r.bits() | bm)),
+                TriggerEdge::Both => {
+                    self.rtsr.modify(|r, w| w.bits(r.bits() | bm));
+                    self.ftsr.modify(|r, w| w.bits(r.bits() | bm));
+                }
+            }
+
+            self.imr.modify(|r, w| w.bits(r.bits() | bm));
+        }
+    }
+
+    /// Starts listening to a "direct" interrupt line.
+    #[inline]
+    fn listen_direct(&mut self, line: DirectLine) {
+        let bm: u32 = 1 << line.raw_line();
+
+        unsafe {
+            self.imr.modify(|r, w| w.bits(r.bits() | bm));
+        }
+    }
+
+    /// Disables the interrupt on `line`.
+    fn unlisten<L: ExtiLine>(&mut self, line: L) {
+        let bm = 1 << line.raw_line();
+
+        // Safety: We clear the correct bit and have unique ownership of the EXTI registers here.
+        unsafe {
+            self.imr.modify(|r, w| w.bits(r.bits() & !bm));
+            self.rtsr.modify(|r, w| w.bits(r.bits() & !bm));
+            self.ftsr.modify(|r, w| w.bits(r.bits() & !bm));
+        }
     }
 
     /// Marks `line` as "pending".
     ///
     /// This will cause an interrupt if the EXTI was previously configured to
     /// listen on `line`.
-    fn pend_interrupt(&self, line: u8) {
-        assert_line_valid(line);
+    ///
+    /// If `line` is already pending, this does nothing.
+    fn pend<L: ExtiLine>(line: L) {
+        let line = line.raw_line();
 
-        bb::set(&self.swier, line);
-    }
-
-    /// Get a bitmask of currently pending IRQs.
-    fn get_pending_irq(&self) -> u32 {
-        self.pr.read().bits()
+        // Safety:
+        // - We've ensured that the only 1-bit written is a valid line.
+        // - This mirrors the `NVIC::pend` API and implementation, which is
+        //   presumed safe.
+        // - This is a "set by writing 1" register (ie. writing 0 does nothing),
+        //   and this is a single write operation that cannot be interrupted.
+        unsafe {
+            (*Self::ptr()).swier.write(|w| w.bits(1 << line));
+        }
     }
 
     /// Marks `line` as "not pending".
-    fn clear_irq(&self, line: u8) {
-        assert_line_valid(line);
+    fn unpend<L: ExtiLine>(line: L) {
+        let line = line.raw_line();
 
-        self.pr.modify(|_, w| unsafe { w.bits(0b1 << line) });
+        // Safety:
+        // - We've ensured that the only 1-bit written is a valid line.
+        // - This mirrors the `NVIC::pend` API and implementation, which is
+        //   presumed safe.
+        // - This is a "clear by writing 1" register, and this is a single write
+        //   operation that cannot be interrupted.
+        unsafe {
+            (*Self::ptr()).pr.write(|w| w.bits(1 << line));
+        }
     }
 
-    /// Enters a low-power mode until an interrupt occurs
+    /// Returns whether `line` is currently marked as pending.
+    fn is_pending<L: ExtiLine>(line: L) -> bool {
+        let bm: u32 = 1 << line.raw_line();
+
+        // Safety: This is a read without side effects that cannot be
+        // interrupted.
+        let pr = unsafe { (*Self::ptr()).pr.read().bits() };
+
+        pr & bm != 0
+    }
+
+    /// Enters a low-power mode until an interrupt occurs.
     ///
     /// Please note that this method will return after _any_ interrupt that can
     /// wake up the microcontroller from the given power mode.
@@ -158,23 +229,10 @@ impl ExtiExt for EXTI {
     ///
     /// Panics, if `line` is an invalid EXTI line (reserved or not defined).
     /// Check the Reference Manual for a list of valid lines.
-    fn wait_for_irq<M>(&mut self, line: u8, mut power_mode: M)
-        where M: PowerMode
+    fn wait_for_irq<L, M>(&mut self, line: L, mut power_mode: M)
+        where L: ExtiLine, M: PowerMode,
     {
-        let interrupt = match line {
-            0..=1 => pac::Interrupt::EXTI0_1,
-            2..=3 => pac::Interrupt::EXTI2_3,
-            4..=15 => pac::Interrupt::EXTI4_15,
-            16 => pac::Interrupt::PVD,
-            17 | 19 | 20 => pac::Interrupt::RTC,  // also LSE CSS
-            21 | 22 => pac::Interrupt::ADC_COMP,
-            23 => pac::Interrupt::I2C1,
-            25 => pac::Interrupt::USART1,
-            26 => pac::Interrupt::USART2,
-            28 => pac::Interrupt::AES_RNG_LPUART1,
-            29 => pac::Interrupt::LPTIM1,
-            line => panic!("Line {} not supported", line),
-        };
+        let interrupt = line.interrupt();
 
         // This construct allows us to wait for the interrupt without having to
         // define an interrupt handler.
@@ -183,18 +241,9 @@ impl ExtiExt for EXTI {
 
             power_mode.enter();
 
-            self.clear_irq(line);
+            Self::unpend(line);
             NVIC::unpend(interrupt);
             NVIC::mask(interrupt);
         });
     }
-}
-
-fn assert_line_valid(line: u8) {
-    assert!(line <= 29);
-    assert_ne!(line, 27);
-
-    // Line 18 is used by the USB peripheral. On the l0x1, it is reserved.
-    #[cfg(feature = "stm32l0x1")]
-    assert_ne!(line, 18);
 }
