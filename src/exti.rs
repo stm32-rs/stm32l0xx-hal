@@ -118,6 +118,7 @@ impl ExtiExt for EXTI {
         }
     }
 
+    /// Disables the interrupt on `line`.
     fn unlisten(&self, line: u8) {
         assert_line_valid(line);
 
@@ -126,16 +127,22 @@ impl ExtiExt for EXTI {
         bb::clear(&self.imr, line);
     }
 
+    /// Marks `line` as "pending".
+    ///
+    /// This will cause an interrupt if the EXTI was previously configured to
+    /// listen on `line`.
     fn pend_interrupt(&self, line: u8) {
         assert_line_valid(line);
 
         bb::set(&self.swier, line);
     }
 
+    /// Get a bitmask of currently pending IRQs.
     fn get_pending_irq(&self) -> u32 {
         self.pr.read().bits()
     }
 
+    /// Marks `line` as "not pending".
     fn clear_irq(&self, line: u8) {
         assert_line_valid(line);
 
@@ -149,7 +156,8 @@ impl ExtiExt for EXTI {
     ///
     /// # Panics
     ///
-    /// Panics, if `line` is not between 0 and 15 (inclusive).
+    /// Panics, if `line` is an invalid EXTI line (reserved or not defined).
+    /// Check the Reference Manual for a list of valid lines.
     fn wait_for_irq<M>(&mut self, line: u8, mut power_mode: M)
         where M: PowerMode
     {
