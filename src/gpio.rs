@@ -127,6 +127,9 @@ macro_rules! gpio {
             }
 
             impl<MODE> $PXx<MODE> {
+                /// The port this pin is part of.
+                pub const PORT: Port = Port::$PXx;
+
                 /// Returns the port this pin is part of.
                 pub fn port(&self) -> Port {
                     Port::$PXx
@@ -206,6 +209,12 @@ macro_rules! gpio {
                 }
 
                 impl<MODE> $PXi<MODE> {
+                    /// The port this pin is part of.
+                    pub const PORT: Port = Port::$PXx;
+
+                    /// The pin's number inside its port.
+                    pub const PIN_NUMBER: u8 = $i;
+
                     /// Returns the port this pin is part of.
                     pub fn port(&self) -> Port {
                         Port::$PXx
