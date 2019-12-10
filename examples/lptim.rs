@@ -11,9 +11,10 @@ use cortex_m::{asm, peripheral::NVIC};
 use cortex_m_rt::entry;
 use stm32l0xx_hal::{
     prelude::*,
-    exti,
+    exti::{
+        line::DirectLine,
+    },
     gpio::{
-        self,
         Output,
         PushPull,
         gpiob::PB,
@@ -23,13 +24,15 @@ use stm32l0xx_hal::{
         LpTimer,
         ClockSrc,
     },
-    pac,
+    pac::{
+        self,
+        EXTI,
+    },
     pwr::{
         self,
         PWR,
     },
     rcc,
-    syscfg::SYSCFG,
 };
 
 
@@ -46,21 +49,15 @@ fn main() -> ! {
 
     let mut led = gpiob.pb2.into_push_pull_output().downgrade();
 
-    let mut syscfg = SYSCFG::new(dp.SYSCFG, &mut rcc);
     let mut lptim = LpTimer::init_periodic(dp.LPTIM, &mut pwr, &mut rcc, ClockSrc::Lse);
 
-    let exti_line = 29; // LPTIM1 wakeup
+    let exti_line = DirectLine::Lptim1;
 
     lptim.enable_interrupts(lptim::Interrupts {
         autoreload_match: true,
         ..lptim::Interrupts::default()
     });
-    exti.listen(
-        &mut syscfg,
-        gpio::Port::PA, // argument ignored; next argument is not a GPIO line
-        exti_line,
-        exti::TriggerEdge::Rising,
-    );
+    exti.listen_direct(exti_line);
 
     // Blink twice to signal the start of the program
     blink(&mut led);
@@ -70,7 +67,7 @@ fn main() -> ! {
     lptim.start(1.hz());
     block!(lptim.wait()).unwrap();
 
-    exti.clear_irq(exti_line);
+    EXTI::unpend(exti_line);
     NVIC::unpend(pac::Interrupt::LPTIM1);
 
     blink(&mut led);
@@ -79,8 +76,8 @@ fn main() -> ! {
     pwr.enter_low_power_run_mode(rcc.clocks);
     block!(lptim.wait()).unwrap();
     pwr.exit_low_power_run_mode();
-    exti.clear_irq(exti_line);
-    cortex_m::peripheral::NVIC::unpend(pac::Interrupt::LPTIM1);
+    EXTI::unpend(exti_line);
+    NVIC::unpend(pac::Interrupt::LPTIM1);
 
     blink(&mut led);
 
@@ -90,8 +87,8 @@ fn main() -> ! {
         pwr.sleep_mode(&mut scb),
     );
     lptim.wait().unwrap(); // returns immediately; we just got the interrupt
-    exti.clear_irq(exti_line);
-    cortex_m::peripheral::NVIC::unpend(pac::Interrupt::LPTIM1);
+    EXTI::unpend(exti_line);
+    NVIC::unpend(pac::Interrupt::LPTIM1);
 
     blink(&mut led);
 
@@ -101,8 +98,8 @@ fn main() -> ! {
         pwr.low_power_sleep_mode(&mut scb, &mut rcc),
     );
     lptim.wait().unwrap(); // returns immediately; we just got the interrupt
-    exti.clear_irq(exti_line);
-    cortex_m::peripheral::NVIC::unpend(pac::Interrupt::LPTIM1);
+    EXTI::unpend(exti_line);
+    NVIC::unpend(pac::Interrupt::LPTIM1);
 
     blink(&mut led);
 
@@ -122,7 +119,7 @@ fn main() -> ! {
     blink(&mut led);
 
     // 1 second of standby mode
-    cortex_m::peripheral::NVIC::unpend(pac::Interrupt::LPTIM1);
+    NVIC::unpend(pac::Interrupt::LPTIM1);
     exti.wait_for_irq(
         exti_line,
         pwr.standby_mode(&mut scb),

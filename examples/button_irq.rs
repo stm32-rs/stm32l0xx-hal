@@ -11,7 +11,7 @@ use cortex_m::interrupt::Mutex;
 use cortex_m::peripheral::NVIC;
 use cortex_m_rt::entry;
 use stm32l0xx_hal::{
-    exti::TriggerEdge,
+    exti::{TriggerEdge, line::{GpioLine, ExtiLine}},
     gpio::*,
     pac::{self, interrupt, Interrupt, EXTI},
     prelude::*,
@@ -19,7 +19,6 @@ use stm32l0xx_hal::{
     syscfg::SYSCFG,
 };
 
-static INT: Mutex<RefCell<Option<EXTI>>> = Mutex::new(RefCell::new(None));
 static LED: Mutex<RefCell<Option<gpiob::PB6<Output<PushPull>>>>> = Mutex::new(RefCell::new(None));
 
 #[entry]
@@ -42,13 +41,13 @@ fn main() -> ! {
     let mut syscfg = SYSCFG::new(dp.SYSCFG, &mut rcc);
 
     // Configure the external interrupt on the falling edge for the pin 0.
-    let exti = dp.EXTI;
-    exti.listen(&mut syscfg, button.port(), button.pin_number(), TriggerEdge::Falling);
+    let line = GpioLine::from_raw_line(button.pin_number()).unwrap();
+    let mut exti = dp.EXTI;
+    exti.listen_gpio(&mut syscfg, button.port(), line, TriggerEdge::Falling);
 
     // Store the external interrupt and LED in mutex reffcells to make them
     // available from the interrupt.
     cortex_m::interrupt::free(|cs| {
-        *INT.borrow(cs).borrow_mut() = Some(exti);
         *LED.borrow(cs).borrow_mut() = Some(led);
     });
 
@@ -66,19 +65,17 @@ fn EXTI2_3() {
     static mut STATE: bool = false;
 
     cortex_m::interrupt::free(|cs| {
-        if let Some(ref mut exti) = INT.borrow(cs).borrow_mut().deref_mut() {
-            // Clear the interrupt flag.
-            exti.clear_irq(2);
+        // Clear the interrupt flag.
+        EXTI::unpend(GpioLine::from_raw_line(2).unwrap());
 
-            // Change the LED state on each interrupt.
-            if let Some(ref mut led) = LED.borrow(cs).borrow_mut().deref_mut() {
-                if *STATE {
-                    led.set_low().unwrap();
-                    *STATE = false;
-                } else {
-                    led.set_high().unwrap();
-                    *STATE = true;
-                }
+        // Change the LED state on each interrupt.
+        if let Some(ref mut led) = LED.borrow(cs).borrow_mut().deref_mut() {
+            if *STATE {
+                led.set_low().unwrap();
+                *STATE = false;
+            } else {
+                led.set_high().unwrap();
+                *STATE = true;
             }
         }
     });
