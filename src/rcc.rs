@@ -2,7 +2,10 @@ use crate::pac::RCC;
 use crate::time::{Hertz, U32Ext};
 
 #[cfg(any(feature = "stm32l0x2", feature = "stm32l0x3"))]
-use crate::{pac::CRS, syscfg::SYSCFG};
+use crate::{
+    pac::CRS,
+    syscfg::SYSCFG
+};
 
 /// System clock mux source
 #[derive(Clone, Copy)]
