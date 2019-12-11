@@ -2,11 +2,7 @@ use crate::pac::RCC;
 use crate::time::{Hertz, U32Ext};
 
 #[cfg(any(feature = "stm32l0x2", feature = "stm32l0x3"))]
-use crate::{
-    pac::CRS,
-    syscfg::SYSCFG,
-};
-
+use crate::{pac::CRS, syscfg::SYSCFG};
 
 /// System clock mux source
 #[derive(Clone, Copy)]
@@ -199,27 +195,22 @@ impl Rcc {
         // Initialize CRS
         crs.cfgr.write(|w|
             // Select LSE as synchronization source
-            unsafe { w.syncsrc().bits(0b01) }
-        );
-        crs.cr.write(|w|
-            w
-                .autotrimen().set_bit()
-                .cen().set_bit()
-        );
+            unsafe { w.syncsrc().bits(0b01) });
+        crs.cr
+            .modify(|_, w| w.autotrimen().set_bit().cen().set_bit());
 
         // Enable VREFINT reference for HSI48 oscillator
-        syscfg.syscfg.cfgr3.modify(|_, w|
-            w
-                .enref_hsi48().set_bit()
-                .en_vrefint().set_bit()
-        );
+        syscfg
+            .syscfg
+            .cfgr3
+            .modify(|_, w| w.enref_hsi48().set_bit().en_vrefint().set_bit());
 
         // Select HSI48 as USB clock
         self.rb.ccipr.modify(|_, w| w.hsi48msel().set_bit());
 
         // Enable dedicated USB clock
         self.rb.crrcr.modify(|_, w| w.hsi48on().set_bit());
-        while self.rb.crrcr.read().hsi48rdy().bit_is_clear() {};
+        while self.rb.crrcr.read().hsi48rdy().bit_is_clear() {}
 
         HSI48(())
     }
@@ -280,7 +271,7 @@ impl RccExt for RCC {
                 };
 
                 // Disable PLL
-                self.cr.write(|w| w.pllon().clear_bit());
+                self.cr.modify(|_, w| w.pllon().clear_bit());
                 while self.cr.read().pllrdy().bit_is_set() {}
 
                 let mul_bytes = mul as u8;
@@ -315,7 +306,7 @@ impl RccExt for RCC {
                 });
 
                 // Enable PLL
-                self.cr.write(|w| w.pllon().set_bit());
+                self.cr.modify(|_, w| w.pllon().set_bit());
                 while self.cr.read().pllrdy().bit_is_clear() {}
 
                 (freq, 3)
@@ -366,7 +357,6 @@ impl RccExt for RCC {
 
         Rcc { rb: self, clocks }
     }
-
 }
 
 /// Frozen clock frequencies
@@ -419,7 +409,6 @@ impl Clocks {
         self.apb2_tim_clk
     }
 }
-
 
 /// Token that exists only, if the HSI48 clock has been enabled
 ///
