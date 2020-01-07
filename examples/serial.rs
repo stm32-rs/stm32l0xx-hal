@@ -22,20 +22,14 @@ fn main() -> ! {
     // the RCC register.
     let gpioa = dp.GPIOA.split(&mut rcc);
 
-    #[cfg(feature = "stm32l0x1")]
-    let tx_pin = gpioa.pa9;
-    #[cfg(feature = "stm32l0x1")]
-    let rx_pin = gpioa.pa10;
-
-    #[cfg(any(feature = "stm32l0x2", feature = "stm32l0x3"))]
-    let tx_pin = gpioa.pa14;
-    #[cfg(any(feature = "stm32l0x2", feature = "stm32l0x3"))]
-    let rx_pin = gpioa.pa15;
+    // Choose TX / RX pins
+    let tx_pin = gpioa.pa2;
+    let rx_pin = gpioa.pa3;
 
     // Configure the serial peripheral.
     let serial = dp
         .USART2
-        .usart((tx_pin, rx_pin), serial::Config::default(), &mut rcc)
+        .usart(tx_pin, rx_pin, serial::Config::default(), &mut rcc)
         .unwrap();
 
     let (mut tx, mut rx) = serial.split();

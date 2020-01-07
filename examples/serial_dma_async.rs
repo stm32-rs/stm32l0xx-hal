@@ -46,14 +46,15 @@ fn main() -> ! {
     let gpioa = dp.GPIOA.split(&mut rcc);
 
     let (tx, rx) = dp
-    .USART2
-    .usart(
-        (gpioa.pa2, gpioa.pa3),
-        serial::Config::default().baudrate(115_200.bps()),
-        &mut rcc,
-    )
-    .unwrap()
-    .split();
+        .USART2
+        .usart(
+            gpioa.pa2,
+            gpioa.pa3,
+            serial::Config::default().baudrate(115_200.bps()),
+            &mut rcc,
+        )
+        .unwrap()
+        .split();
 
     // we only have two elements for each queue, so U2 is fine (size is max 2)
     let mut rx_buffers: Queue<Pin<DmaBuffer>, U2> = Queue::new();
