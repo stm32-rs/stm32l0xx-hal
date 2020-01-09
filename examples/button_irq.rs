@@ -11,7 +11,7 @@ use cortex_m::interrupt::Mutex;
 use cortex_m::peripheral::NVIC;
 use cortex_m_rt::entry;
 use stm32l0xx_hal::{
-    exti::{TriggerEdge, line::{GpioLine, ExtiLine}},
+    exti::{TriggerEdge, GpioLine, ExtiLine},
     gpio::*,
     pac::{self, interrupt, Interrupt, EXTI},
     prelude::*,

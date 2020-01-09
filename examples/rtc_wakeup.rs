@@ -5,7 +5,7 @@ extern crate panic_halt;
 
 use cortex_m_rt::entry;
 use stm32l0xx_hal::{
-    exti::{self, line::ConfigurableLine}, pac,
+    exti::{self, ConfigurableLine}, pac,
     prelude::*,
     pwr::PWR,
     rcc,

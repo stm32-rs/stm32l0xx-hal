@@ -11,9 +11,7 @@ use cortex_m::{asm, peripheral::NVIC};
 use cortex_m_rt::entry;
 use stm32l0xx_hal::{
     prelude::*,
-    exti::{
-        line::DirectLine,
-    },
+    exti::DirectLine,
     gpio::{
         Output,
         PushPull,

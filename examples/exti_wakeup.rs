@@ -5,7 +5,7 @@ extern crate panic_halt;
 
 use cortex_m_rt::entry;
 use stm32l0xx_hal::{
-    exti::{self, line::{GpioLine, ExtiLine}}, pac,
+    exti::{self, GpioLine, ExtiLine}, pac,
     prelude::*,
     pwr::{self, PWR},
     rcc::Config,

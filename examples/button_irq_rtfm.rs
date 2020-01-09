@@ -7,7 +7,7 @@ extern crate panic_halt;
 
 use rtfm::app;
 use stm32l0xx_hal::{
-    exti::{TriggerEdge, EXTI, line::{GpioLine, ExtiLine}},
+    exti::{TriggerEdge, EXTI, GpioLine, ExtiLine},
     gpio::*,
     pac,
     prelude::*,

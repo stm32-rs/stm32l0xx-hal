@@ -11,7 +11,7 @@ use stm32l0xx_hal::{
     prelude::*,
     exti::{
         self,
-        line::ConfigurableLine,
+        ConfigurableLine,
     },
     gpio::{
         Output,
