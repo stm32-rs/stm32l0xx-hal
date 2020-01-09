@@ -59,15 +59,10 @@ pub trait ExtiExt {
     /// Returns whether `line` is currently marked as pending.
     fn is_pending<L: ExtiLine>(line: L) -> bool;
 
-    /// Enters a low-power mode until an EXTI interrupt occurs.
+    /// Enters a low-power mode until an interrupt occurs.
     ///
     /// Please note that this method will return after _any_ interrupt that can
     /// wake up the microcontroller from the given power mode.
-    ///
-    /// # Panics
-    ///
-    /// Panics, if `line` is an invalid EXTI line (reserved or not defined).
-    /// Check the Reference Manual for a list of valid lines.
     fn wait_for_irq<L, M>(&mut self, line: L, power_mode: M)
         where L: ExtiLine, M: PowerMode;
 }
