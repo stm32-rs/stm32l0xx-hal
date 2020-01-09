@@ -28,7 +28,7 @@ pub use crate::{
     gpio::gpiob::*,
     gpio::gpioc::*,
     gpio::gpiod::*,
-    gpio::gpioe::*, 
+    gpio::gpioe::*,
     pac::{LPUART1, USART1, USART4, USART5},
 };
 
@@ -181,7 +181,7 @@ impl_pins!(
     USART4, PC10, PC11, AF6;
     USART4, PE8,  PE9,  AF6;
     USART5, PB3,  PB4,  AF6;
-    USART5, PE10, PE11, AF6; 
+    USART5, PE10, PE11, AF6;
 );
 
 /// Serial abstraction
@@ -425,42 +425,33 @@ macro_rules! usart {
                 fn read(&mut self) -> nb::Result<u8, Error> {
                     // NOTE(unsafe) atomic read with no side effects
                     let isr = unsafe { (*$USARTX::ptr()).isr.read() };
+                    let icr = unsafe { &(*$USARTX::ptr()).icr };
 
-                    // Check for any errors
-                    let _err = if isr.pe().bit_is_set() {
-                        Some(Error::Parity)
+                    // Check for errors. We don't want to drop errors, so check each error bit in
+                    // sequence. If any bit is set, clear it and return its error.
+                    if isr.pe().bit_is_set() {
+                        icr.write(|w| {w.pecf().set_bit()});
+                        return Err(Error::Parity.into());
                     } else if isr.fe().bit_is_set() {
-                        Some(Error::Framing)
+                        icr.write(|w| {w.fecf().set_bit()});
+                        return Err(Error::Framing.into());
                     } else if isr.nf().bit_is_set() {
-                        Some(Error::Noise)
+                        icr.write(|w| {w.ncf().set_bit()});
+                        return Err(Error::Noise.into());
                     } else if isr.ore().bit_is_set() {
-                        Some(Error::Overrun)
-                    } else {
-                        None
-                    };
+                        icr.write(|w| {w.orecf().set_bit()});
+                        return Err(Error::Overrun.into());
+                    }
 
-                    if let Some(_err) = _err {
-                        // Some error occured. Clear the error flags by writing to ICR
-                        // followed by a read from the rdr register
+                    // Check if a byte is available
+                    if isr.rxne().bit_is_set() {
+                        // Read the received byte
                         // NOTE(read_volatile) see `write_volatile` below
-                        unsafe {
-                            (*$USARTX::ptr()).icr.write(|w| {w.pecf().set_bit()});
-                            (*$USARTX::ptr()).icr.write(|w| {w.fecf().set_bit()});
-                            (*$USARTX::ptr()).icr.write(|w| {w.ncf().set_bit()});
-                            (*$USARTX::ptr()).icr.write(|w| {w.orecf().set_bit()});
-                        }
-                        Err(nb::Error::WouldBlock)
+                        Ok(unsafe {
+                            ptr::read_volatile(&(*$USARTX::ptr()).rdr as *const _ as *const _)
+                        })
                     } else {
-                        // Check if a byte is available
-                        if isr.rxne().bit_is_set() {
-                            // Read the received byte
-                            // NOTE(read_volatile) see `write_volatile` below
-                            Ok(unsafe {
-                                ptr::read_volatile(&(*$USARTX::ptr()).rdr as *const _ as *const _)
-                            })
-                        } else {
-                            Err(nb::Error::WouldBlock)
-                        }
+                        Err(nb::Error::WouldBlock)
                     }
                 }
             }
@@ -569,7 +560,7 @@ usart! {
     USART1: (usart1, apb2enr, usart1en, apb1_clk, Serial1Ext),
     USART2: (usart2, apb1enr, usart2en, apb1_clk, Serial2Ext),
     USART4: (usart4, apb1enr, usart4en, apb1_clk, Serial4Ext),
-    USART5: (usart5, apb1enr, usart5en, apb1_clk, Serial5Ext), 
+    USART5: (usart5, apb1enr, usart5en, apb1_clk, Serial5Ext),
 }
 
 impl<USART> fmt::Write for Serial<USART>
