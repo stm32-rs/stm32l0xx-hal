@@ -22,27 +22,57 @@ pub enum TriggerEdge {
 
 /// Extension trait providing a high-level API for the EXTI controller.
 pub trait ExtiExt {
-    fn listen_gpio(&mut self, syscfg: &mut SYSCFG, port: gpio::Port, line: GpioLine, edge: TriggerEdge);
-    fn listen_configurable(&mut self, line: ConfigurableLine, edge: TriggerEdge);
-    fn listen_direct(&mut self, line: DirectLine);
-
-    fn unlisten<L: ExtiLine>(&mut self, line: L);
-
-    fn pend<L: ExtiLine>(line: L);
-    fn unpend<L: ExtiLine>(line: L);
-    fn is_pending<L: ExtiLine>(line: L) -> bool;
-
-    fn wait_for_irq<L, M>(&mut self, line: L, power_mode: M)
-        where L: ExtiLine, M: PowerMode;
-}
-
-impl ExtiExt for EXTI {
     /// Starts listening to a GPIO interrupt line.
     ///
     /// GPIO interrupt lines are "configurable" lines, meaning that the edges
     /// that should trigger the interrupt can be configured. However, they
     /// require more setup than ordinary "configurable" lines, which requires
     /// access to the `SYSCFG` peripheral.
+    fn listen_gpio(&mut self, syscfg: &mut SYSCFG, port: gpio::Port, line: GpioLine, edge: TriggerEdge);
+
+    /// Starts listening to a configurable interrupt line.
+    ///
+    /// The edges that should trigger the interrupt can be configured with
+    /// `edge`.
+    fn listen_configurable(&mut self, line: ConfigurableLine, edge: TriggerEdge);
+
+    /// Starts listening to a "direct" interrupt line.
+    fn listen_direct(&mut self, line: DirectLine);
+
+    /// Disables the interrupt on `line`.
+    fn unlisten<L: ExtiLine>(&mut self, line: L);
+
+    /// Marks `line` as "pending".
+    ///
+    /// This will cause an interrupt if the EXTI was previously configured to
+    /// listen on `line`.
+    ///
+    /// If `line` is already pending, this does nothing.
+    fn pend<L: ExtiLine>(line: L);
+
+    /// Marks `line` as "not pending".
+    ///
+    /// This should be called from an interrupt handler to ensure that the
+    /// interrupt doesn't continuously fire.
+    fn unpend<L: ExtiLine>(line: L);
+
+    /// Returns whether `line` is currently marked as pending.
+    fn is_pending<L: ExtiLine>(line: L) -> bool;
+
+    /// Enters a low-power mode until an EXTI interrupt occurs.
+    ///
+    /// Please note that this method will return after _any_ interrupt that can
+    /// wake up the microcontroller from the given power mode.
+    ///
+    /// # Panics
+    ///
+    /// Panics, if `line` is an invalid EXTI line (reserved or not defined).
+    /// Check the Reference Manual for a list of valid lines.
+    fn wait_for_irq<L, M>(&mut self, line: L, power_mode: M)
+        where L: ExtiLine, M: PowerMode;
+}
+
+impl ExtiExt for EXTI {
     // `port` and `line` are almost always constants, so make sure they can get constant-propagated
     // by inlining the method. Saves ~600 Bytes in the `lptim.rs` example.
     #[inline]
@@ -122,10 +152,6 @@ impl ExtiExt for EXTI {
         }
     }
 
-    /// Starts listening to a configurable interrupt line.
-    ///
-    /// The edges that should trigger the interrupt can be configured with
-    /// `edge`.
     #[inline]
     fn listen_configurable(&mut self, line: ConfigurableLine, edge: TriggerEdge) {
         let bm: u32 = 1 << line.raw_line();
@@ -144,7 +170,6 @@ impl ExtiExt for EXTI {
         }
     }
 
-    /// Starts listening to a "direct" interrupt line.
     #[inline]
     fn listen_direct(&mut self, line: DirectLine) {
         let bm: u32 = 1 << line.raw_line();
@@ -154,7 +179,6 @@ impl ExtiExt for EXTI {
         }
     }
 
-    /// Disables the interrupt on `line`.
     fn unlisten<L: ExtiLine>(&mut self, line: L) {
         let bm = 1 << line.raw_line();
 
@@ -166,12 +190,6 @@ impl ExtiExt for EXTI {
         }
     }
 
-    /// Marks `line` as "pending".
-    ///
-    /// This will cause an interrupt if the EXTI was previously configured to
-    /// listen on `line`.
-    ///
-    /// If `line` is already pending, this does nothing.
     fn pend<L: ExtiLine>(line: L) {
         let line = line.raw_line();
 
@@ -186,7 +204,6 @@ impl ExtiExt for EXTI {
         }
     }
 
-    /// Marks `line` as "not pending".
     fn unpend<L: ExtiLine>(line: L) {
         let line = line.raw_line();
 
@@ -201,7 +218,6 @@ impl ExtiExt for EXTI {
         }
     }
 
-    /// Returns whether `line` is currently marked as pending.
     fn is_pending<L: ExtiLine>(line: L) -> bool {
         let bm: u32 = 1 << line.raw_line();
 
@@ -212,15 +228,6 @@ impl ExtiExt for EXTI {
         pr & bm != 0
     }
 
-    /// Enters a low-power mode until an interrupt occurs.
-    ///
-    /// Please note that this method will return after _any_ interrupt that can
-    /// wake up the microcontroller from the given power mode.
-    ///
-    /// # Panics
-    ///
-    /// Panics, if `line` is an invalid EXTI line (reserved or not defined).
-    /// Check the Reference Manual for a list of valid lines.
     fn wait_for_irq<L, M>(&mut self, line: L, mut power_mode: M)
         where L: ExtiLine, M: PowerMode,
     {
