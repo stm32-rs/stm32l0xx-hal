@@ -268,6 +268,9 @@ pub trait ExtiLine: Sized + sealed::Sealed {
 ///
 /// All `GpioLine`s are *configurable*: They can be configured to listen for
 /// rising or falling edges.
+///
+/// You can create a `GpioLine` by using the `ExtiLine::from_raw_line` method.
+/// Lines `0..=15` are valid GPIO lines.
 #[derive(Copy, Clone, PartialEq, Eq)]
 pub struct GpioLine(u8);
 
