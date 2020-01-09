@@ -337,6 +337,19 @@ macro_rules! usart {
                     }
                 }
 
+                /// Checks for reception errors that may have occurred.
+                ///
+                /// Note that multiple errors can be signaled at the same time. In that case,
+                /// calling this function repeatedly will return the remaining errors.
+                pub fn check_errors(&mut self) -> Result<(), Error> {
+                    self.rx.check_errors()
+                }
+
+                /// Clears any signaled errors without returning them.
+                pub fn clear_errors(&mut self) {
+                    self.rx.clear_errors()
+                }
+
                 pub fn split(self) -> (Tx<$USARTX>, Rx<$USARTX>) {
                     (self.tx, self.rx)
                 }
@@ -366,7 +379,49 @@ macro_rules! usart {
                 }
             }
 
-#[cfg(any(feature = "stm32l0x2", feature = "stm32l0x3"))]
+            impl Rx<$USARTX> {
+                /// Checks for reception errors that may have occurred.
+                ///
+                /// Note that multiple errors can be signaled at the same time. In that case,
+                /// calling this function repeatedly will return the remaining errors.
+                pub fn check_errors(&mut self) -> Result<(), Error> {
+                    let isr = unsafe { (*$USARTX::ptr()).isr.read() };
+                    let icr = unsafe { &(*$USARTX::ptr()).icr };
+
+                    // We don't want to drop any errors, so check each error bit in sequence. If
+                    // any bit is set, clear it and return its error.
+                    if isr.pe().bit_is_set() {
+                        icr.write(|w| {w.pecf().set_bit()});
+                        return Err(Error::Parity.into());
+                    } else if isr.fe().bit_is_set() {
+                        icr.write(|w| {w.fecf().set_bit()});
+                        return Err(Error::Framing.into());
+                    } else if isr.nf().bit_is_set() {
+                        icr.write(|w| {w.ncf().set_bit()});
+                        return Err(Error::Noise.into());
+                    } else if isr.ore().bit_is_set() {
+                        icr.write(|w| {w.orecf().set_bit()});
+                        return Err(Error::Overrun.into());
+                    }
+
+                    Ok(())
+                }
+
+                /// Clears any signaled errors without returning them.
+                pub fn clear_errors(&mut self) {
+                    let icr = unsafe { &(*$USARTX::ptr()).icr };
+
+                    icr.write(|w| w
+                        .pecf().set_bit()
+                        .fecf().set_bit()
+                        .ncf().set_bit()
+                        .orecf().set_bit()
+                    );
+                }
+            }
+
+            /// DMA operations.
+            #[cfg(any(feature = "stm32l0x2", feature = "stm32l0x3"))]
             impl Rx<$USARTX> {
                 pub fn read_all<Buffer, Channel>(self,
                     dma:     &mut dma::Handle,
@@ -423,25 +478,10 @@ macro_rules! usart {
                 type Error = Error;
 
                 fn read(&mut self) -> nb::Result<u8, Error> {
+                    self.check_errors()?;
+
                     // NOTE(unsafe) atomic read with no side effects
                     let isr = unsafe { (*$USARTX::ptr()).isr.read() };
-                    let icr = unsafe { &(*$USARTX::ptr()).icr };
-
-                    // Check for errors. We don't want to drop errors, so check each error bit in
-                    // sequence. If any bit is set, clear it and return its error.
-                    if isr.pe().bit_is_set() {
-                        icr.write(|w| {w.pecf().set_bit()});
-                        return Err(Error::Parity.into());
-                    } else if isr.fe().bit_is_set() {
-                        icr.write(|w| {w.fecf().set_bit()});
-                        return Err(Error::Framing.into());
-                    } else if isr.nf().bit_is_set() {
-                        icr.write(|w| {w.ncf().set_bit()});
-                        return Err(Error::Noise.into());
-                    } else if isr.ore().bit_is_set() {
-                        icr.write(|w| {w.orecf().set_bit()});
-                        return Err(Error::Overrun.into());
-                    }
 
                     // Check if a byte is available
                     if isr.rxne().bit_is_set() {
