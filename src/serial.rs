@@ -52,11 +52,19 @@ pub enum Error {
 
 /// Interrupt event
 pub enum Event {
-    /// New data has been received
+    /// New data has been received.
+    ///
+    /// This event is cleared by reading a character from the UART.
     Rxne,
-    /// New data can be sent
+    /// New data can be sent.
+    ///
+    /// This event is cleared by writing a character to the UART.
+    ///
+    /// Note that this event does not mean that the character in the TX buffer
+    /// is fully transmitted. It only means that the TX buffer is ready to take
+    /// another character to be transmitted.
     Txe,
-    /// Idle line state detected
+    /// Idle line state detected.
     Idle,
 }
 
