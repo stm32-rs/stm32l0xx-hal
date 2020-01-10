@@ -62,8 +62,8 @@ fn main() -> ! {
     // enqueue as many buffers as available into rx_buffers
     unsafe {
         // putting the same pointer in here twice would be a big mistake
-        rx_buffers.enqueue(Pin::new(&mut BUFFER_1)).unwrap();;
-        rx_buffers.enqueue(Pin::new(&mut BUFFER_2)).unwrap();;
+        rx_buffers.enqueue(Pin::new(&mut BUFFER_1)).unwrap();
+        rx_buffers.enqueue(Pin::new(&mut BUFFER_2)).unwrap();
     }
 
     let dma_handle = &mut dma.handle;
