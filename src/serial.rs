@@ -330,13 +330,6 @@ macro_rules! usart {
                     }
                 }
 
-                /// Clears interrupt flag
-                pub fn clear_irq(&mut self, event: Event) {
-                    if let Event::Rxne = event {
-                        self.usart.rqr.write(|w| w.rxfrq().discard())
-                    }
-                }
-
                 /// Checks for reception errors that may have occurred.
                 ///
                 /// Note that multiple errors can be signaled at the same time. In that case,
