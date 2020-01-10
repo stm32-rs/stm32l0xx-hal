@@ -338,6 +338,34 @@ macro_rules! usart {
                     }
                 }
 
+                /// Returns a pending and enabled `Event`.
+                ///
+                /// Multiple `Event`s can be signaled at the same time. In that case, an arbitrary
+                /// pending event will be returned. Clearing the event condition will cause this
+                /// method to return the other pending event(s).
+                ///
+                /// For an event to be returned by this method, it must first be enabled by calling
+                /// `listen`.
+                ///
+                /// This method will never clear a pending event. If the event condition is not
+                /// resolved by the user, it will be returned again by the next call to
+                /// `pending_event`.
+                pub fn pending_event(&self) -> Option<Event> {
+                    let cr1 = self.usart.cr1.read();
+                    let isr = self.usart.isr.read();
+
+                    if cr1.rxneie().bit_is_set() && isr.rxne().bit_is_set() {
+                        // Give highest priority to RXNE to help with avoiding overrun
+                        Some(Event::Rxne)
+                    } else if cr1.txeie().bit_is_set() && isr.txe().bit_is_set() {
+                        Some(Event::Txe)
+                    } else if cr1.idleie().bit_is_set() && isr.idle().bit_is_set() {
+                        Some(Event::Idle)
+                    } else {
+                        None
+                    }
+                }
+
                 /// Checks for reception errors that may have occurred.
                 ///
                 /// Note that multiple errors can be signaled at the same time. In that case,
