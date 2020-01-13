@@ -28,7 +28,7 @@ pub use crate::{
     gpio::gpiob::*,
     gpio::gpioc::*,
     gpio::gpiod::*,
-    gpio::gpioe::*, 
+    gpio::gpioe::*,
     pac::{LPUART1, USART1, USART4, USART5},
 };
 
@@ -52,11 +52,19 @@ pub enum Error {
 
 /// Interrupt event
 pub enum Event {
-    /// New data has been received
+    /// New data has been received.
+    ///
+    /// This event is cleared by reading a character from the UART.
     Rxne,
-    /// New data can be sent
+    /// New data can be sent.
+    ///
+    /// This event is cleared by writing a character to the UART.
+    ///
+    /// Note that this event does not mean that the character in the TX buffer
+    /// is fully transmitted. It only means that the TX buffer is ready to take
+    /// another character to be transmitted.
     Txe,
-    /// Idle line state detected
+    /// Idle line state detected.
     Idle,
 }
 
@@ -181,7 +189,7 @@ impl_pins!(
     USART4, PC10, PC11, AF6;
     USART4, PE8,  PE9,  AF6;
     USART5, PB3,  PB4,  AF6;
-    USART5, PE10, PE11, AF6; 
+    USART5, PE10, PE11, AF6;
 );
 
 /// Serial abstraction
@@ -330,11 +338,45 @@ macro_rules! usart {
                     }
                 }
 
-                /// Clears interrupt flag
-                pub fn clear_irq(&mut self, event: Event) {
-                    if let Event::Rxne = event {
-                        self.usart.rqr.write(|w| w.rxfrq().discard())
+                /// Returns a pending and enabled `Event`.
+                ///
+                /// Multiple `Event`s can be signaled at the same time. In that case, an arbitrary
+                /// pending event will be returned. Clearing the event condition will cause this
+                /// method to return the other pending event(s).
+                ///
+                /// For an event to be returned by this method, it must first be enabled by calling
+                /// `listen`.
+                ///
+                /// This method will never clear a pending event. If the event condition is not
+                /// resolved by the user, it will be returned again by the next call to
+                /// `pending_event`.
+                pub fn pending_event(&self) -> Option<Event> {
+                    let cr1 = self.usart.cr1.read();
+                    let isr = self.usart.isr.read();
+
+                    if cr1.rxneie().bit_is_set() && isr.rxne().bit_is_set() {
+                        // Give highest priority to RXNE to help with avoiding overrun
+                        Some(Event::Rxne)
+                    } else if cr1.txeie().bit_is_set() && isr.txe().bit_is_set() {
+                        Some(Event::Txe)
+                    } else if cr1.idleie().bit_is_set() && isr.idle().bit_is_set() {
+                        Some(Event::Idle)
+                    } else {
+                        None
                     }
+                }
+
+                /// Checks for reception errors that may have occurred.
+                ///
+                /// Note that multiple errors can be signaled at the same time. In that case,
+                /// calling this function repeatedly will return the remaining errors.
+                pub fn check_errors(&mut self) -> Result<(), Error> {
+                    self.rx.check_errors()
+                }
+
+                /// Clears any signaled errors without returning them.
+                pub fn clear_errors(&mut self) {
+                    self.rx.clear_errors()
                 }
 
                 pub fn split(self) -> (Tx<$USARTX>, Rx<$USARTX>) {
@@ -366,7 +408,49 @@ macro_rules! usart {
                 }
             }
 
-#[cfg(any(feature = "stm32l0x2", feature = "stm32l0x3"))]
+            impl Rx<$USARTX> {
+                /// Checks for reception errors that may have occurred.
+                ///
+                /// Note that multiple errors can be signaled at the same time. In that case,
+                /// calling this function repeatedly will return the remaining errors.
+                pub fn check_errors(&mut self) -> Result<(), Error> {
+                    let isr = unsafe { (*$USARTX::ptr()).isr.read() };
+                    let icr = unsafe { &(*$USARTX::ptr()).icr };
+
+                    // We don't want to drop any errors, so check each error bit in sequence. If
+                    // any bit is set, clear it and return its error.
+                    if isr.pe().bit_is_set() {
+                        icr.write(|w| {w.pecf().set_bit()});
+                        return Err(Error::Parity.into());
+                    } else if isr.fe().bit_is_set() {
+                        icr.write(|w| {w.fecf().set_bit()});
+                        return Err(Error::Framing.into());
+                    } else if isr.nf().bit_is_set() {
+                        icr.write(|w| {w.ncf().set_bit()});
+                        return Err(Error::Noise.into());
+                    } else if isr.ore().bit_is_set() {
+                        icr.write(|w| {w.orecf().set_bit()});
+                        return Err(Error::Overrun.into());
+                    }
+
+                    Ok(())
+                }
+
+                /// Clears any signaled errors without returning them.
+                pub fn clear_errors(&mut self) {
+                    let icr = unsafe { &(*$USARTX::ptr()).icr };
+
+                    icr.write(|w| w
+                        .pecf().set_bit()
+                        .fecf().set_bit()
+                        .ncf().set_bit()
+                        .orecf().set_bit()
+                    );
+                }
+            }
+
+            /// DMA operations.
+            #[cfg(any(feature = "stm32l0x2", feature = "stm32l0x3"))]
             impl Rx<$USARTX> {
                 pub fn read_all<Buffer, Channel>(self,
                     dma:     &mut dma::Handle,
@@ -423,44 +507,20 @@ macro_rules! usart {
                 type Error = Error;
 
                 fn read(&mut self) -> nb::Result<u8, Error> {
+                    self.check_errors()?;
+
                     // NOTE(unsafe) atomic read with no side effects
                     let isr = unsafe { (*$USARTX::ptr()).isr.read() };
 
-                    // Check for any errors
-                    let _err = if isr.pe().bit_is_set() {
-                        Some(Error::Parity)
-                    } else if isr.fe().bit_is_set() {
-                        Some(Error::Framing)
-                    } else if isr.nf().bit_is_set() {
-                        Some(Error::Noise)
-                    } else if isr.ore().bit_is_set() {
-                        Some(Error::Overrun)
-                    } else {
-                        None
-                    };
-
-                    if let Some(_err) = _err {
-                        // Some error occured. Clear the error flags by writing to ICR
-                        // followed by a read from the rdr register
+                    // Check if a byte is available
+                    if isr.rxne().bit_is_set() {
+                        // Read the received byte
                         // NOTE(read_volatile) see `write_volatile` below
-                        unsafe {
-                            (*$USARTX::ptr()).icr.write(|w| {w.pecf().set_bit()});
-                            (*$USARTX::ptr()).icr.write(|w| {w.fecf().set_bit()});
-                            (*$USARTX::ptr()).icr.write(|w| {w.ncf().set_bit()});
-                            (*$USARTX::ptr()).icr.write(|w| {w.orecf().set_bit()});
-                        }
-                        Err(nb::Error::WouldBlock)
+                        Ok(unsafe {
+                            ptr::read_volatile(&(*$USARTX::ptr()).rdr as *const _ as *const _)
+                        })
                     } else {
-                        // Check if a byte is available
-                        if isr.rxne().bit_is_set() {
-                            // Read the received byte
-                            // NOTE(read_volatile) see `write_volatile` below
-                            Ok(unsafe {
-                                ptr::read_volatile(&(*$USARTX::ptr()).rdr as *const _ as *const _)
-                            })
-                        } else {
-                            Err(nb::Error::WouldBlock)
-                        }
+                        Err(nb::Error::WouldBlock)
                     }
                 }
             }
@@ -569,7 +629,7 @@ usart! {
     USART1: (usart1, apb2enr, usart1en, apb1_clk, Serial1Ext),
     USART2: (usart2, apb1enr, usart2en, apb1_clk, Serial2Ext),
     USART4: (usart4, apb1enr, usart4en, apb1_clk, Serial4Ext),
-    USART5: (usart5, apb1enr, usart5en, apb1_clk, Serial5Ext), 
+    USART5: (usart5, apb1enr, usart5en, apb1_clk, Serial5Ext),
 }
 
 impl<USART> fmt::Write for Serial<USART>
