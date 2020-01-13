@@ -7,9 +7,8 @@ extern crate panic_halt;
 
 use rtfm::app;
 use stm32l0xx_hal::{
-    exti::{TriggerEdge, EXTI, line::{GpioLine, ExtiLine}},
+    exti::{TriggerEdge, Exti, GpioLine, ExtiLine},
     gpio::*,
-    pac,
     prelude::*,
     rcc::Config,
     syscfg::SYSCFG,
@@ -18,7 +17,7 @@ use stm32l0xx_hal::{
 #[app(device = stm32l0xx_hal::pac)]
 const APP: () = {
     static mut LED: gpiob::PB6<Output<PushPull>> = ();
-    static mut INT: pac::EXTI = ();
+    static mut INT: Exti = ();
 
     #[init]
     fn init() -> init::LateResources {
@@ -36,10 +35,10 @@ const APP: () = {
         let button = gpiob.pb2.into_pull_up_input();
 
         let mut syscfg = SYSCFG::new(device.SYSCFG, &mut rcc);
+        let mut exti = Exti::new(device.EXTI);
 
         // Configure the external interrupt on the falling edge for the pin 0.
         let line = GpioLine::from_raw_line(button.pin_number()).unwrap();
-        let mut exti = device.EXTI;
         exti.listen_gpio(&mut syscfg, button.port(), line, TriggerEdge::Falling);
 
         // Return the initialised resources.
@@ -54,7 +53,7 @@ const APP: () = {
         static mut STATE: bool = false;
 
         // Clear the interrupt flag.
-        EXTI::unpend(GpioLine::from_raw_line(0).unwrap());
+        Exti::unpend(GpioLine::from_raw_line(0).unwrap());
 
         // Change the LED state on each interrupt.
         if *STATE {

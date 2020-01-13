@@ -5,7 +5,7 @@ extern crate panic_halt;
 
 use cortex_m_rt::entry;
 use stm32l0xx_hal::{
-    exti::{self, line::{GpioLine, ExtiLine}}, pac,
+    exti::{Exti, TriggerEdge, GpioLine, ExtiLine}, pac,
     prelude::*,
     pwr::{self, PWR},
     rcc::Config,
@@ -19,7 +19,7 @@ fn main() -> ! {
 
     let mut rcc = dp.RCC.freeze(Config::hsi16());
     let gpiob = dp.GPIOB.split(&mut rcc);
-    let mut exti = dp.EXTI;
+    let mut exti = Exti::new(dp.EXTI);
     let mut pwr = PWR::new(dp.PWR, &mut rcc);
     let mut delay = cp.SYST.delay(rcc.clocks);
     let mut scb   = cp.SCB;
@@ -37,7 +37,7 @@ fn main() -> ! {
         &mut syscfg,
         button.port(),
         line,
-        exti::TriggerEdge::Falling,
+        TriggerEdge::Falling,
     );
 
     loop {

@@ -12,7 +12,6 @@ pub use embedded_hal::{
 pub use crate::{
     adc::AdcExt as _,
     delay::DelayExt as _,
-    exti::ExtiExt as _,
     gpio::GpioExt as _,
     i2c::I2cExt as _,
     pwr::PowerMode as _,

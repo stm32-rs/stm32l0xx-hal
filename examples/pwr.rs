@@ -10,18 +10,16 @@ use cortex_m_rt::entry;
 use stm32l0xx_hal::{
     prelude::*,
     exti::{
-        self,
-        line::ConfigurableLine,
+        Exti,
+        ConfigurableLine,
+        TriggerEdge,
     },
     gpio::{
         Output,
         PushPull,
         gpiob::PB,
     },
-    pac::{
-        self,
-        EXTI,
-    },
+    pac,
     pwr::{
         self,
         PWR,
@@ -42,7 +40,7 @@ fn main() -> ! {
 
     let mut scb   = cp.SCB;
     let mut rcc   = dp.RCC.freeze(rcc::Config::msi(rcc::MSIRange::Range0));
-    let mut exti  = dp.EXTI;
+    let mut exti  = Exti::new(dp.EXTI);
     let mut pwr   = PWR::new(dp.PWR, &mut rcc);
     let     gpiob = dp.GPIOB.split(&mut rcc);
 
@@ -66,7 +64,7 @@ fn main() -> ! {
     });
     exti.listen_configurable(
         exti_line,
-        exti::TriggerEdge::Rising,
+        TriggerEdge::Rising,
     );
 
     let mut timer = rtc.wakeup_timer();
@@ -78,7 +76,7 @@ fn main() -> ! {
     // 5 seconds of regular run mode
     timer.start(5u32);
     while let Err(nb::Error::WouldBlock) = timer.wait() {}
-    EXTI::unpend(exti_line);
+    Exti::unpend(exti_line);
     NVIC::unpend(pac::Interrupt::RTC);
 
     blink(&mut led);
@@ -87,7 +85,7 @@ fn main() -> ! {
     pwr.enter_low_power_run_mode(rcc.clocks);
     while let Err(nb::Error::WouldBlock) = timer.wait() {}
     pwr.exit_low_power_run_mode();
-    EXTI::unpend(exti_line);
+    Exti::unpend(exti_line);
     NVIC::unpend(pac::Interrupt::RTC);
 
     blink(&mut led);

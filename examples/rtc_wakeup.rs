@@ -5,7 +5,8 @@ extern crate panic_halt;
 
 use cortex_m_rt::entry;
 use stm32l0xx_hal::{
-    exti::{self, line::ConfigurableLine}, pac,
+    exti::{Exti, ConfigurableLine, TriggerEdge},
+    pac,
     prelude::*,
     pwr::PWR,
     rcc,
@@ -28,7 +29,7 @@ fn main() -> ! {
     led.set_high().unwrap();
 
     let mut scb  = cp.SCB;
-    let mut exti = dp.EXTI;
+    let mut exti = Exti::new(dp.EXTI);
     let mut pwr = PWR::new(dp.PWR, &mut rcc);
 
     let instant = Instant::new()
@@ -49,7 +50,7 @@ fn main() -> ! {
     });
     exti.listen_configurable(
         exti_line,
-        exti::TriggerEdge::Rising,
+        TriggerEdge::Rising,
     );
 
     while button.is_low().unwrap() {}

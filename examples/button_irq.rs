@@ -11,9 +11,9 @@ use cortex_m::interrupt::Mutex;
 use cortex_m::peripheral::NVIC;
 use cortex_m_rt::entry;
 use stm32l0xx_hal::{
-    exti::{TriggerEdge, line::{GpioLine, ExtiLine}},
+    exti::{TriggerEdge, GpioLine, ExtiLine, Exti},
     gpio::*,
-    pac::{self, interrupt, Interrupt, EXTI},
+    pac::{self, interrupt, Interrupt},
     prelude::*,
     rcc::Config,
     syscfg::SYSCFG,
@@ -39,10 +39,10 @@ fn main() -> ! {
     let button = gpiob.pb2.into_pull_up_input();
 
     let mut syscfg = SYSCFG::new(dp.SYSCFG, &mut rcc);
+    let mut exti = Exti::new(dp.EXTI);
 
     // Configure the external interrupt on the falling edge for the pin 0.
     let line = GpioLine::from_raw_line(button.pin_number()).unwrap();
-    let mut exti = dp.EXTI;
     exti.listen_gpio(&mut syscfg, button.port(), line, TriggerEdge::Falling);
 
     // Store the external interrupt and LED in mutex reffcells to make them
@@ -66,7 +66,7 @@ fn EXTI2_3() {
 
     cortex_m::interrupt::free(|cs| {
         // Clear the interrupt flag.
-        EXTI::unpend(GpioLine::from_raw_line(2).unwrap());
+        Exti::unpend(GpioLine::from_raw_line(2).unwrap());
 
         // Change the LED state on each interrupt.
         if let Some(ref mut led) = LED.borrow(cs).borrow_mut().deref_mut() {
