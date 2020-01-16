@@ -300,6 +300,37 @@ macro_rules! gpio {
                         }
                     }
 
+                    fn with_mode<M, F, R>(
+                        &mut self,
+                        f: F
+                    ) -> R
+                    where
+                        M: PinMode,
+                        F: FnOnce(&mut $PXi<M>) -> R,
+                    {
+                        struct ResetMode<'a, ORIG: PinMode> {
+                            pin: &'a mut $PXi<ORIG>,
+                        }
+
+                        impl<'a, ORIG: PinMode> Drop for ResetMode<'a, ORIG> {
+                            fn drop(&mut self) {
+                                self.pin.mode::<ORIG>();
+                            }
+                        }
+
+                        self.mode::<M>();
+
+                        // This will reset the pin back to the original mode when dropped.
+                        // (so either when `with_mode` returns or when `f` unwinds)
+                        let _resetti = ResetMode { pin: self };
+
+                        let mut witness = $PXi {
+                            _mode: PhantomData
+                        };
+
+                        f(&mut witness)
+                    }
+
                     /// Configures the pin to operate as a floating input pin.
                     pub fn into_floating_input(
                         mut self,
@@ -310,7 +341,18 @@ macro_rules! gpio {
                         }
                     }
 
-                    /// Configures the pin to operate as a pulled down input pin.
+                    /// Temporarily configures this pin as a floating input.
+                    ///
+                    /// The closure `f` is called with the reconfigured pin. After it returns,
+                    /// the pin will be configured back.
+                    pub fn with_floating_input<R>(
+                        &mut self,
+                        f: impl FnOnce(&mut $PXi<Input<Floating>>) -> R,
+                    ) -> R {
+                        self.with_mode(f)
+                    }
+
+                    /// Configures the pin to operate as a pulled-down input pin.
                     pub fn into_pull_down_input(
                         mut self,
                     ) -> $PXi<Input<PullDown>> {
@@ -320,7 +362,18 @@ macro_rules! gpio {
                         }
                     }
 
-                    /// Configures the pin to operate as a pulled up input pin.
+                    /// Temporarily configures this pin as a pulled-down input.
+                    ///
+                    /// The closure `f` is called with the reconfigured pin. After it returns,
+                    /// the pin will be configured back.
+                    pub fn with_pull_down_input<R>(
+                        &mut self,
+                        f: impl FnOnce(&mut $PXi<Input<PullDown>>) -> R,
+                    ) -> R {
+                        self.with_mode(f)
+                    }
+
+                    /// Configures the pin to operate as a pulled-up input pin.
                     pub fn into_pull_up_input(
                         mut self,
                     ) -> $PXi<Input<PullUp>> {
@@ -328,6 +381,17 @@ macro_rules! gpio {
                         $PXi {
                             _mode: PhantomData
                         }
+                    }
+
+                    /// Temporarily configures this pin as a pulled-up input.
+                    ///
+                    /// The closure `f` is called with the reconfigured pin. After it returns,
+                    /// the pin will be configured back.
+                    pub fn with_pull_up_input<R>(
+                        &mut self,
+                        f: impl FnOnce(&mut $PXi<Input<PullUp>>) -> R,
+                    ) -> R {
+                        self.with_mode(f)
                     }
 
                     /// Configures the pin to operate as an analog pin.
@@ -340,6 +404,17 @@ macro_rules! gpio {
                         }
                     }
 
+                    /// Temporarily configures this pin as an analog pin.
+                    ///
+                    /// The closure `f` is called with the reconfigured pin. After it returns,
+                    /// the pin will be configured back.
+                    pub fn with_analog<R>(
+                        &mut self,
+                        f: impl FnOnce(&mut $PXi<Analog>) -> R,
+                    ) -> R {
+                        self.with_mode(f)
+                    }
+
                     /// Configures the pin to operate as an open drain output pin.
                     pub fn into_open_drain_output(
                         mut self,
@@ -350,7 +425,18 @@ macro_rules! gpio {
                         }
                     }
 
-                    /// Configures the pin to operate as an push pull output pin.
+                    /// Temporarily configures this pin as an open drain output.
+                    ///
+                    /// The closure `f` is called with the reconfigured pin. After it returns,
+                    /// the pin will be configured back.
+                    pub fn with_open_drain_output<R>(
+                        &mut self,
+                        f: impl FnOnce(&mut $PXi<Output<OpenDrain>>) -> R,
+                    ) -> R {
+                        self.with_mode(f)
+                    }
+
+                    /// Configures the pin to operate as an push-pull output pin.
                     pub fn into_push_pull_output(
                         mut self,
                     ) -> $PXi<Output<PushPull>> {
@@ -358,6 +444,17 @@ macro_rules! gpio {
                         $PXi {
                             _mode: PhantomData
                         }
+                    }
+
+                    /// Temporarily configures this pin as a push-pull output.
+                    ///
+                    /// The closure `f` is called with the reconfigured pin. After it returns,
+                    /// the pin will be configured back.
+                    pub fn with_push_pull_output<R>(
+                        &mut self,
+                        f: impl FnOnce(&mut $PXi<Output<PushPull>>) -> R,
+                    ) -> R {
+                        self.with_mode(f)
                     }
 
                     /// Set pin speed.
