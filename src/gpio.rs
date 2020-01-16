@@ -41,6 +41,63 @@ pub struct Output<MODE> {
 /// Push pull output (type state)
 pub struct PushPull;
 
+mod sealed {
+    pub trait Sealed {}
+}
+
+/// Marker trait for valid pin modes (type state).
+///
+/// It can not be implemented by outside types.
+pub trait PinMode: sealed::Sealed {
+    // These constants are used to implement the pin configuration code.
+    // They are not part of public API.
+
+    #[doc(hidden)]
+    const PUPDR: u8;
+    #[doc(hidden)]
+    const MODER: u8;
+    #[doc(hidden)]
+    const OTYPER: Option<u8> = None;
+}
+
+impl sealed::Sealed for Input<Floating> {}
+impl PinMode for Input<Floating> {
+    const PUPDR: u8 = 0b00;
+    const MODER: u8 = 0b00;
+}
+
+impl sealed::Sealed for Input<PullDown> {}
+impl PinMode for Input<PullDown> {
+    const PUPDR: u8 = 0b10;
+    const MODER: u8 = 0b00;
+}
+
+impl sealed::Sealed for Input<PullUp> {}
+impl PinMode for Input<PullUp> {
+    const PUPDR: u8 = 0b01;
+    const MODER: u8 = 0b00;
+}
+
+impl sealed::Sealed for Analog {}
+impl PinMode for Analog {
+    const PUPDR: u8 = 0b00;
+    const MODER: u8 = 0b11;
+}
+
+impl sealed::Sealed for Output<OpenDrain> {}
+impl PinMode for Output<OpenDrain> {
+    const PUPDR: u8 = 0b00;
+    const MODER: u8 = 0b01;
+    const OTYPER: Option<u8> = Some(0b1);
+}
+
+impl sealed::Sealed for Output<PushPull> {}
+impl PinMode for Output<PushPull> {
+    const PUPDR: u8 = 0b00;
+    const MODER: u8 = 0b01;
+    const OTYPER: Option<u8> = Some(0b0);
+}
+
 /// GPIO Pin speed selection
 #[derive(Debug, Copy, Clone, PartialEq, Eq)]
 pub enum Speed {
@@ -85,7 +142,8 @@ macro_rules! gpio {
             use crate::rcc::Rcc;
             use super::{
                 Floating, GpioExt, Input, OpenDrain, Output, Speed,
-                PullDown, PullUp, PushPull, AltMode, Analog, Port
+                PullDown, PullUp, PushPull, AltMode, Analog, Port,
+                PinMode,
             };
 
             /// GPIO parts
@@ -218,122 +276,91 @@ macro_rules! gpio {
                     }
                 }
 
-                impl<MODE> $PXi<MODE> {
-                    /// Configures the pin to operate as a floating input pin
+                impl<MODE: PinMode> $PXi<MODE> {
+                    /// Puts `self` into mode `M`.
+                    ///
+                    /// This violates the type state constraints from `MODE`, so callers must
+                    /// ensure they use this properly.
+                    fn mode<M: PinMode>(&mut self) {
+                        let offset = 2 * $i;
+                        unsafe {
+                            &(*$GPIOX::ptr()).pupdr.modify(|r, w| {
+                                w.bits((r.bits() & !(0b11 << offset)) | (u32::from(M::PUPDR) << offset))
+                            });
+
+                            if let Some(otyper) = M::OTYPER {
+                                &(*$GPIOX::ptr()).otyper.modify(|r, w| {
+                                    w.bits(r.bits() & !(0b1 << $i) | (u32::from(otyper) << $i))
+                                });
+                            }
+
+                            &(*$GPIOX::ptr()).moder.modify(|r, w| {
+                                w.bits((r.bits() & !(0b11 << offset)) | (u32::from(M::MODER) << offset))
+                            });
+                        }
+                    }
+
+                    /// Configures the pin to operate as a floating input pin.
                     pub fn into_floating_input(
-                        self,
+                        mut self,
                     ) -> $PXi<Input<Floating>> {
-                        let offset = 2 * $i;
-                        unsafe {
-                            &(*$GPIOX::ptr()).pupdr.modify(|r, w| {
-                                w.bits((r.bits() & !(0b11 << offset)) | (0b00 << offset))
-                            });
-                            &(*$GPIOX::ptr()).moder.modify(|r, w| {
-                                w.bits((r.bits() & !(0b11 << offset)) | (0b00 << offset))
-                            })
-                        };
+                        self.mode::<Input<Floating>>();
                         $PXi {
                             _mode: PhantomData
                         }
                     }
 
-                    /// Configures the pin to operate as a pulled down input pin
+                    /// Configures the pin to operate as a pulled down input pin.
                     pub fn into_pull_down_input(
-                        self,
-                        ) -> $PXi<Input<PullDown>> {
-                        let offset = 2 * $i;
-                        unsafe {
-                            &(*$GPIOX::ptr()).pupdr.modify(|r, w| {
-                                w.bits((r.bits() & !(0b11 << offset)) | (0b10 << offset))
-                            });
-                            &(*$GPIOX::ptr()).moder.modify(|r, w| {
-                                w.bits((r.bits() & !(0b11 << offset)) | (0b00 << offset))
-                            })
-                        };
+                        mut self,
+                    ) -> $PXi<Input<PullDown>> {
+                        self.mode::<Input<Floating>>();
                         $PXi {
                             _mode: PhantomData
                         }
                     }
 
-                    /// Configures the pin to operate as a pulled up input pin
+                    /// Configures the pin to operate as a pulled up input pin.
                     pub fn into_pull_up_input(
-                        self,
+                        mut self,
                     ) -> $PXi<Input<PullUp>> {
-                        let offset = 2 * $i;
-                        unsafe {
-                            &(*$GPIOX::ptr()).pupdr.modify(|r, w| {
-                                w.bits((r.bits() & !(0b11 << offset)) | (0b01 << offset))
-                            });
-                            &(*$GPIOX::ptr()).moder.modify(|r, w| {
-                                w.bits((r.bits() & !(0b11 << offset)) | (0b00 << offset))
-                            })
-                        };
+                        self.mode::<Input<PullUp>>();
                         $PXi {
                             _mode: PhantomData
                         }
                     }
 
-                    /// Configures the pin to operate as an analog pin
+                    /// Configures the pin to operate as an analog pin.
                     pub fn into_analog(
-                        self,
+                        mut self,
                     ) -> $PXi<Analog> {
-                        let offset = 2 * $i;
-                        unsafe {
-                            &(*$GPIOX::ptr()).pupdr.modify(|r, w| {
-                                w.bits((r.bits() & !(0b11 << offset)) | (0b00 << offset))
-                            });
-                            &(*$GPIOX::ptr()).moder.modify(|r, w| {
-                                w.bits((r.bits() & !(0b11 << offset)) | (0b11 << offset))
-                            });
-                        }
+                        self.mode::<Analog>();
                         $PXi {
                             _mode: PhantomData
                         }
                     }
 
-                    /// Configures the pin to operate as an open drain output pin
+                    /// Configures the pin to operate as an open drain output pin.
                     pub fn into_open_drain_output(
-                        self,
+                        mut self,
                     ) -> $PXi<Output<OpenDrain>> {
-                        let offset = 2 * $i;
-                        unsafe {
-                            &(*$GPIOX::ptr()).pupdr.modify(|r, w| {
-                                w.bits((r.bits() & !(0b11 << offset)) | (0b00 << offset))
-                            });
-                            &(*$GPIOX::ptr()).otyper.modify(|r, w| {
-                                w.bits(r.bits() | (0b1 << $i))
-                            });
-                            &(*$GPIOX::ptr()).moder.modify(|r, w| {
-                                w.bits((r.bits() & !(0b11 << offset)) | (0b01 << offset))
-                            })
-                        };
+                        self.mode::<Output<OpenDrain>>();
                         $PXi {
                             _mode: PhantomData
                         }
                     }
 
-                    /// Configures the pin to operate as an push pull output pin
+                    /// Configures the pin to operate as an push pull output pin.
                     pub fn into_push_pull_output(
-                        self,
+                        mut self,
                     ) -> $PXi<Output<PushPull>> {
-                        let offset = 2 * $i;
-                        unsafe {
-                            &(*$GPIOX::ptr()).pupdr.modify(|r, w| {
-                                w.bits((r.bits() & !(0b11 << offset)) | (0b00 << offset))
-                            });
-                            &(*$GPIOX::ptr()).otyper.modify(|r, w| {
-                                w.bits(r.bits() & !(0b1 << $i))
-                            });
-                            &(*$GPIOX::ptr()).moder.modify(|r, w| {
-                                w.bits((r.bits() & !(0b11 << offset)) | (0b01 << offset))
-                            })
-                        };
+                        self.mode::<Output<PushPull>>();
                         $PXi {
                             _mode: PhantomData
                         }
                     }
 
-                    /// Set pin speed
+                    /// Set pin speed.
                     pub fn set_speed(self, speed: Speed) -> Self {
                         let offset = 2 * $i;
                         unsafe {

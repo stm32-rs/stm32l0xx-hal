@@ -4,7 +4,7 @@ use core::ops::Deref;
 use cortex_m::interrupt;
 
 use crate::gpio::gpioa::{PA0, PA1, PA2, PA3};
-use crate::gpio::AltMode;
+use crate::gpio::{AltMode, PinMode};
 use crate::hal;
 use crate::pac::{tim2, TIM2, TIM3};
 use crate::rcc::Rcc;
@@ -251,7 +251,7 @@ macro_rules! impl_pin {
     ) => {
         $(
             $(
-                impl<State> Pin<$instance, $channel> for $name<State> {
+                impl<State: PinMode> Pin<$instance, $channel> for $name<State> {
                     fn setup(&self) {
                         self.set_alt_mode(AltMode::$alternate_function);
                     }
