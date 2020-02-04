@@ -493,12 +493,12 @@ i2c!(
     i2c1rst,
     sda: [
         (PB7<Output<OpenDrain>>, AltMode::AF1),
-        (PA10<Output<OpenDrain>>, AltMode::AF1),
+        (PA10<Output<OpenDrain>>, AltMode::AF6),
         (PA13<Output<OpenDrain>>, AltMode::AF3),
     ],
     scl: [
         (PB6<Output<OpenDrain>>, AltMode::AF1),
-        (PA9<Output<OpenDrain>>, AltMode::AF1),
+        (PA9<Output<OpenDrain>>, AltMode::AF6),
         (PA4<Output<OpenDrain>>, AltMode::AF3),
     ],
 );
