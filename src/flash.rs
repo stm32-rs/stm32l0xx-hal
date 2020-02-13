@@ -6,7 +6,10 @@
 use cortex_m::interrupt;
 
 use crate::{
-    pac,
+    pac::{
+        self,
+        flash::acr::LATENCY_A,
+    },
     rcc::Rcc,
 };
 
@@ -75,17 +78,24 @@ impl FLASH {
         // Enable the peripheral interface
         rcc.rb.ahbenr.modify(|_, w| w.mifen().set_bit());
 
-        // Set the number of wait states to 1. This is never wrong, but will
-        // lead to suboptimal performance at lower frequencies. See STM32L0x2
-        // reference manual, section 3.3.3.
-        flash.acr.modify(|_, w| w.latency().set_bit());
-
         Self {
             flash,
             flash_end,
             eeprom_start,
             eeprom_end,
         }
+    }
+
+    /// Set wait states
+    ///
+    /// By default, the number of wait states is zero. This is not suitable for
+    /// all configurations. Depending on the processor's voltage range and
+    /// frequency, it might be necessary to set the number of wait states to 1.
+    ///
+    /// This is explained, for example, in the STM32L0x2 Reference Manual,
+    /// section 3.3.3.
+    pub fn set_wait_states(&mut self, wait_states: LATENCY_A) {
+        self.flash.acr.modify(|_, w| w.latency().variant(wait_states));
     }
 
     /// Erases a page of flash memory
