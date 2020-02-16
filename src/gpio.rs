@@ -557,6 +557,6 @@ gpio!(GPIOE, gpioe, iopeen, PE, [
 gpio!(GPIOH, gpioh, iophen, PH, [
     PH0: (ph0, 0, Analog),
     PH1: (ph1, 1, Analog),
-    PH9: (ph9, 2, Analog),
-    PH10: (ph10, 2, Analog),
+    PH9: (ph9, 9, Analog),
+    PH10: (ph10, 10, Analog),
 ]);
