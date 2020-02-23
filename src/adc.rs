@@ -247,7 +247,7 @@ adc_pins! {
         feature = "lqfp100",
         feature = "tfbga64",
         feature = "ufbga64",
-        feature = "ufbg100",
+        feature = "ufbga100",
         feature = "wlcsp49",
     ),
 ))]
@@ -271,7 +271,7 @@ adc_pins! {
 
 #[cfg(all(
     feature = "stm32l072",
-    any(feature = "lqfp64", feature = "lqfp100", feature = "ufbg100",),
+    any(feature = "lqfp64", feature = "lqfp100", feature = "ufbga100",),
 ))]
 adc_pins! {
     Channel13: (gpioc::PC3<Analog>, 13u8),
@@ -290,7 +290,7 @@ adc_pins! {
         feature = "lqfp100",
         feature = "tfbga64",
         feature = "ufbga64",
-        feature = "ufbg100",
+        feature = "ufbga100",
     ),
 ))]
 adc_pins! {
