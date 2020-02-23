@@ -52,8 +52,8 @@ usbd-serial = "0.1.0"
 rt = ["stm32l0/rt"]
 disable-linker-script = []
 
-# PAC families
-# (Warning: Some peripherals, e.g. GPIO, don't follow this family grouping.)
+# STM32L0 subfamilies
+# (Warning: Some peripherals, e.g. GPIO, don't follow this subfamily grouping.)
 stm32l0x1 = ["stm32l0/stm32l0x1"]
 stm32l0x2 = ["stm32l0/stm32l0x2"]
 stm32l0x3 = ["stm32l0/stm32l0x3"]
