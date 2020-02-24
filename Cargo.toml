@@ -58,6 +58,11 @@ stm32l0x1 = ["stm32l0/stm32l0x1"]
 stm32l0x2 = ["stm32l0/stm32l0x2"]
 stm32l0x3 = ["stm32l0/stm32l0x3"]
 
+# Legacy features (don't use those anymore)
+stm32l052 = ["stm32l0x2"]
+stm32l072 = ["stm32l0x2"]
+stm32l082 = ["stm32l0x2"]
+
 # Features based on the GPIO peripheral version.
 # This determines the pin function mapping of the MCU.
 io-STM32L021 = []
