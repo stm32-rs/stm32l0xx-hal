@@ -19,18 +19,17 @@ use crate::{
 use stm32_usbd::UsbPeripheral;
 
 use crate::gpio::gpioa::{PA11, PA12};
-use crate::gpio::{Floating, Input};
+use crate::gpio::Analog;
 pub use stm32_usbd::UsbBus;
-
 
 pub struct USB(());
 
 impl USB {
     pub fn new(
-        _:   pac::USB,
-        _dm: PA11<Input<Floating>>,
-        _dp: PA12<Input<Floating>>,
-        _:   HSI48,
+        _: pac::USB,
+        _dm: PA11<Analog>,
+        _dp: PA12<Analog>,
+        _: HSI48
     )
         -> Self
     {
