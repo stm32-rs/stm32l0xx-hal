@@ -3,7 +3,7 @@ use core::marker::PhantomData;
 use core::ptr;
 
 use crate::gpio::gpioa::*;
-use crate::gpio::AltMode;
+use crate::gpio::{PinMode, AltMode};
 use crate::hal;
 use crate::hal::prelude::*;
 pub use crate::pac::USART2;
@@ -159,7 +159,7 @@ pub trait Pins<USART> {
 macro_rules! impl_pins {
     ($($instance:ty, $tx:ident, $rx:ident, $alt:ident;)*) => {
         $(
-            impl<Tx, Rx> Pins<$instance> for ($tx<Tx>, $rx<Rx>) {
+            impl<Tx: PinMode, Rx: PinMode> Pins<$instance> for ($tx<Tx>, $rx<Rx>) {
                 fn setup(&self) {
                     self.0.set_alt_mode(AltMode::$alt);
                     self.1.set_alt_mode(AltMode::$alt);
