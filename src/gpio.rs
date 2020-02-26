@@ -588,7 +588,7 @@ gpio!(GPIOA, gpioa, iopaen, PA, [
     PA1: (pa1, 1, Analog),
     PA2: (pa2, 2, Analog),
     PA3: (pa3, 3, Analog),
-    PA4: (pa4, 4, Input<Floating>),
+    PA4: (pa4, 4, Analog),
     PA5: (pa5, 5, Analog),
     PA6: (pa6, 6, Analog),
     PA7: (pa7, 7, Analog),
@@ -597,8 +597,8 @@ gpio!(GPIOA, gpioa, iopaen, PA, [
     PA10: (pa10, 10, Analog),
     PA11: (pa11, 11, Analog),
     PA12: (pa12, 12, Analog),
-    PA13: (pa13, 13, AltMode),
-    PA14: (pa14, 14, AltMode),
+    PA13: (pa13, 13, Analog),
+    PA14: (pa14, 14, Analog),
     PA15: (pa15, 15, Analog),
 ]);
 
