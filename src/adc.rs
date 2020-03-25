@@ -264,7 +264,7 @@ impl<State> Adc<State> {
         where
             Chan: Channel<Adc<Ready>, ID=u8>,
     {
-        self.rb.cfgr1.modify(|_, w| {
+        self.rb.cfgr1.write(|w| {
             w
                 .res().bits(self.precision as u8)
                 .cont().bit(cont)
