@@ -265,11 +265,6 @@ impl<State> Adc<State> {
             Chan: Channel<Adc<Ready>, ID=u8>,
     {
         self.rb.cfgr1.modify(|_, w| {
-            // Safe, as `self.precision` is of type `Precision`, which defines
-            // only valid values.
-            //
-            // The `bits` method is not unsafe on STM32L0x1, so we need to
-            // suppress the warning there.
             w
                 .res().bits(self.precision as u8)
                 .cont().bit(cont)
