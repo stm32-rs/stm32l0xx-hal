@@ -156,8 +156,8 @@ impl Adc<Ready> {
     ///
     /// Panics, if `buffer` is larger than 65535.
     #[cfg(feature = "stm32l0x2")]
-    pub fn start<Chan, DmaChan, Buf>(mut self,
-        channel:  Chan,
+    pub fn start<DmaChan, Buf>(mut self,
+        channels: impl Into<Channels>,
         trigger:  Option<Trigger>,
         dma:      &mut dma::Handle,
         dma_chan: DmaChan,
@@ -166,7 +166,6 @@ impl Adc<Ready> {
         -> Adc<Active<DmaChan, Buf>>
         where
             DmaToken:    dma::Target<DmaChan>,
-            Chan:        Channel<Self, ID=u8>,
             Buf:         DerefMut + 'static,
             Buf::Target: AsMutSlice<Element=u16>,
             DmaChan:     dma::Channel,
@@ -214,7 +213,7 @@ impl Adc<Ready> {
         let continous = trigger.is_none();
 
         self.power_up();
-        self.configure(&channel, continous, trigger);
+        self.configure(channels, continous, trigger);
 
         Adc {
             rb:          self.rb,
@@ -268,14 +267,11 @@ impl<State> Adc<State> {
         while self.rb.cr.read().aden().bit_is_set() {}
     }
 
-    fn configure<Chan>(&mut self,
-        _channel: &Chan,
+    fn configure(&mut self,
+        channels: impl Into<Channels>,
         cont:     bool,
         trigger:  Option<Trigger>,
-    )
-        where
-            Chan: Channel<Adc<Ready>, ID=u8>,
-    {
+    ) {
         self.rb.cfgr1.write(|w| {
             w
                 .res().bits(self.precision as u8)
@@ -303,7 +299,7 @@ impl<State> Adc<State> {
         self.rb.chselr.write(|w|
             // Safe, as long as there are no `Channel` implementations that
             // define invalid values.
-            unsafe { w.bits(0b1 << Chan::channel()) }
+            unsafe { w.bits(channels.into().flags) }
         );
 
         self.rb.isr.modify(|_, w| w.eos().set_bit());
@@ -318,9 +314,9 @@ where
 {
     type Error = ();
 
-    fn read(&mut self, pin: &mut PIN) -> nb::Result<WORD, Self::Error> {
+    fn read(&mut self, _: &mut PIN) -> nb::Result<WORD, Self::Error> {
         self.power_up();
-        self.configure(pin, false, None);
+        self.configure(Channels { flags: 0x1 << PIN::channel() }, false, None);
 
         while self.rb.isr.read().eos().bit_is_clear() {}
 
@@ -345,6 +341,33 @@ pub struct Ready;
 pub struct Active<DmaChan, Buf> {
     transfer: dma::Transfer<DmaToken, DmaChan, Buf, dma::Started>,
     buffer:   Buffer,
+}
+
+
+/// A collection of channels
+///
+/// Used to set up multi-channel conversions.
+pub struct Channels {
+    flags: u32,
+}
+
+impl Channels {
+    /// Adds a channel to the collection
+    pub fn add<C>(&mut self, _: C)
+        where C: Channel<Adc<Ready>, ID=u8>
+    {
+        self.flags |= 0x1 << C::channel()
+    }
+}
+
+impl<C> From<C> for Channels
+    where C: Channel<Adc<Ready>, ID=u8>
+{
+    fn from(channel: C) -> Self {
+        let mut c = Channels { flags: 0 };
+        c.add(channel);
+        c
+    }
 }
 
 
