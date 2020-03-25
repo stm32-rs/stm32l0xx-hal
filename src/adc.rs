@@ -139,7 +139,12 @@ impl Adc<Ready> {
     ///
     /// The `channel` argument specifies which channel should be converted.
     ///
-    /// In addition to the preceeding argument that configures the ADC,
+    /// The `trigger` argument specifies the trigger that will start each
+    /// conversion sequence. This only configures the ADC peripheral to accept
+    /// this trigger. The trigger itself must also be configured using its own
+    /// peripheral API.
+    ///
+    /// In addition to the preceeding arguments that configure the ADC,
     /// additional arguments are required to configure the DMA transfer that is
     /// used to read the results from the ADC:
     /// - `dma` is a handle to the DMA peripheral.
@@ -153,6 +158,7 @@ impl Adc<Ready> {
     #[cfg(feature = "stm32l0x2")]
     pub fn start<Chan, DmaChan, Buf>(mut self,
         channel:  Chan,
+        trigger:  Option<Trigger>,
         dma:      &mut dma::Handle,
         dma_chan: DmaChan,
         buffer:   Pin<Buf>,
@@ -205,8 +211,10 @@ impl Adc<Ready> {
             }
             .start();
 
+        let continous = trigger.is_none();
+
         self.power_up();
-        self.configure(&channel, true);
+        self.configure(&channel, continous, trigger);
 
         Adc {
             rb:          self.rb,
@@ -260,7 +268,11 @@ impl<State> Adc<State> {
         while self.rb.cr.read().aden().bit_is_set() {}
     }
 
-    fn configure<Chan>(&mut self, _channel: &Chan, cont: bool)
+    fn configure<Chan>(&mut self,
+        _channel: &Chan,
+        cont:     bool,
+        trigger:  Option<Trigger>,
+    )
         where
             Chan: Channel<Adc<Ready>, ID=u8>,
     {
@@ -272,7 +284,16 @@ impl<State> Adc<State> {
                 // DMA circular mode
                 .dmacfg().set_bit()
                 // Generate DMA requests
-                .dmaen().set_bit()
+                .dmaen().set_bit();
+
+            if let Some(trigger) = trigger {
+                // Select hardware trigger
+                w.extsel().bits(trigger as u8);
+                // Enable hardware trigger on rising edge
+                w.exten().rising_edge();
+            }
+
+            w
         });
 
         self.rb
@@ -299,7 +320,7 @@ where
 
     fn read(&mut self, pin: &mut PIN) -> nb::Result<WORD, Self::Error> {
         self.power_up();
-        self.configure(pin, false);
+        self.configure(pin, false, None);
 
         while self.rb.isr.read().eos().bit_is_clear() {}
 
@@ -324,6 +345,38 @@ pub struct Ready;
 pub struct Active<DmaChan, Buf> {
     transfer: dma::Transfer<DmaToken, DmaChan, Buf, dma::Started>,
     buffer:   Buffer,
+}
+
+
+/// Hardware triggers that can start an ADC conversion
+#[repr(u8)]
+pub enum Trigger {
+    /// TRG0
+    TIM6_TRGO = 0b000,
+
+    /// TRG1
+    TIM21_CH2 = 0b001,
+
+    /// TRG2
+    TIM2_TRGO = 0b010,
+
+    /// TRG3
+    TIM2_CH4 = 0b011,
+
+    /// TRG4
+    TIM22_TRGO = 0b100,
+
+    /// TRG5
+    ///
+    /// Only available on Category 5 devices.
+    #[cfg(any(feature = "stm32l072", feature = "stm32l082"))]
+    TIM2_CH3 = 0b101,
+
+    /// TRG6
+    TIM3_TRGO = 0b110,
+
+    /// TRG7
+    EXTI11 = 0b111,
 }
 
 

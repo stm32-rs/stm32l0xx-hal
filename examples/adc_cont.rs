@@ -61,6 +61,7 @@ fn main() -> ! {
     // Start reading ADC values
     let mut adc = adc.start(
         a0,
+        None,
         &mut dma.handle,
         dma.channels.channel1,
         buffer,
