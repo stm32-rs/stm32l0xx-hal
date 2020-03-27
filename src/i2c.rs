@@ -273,6 +273,7 @@ where
                 address,
                 dma::Priority::high(),
                 dma::Direction::memory_to_peripheral(),
+                false,
             )
         };
 
@@ -337,6 +338,7 @@ where
                 address,
                 dma::Priority::high(),
                 dma::Direction::peripheral_to_memory(),
+                false,
             )
         };
 

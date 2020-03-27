@@ -263,6 +263,18 @@ opt-level = "s"
 
 
 [[example]]
+name = "adc_cont"
+required-features = ["stm32l0x2"]
+
+[[example]]
+name = "adc_multi"
+required-features = ["stm32l0x2"]
+
+[[example]]
+name = "adc_trig"
+required-features = ["stm32l0x2"]
+
+[[example]]
 name = "aes_ecb"
 required-features = ["stm32l082"]
 

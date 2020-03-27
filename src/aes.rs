@@ -614,6 +614,7 @@ impl<Target, Channel, Buffer> Transfer<Target, Channel, Buffer, dma::Ready>
             address,
             priority,
             dir,
+            false,
         );
 
         Self {
