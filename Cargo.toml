@@ -65,6 +65,8 @@ stm32l082 = ["stm32l0x2"]
 
 # Features based on the GPIO peripheral version.
 # This determines the pin function mapping of the MCU.
+# Note: The easiest way to pick the proper io-* feature is to apply
+# the matching mcu-* feature for your MCU!
 io-STM32L021 = []
 io-STM32L031 = []
 io-STM32L051 = []
@@ -303,8 +305,12 @@ name = "flash"
 required-features = ["rt","stm32l082"]
 
 [[example]]
+name = "i2c"
+required-features = ["rt","stm32l0x2","io-STM32L071"]
+
+[[example]]
 name = "i2c_dma"
-required-features = ["rt","stm32l0x2"]
+required-features = ["rt","stm32l0x2","io-STM32L071"]
 
 [[example]]
 name = "rng"

@@ -15,7 +15,6 @@ use as_slice::{
     AsMutSlice,
 };
 
-use crate::hal::blocking::i2c::{Read, Write, WriteRead};
 
 #[cfg(feature = "stm32l0x2")]
 use crate::dma::{
@@ -31,6 +30,9 @@ use crate::pac::{
 use crate::rcc::Rcc;
 use crate::time::Hertz;
 use cast::u8;
+
+// I²C traits
+use crate::hal::blocking::i2c::{Read, Write, WriteRead};
 
 // I/O Imports
 use crate::gpio::{AltMode, OpenDrain, Output};

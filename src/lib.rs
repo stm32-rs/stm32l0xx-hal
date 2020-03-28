@@ -23,6 +23,12 @@ pub mod exti;
 #[cfg(feature = "stm32l0x2")]
 pub mod flash;
 pub mod gpio;
+#[cfg(any(
+    feature = "io-STM32L021",
+    feature = "io-STM32L031",
+    feature = "io-STM32L051",
+    feature = "io-STM32L071",
+))]
 pub mod i2c;
 pub mod lptim;
 pub mod prelude;
