@@ -65,12 +65,14 @@ stm32l082 = ["stm32l0x2"]
 
 # Features based on the GPIO peripheral version.
 # This determines the pin function mapping of the MCU.
+# The features correspond to the product categories.
+#
 # Note: The easiest way to pick the proper io-* feature is to apply
 # the matching mcu-* feature for your MCU!
-io-STM32L021 = []
-io-STM32L031 = []
-io-STM32L051 = []
-io-STM32L071 = []
+io-STM32L021 = [] # Product category 1
+io-STM32L031 = [] # Product category 2
+io-STM32L051 = [] # Product category 3
+io-STM32L071 = [] # Product category 5
 
 # Physical packages
 ewlcsp49 = []
