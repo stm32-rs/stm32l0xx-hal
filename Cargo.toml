@@ -264,15 +264,15 @@ opt-level = "s"
 
 [[example]]
 name = "adc_cont"
-required-features = ["stm32l0x2"]
+required-features = ["stm32l0x2", "io-STM32L071"]
 
 [[example]]
 name = "adc_multi"
-required-features = ["stm32l0x2"]
+required-features = ["stm32l0x2", "io-STM32L071"]
 
 [[example]]
 name = "adc_trig"
-required-features = ["stm32l0x2"]
+required-features = ["stm32l0x2", "io-STM32L071"]
 
 [[example]]
 name = "aes_ecb"
@@ -312,15 +312,19 @@ required-features = ["rt","stm32l0x2"]
 
 [[example]]
 name = "rtc"
-required-features = ["stm32l0x2"]
+required-features = ["stm32l0x2", "io-STM32L071"]
+
+[[example]]
+name = "serial"
+required-features = ["stm32l0x2", "io-STM32L071"]
 
 [[example]]
 name = "serial_dma"
-required-features = ["stm32l0x2"]
+required-features = ["stm32l0x2", "io-STM32L071"]
 
 [[example]]
 name = "serial_dma_async"
-required-features = ["stm32l0x2"]
+required-features = ["stm32l0x2", "io-STM32L071"]
 
 [[example]]
 name = "timer"

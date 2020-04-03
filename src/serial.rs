@@ -2,13 +2,14 @@ use core::fmt;
 use core::marker::PhantomData;
 use core::ptr;
 
+use nb::block;
+
 use crate::gpio::{gpioa::*, gpiob::*, gpioc::*, gpiod::*, gpioe::*};
 use crate::gpio::{PinMode, AltMode};
 use crate::hal;
 use crate::hal::prelude::*;
 pub use crate::pac::{LPUART1, USART1, USART2, USART4, USART5};
 use crate::rcc::Rcc;
-use nb::block;
 
 #[cfg(any(feature = "stm32l0x2", feature = "stm32l0x3"))]
 use core::{
@@ -23,7 +24,7 @@ use as_slice::{AsMutSlice, AsSlice};
 pub use crate::dma;
 
 #[cfg(any(feature = "stm32l0x2", feature = "stm32l0x3"))]
-use dma::Buffer;
+use crate::dma::Buffer;
 
 /// Serial error
 #[derive(Debug)]
@@ -581,7 +582,7 @@ macro_rules! usart {
                 }
             }
 
-#[cfg(any(feature = "stm32l0x2", feature = "stm32l0x3"))]
+            #[cfg(any(feature = "stm32l0x2", feature = "stm32l0x3"))]
             impl Tx<$USARTX> {
                 pub fn write_all<Buffer, Channel>(self,
                     dma:     &mut dma::Handle,
@@ -638,17 +639,27 @@ macro_rules! usart {
     }
 }
 
-#[cfg(feature = "stm32l0x1")]
+// LPUART1 and USART2 are available on category 1/2/3/5 MCUs
+#[cfg(any(
+    feature = "io-STM32L021",
+    feature = "io-STM32L031",
+    feature = "io-STM32L051",
+    feature = "io-STM32L071",
+))]
 usart! {
-    LPUART1: (lpuart1, apb1enr, lpuart1en, apb1_clk, Serial1Ext),
+    LPUART1: (lpuart1, apb1enr, lpuart1en, apb1_clk, Serial1LpExt),
     USART2: (usart2, apb1enr, usart2en, apb1_clk, Serial2Ext),
 }
 
-#[cfg(any(feature = "stm32l0x2", feature = "stm32l0x3"))]
+// USART1 is available on category 3/5 MCUs
+#[cfg(any(feature = "io-STM32L051", feature = "io-STM32L071"))]
 usart! {
-    LPUART1: (lpuart1, apb1enr, lpuart1en, apb1_clk, Serial1LpExt),
     USART1: (usart1, apb2enr, usart1en, apb1_clk, Serial1Ext),
-    USART2: (usart2, apb1enr, usart2en, apb1_clk, Serial2Ext),
+}
+
+// USART4 and USART5 are available on category 5 MCUs
+#[cfg(feature = "io-STM32L071")]
+usart! {
     USART4: (usart4, apb1enr, usart4en, apb1_clk, Serial4Ext),
     USART5: (usart5, apb1enr, usart5en, apb1_clk, Serial5Ext),
 }

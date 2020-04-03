@@ -32,6 +32,12 @@ pub mod rcc;
 #[cfg(any(feature = "stm32l0x2", feature = "stm32l0x3"))]
 pub mod rng;
 pub mod rtc;
+#[cfg(any(
+    feature = "io-STM32L021",
+    feature = "io-STM32L031",
+    feature = "io-STM32L051",
+    feature = "io-STM32L071",
+))]
 pub mod serial;
 pub mod spi;
 pub mod syscfg;
