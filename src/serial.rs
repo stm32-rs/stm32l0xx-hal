@@ -167,45 +167,106 @@ macro_rules! impl_pins {
     }
 }
 
+#[cfg(feature = "io-STM32L021")]
 impl_pins!(
-    PA0,  AF6, USART4,  TxPin;
-    PA1,  AF6, USART4,  RxPin;
-    PA2,  AF4, USART2,  TxPin;
-    PA2,  AF6, LPUART1, TxPin;
-    PA3,  AF4, USART2,  RxPin;
-    PA3,  AF6, LPUART1, RxPin;
-    PA9,  AF4, USART1,  TxPin;
-    PA10, AF4, USART1,  RxPin;
+    PA0, AF0, USART2, RxPin;
+    PA0, AF6, LPUART1, RxPin;
+    PA1, AF6, LPUART1, TxPin;
+    PA2, AF4, USART2, TxPin;
+    PA2, AF6, LPUART1, TxPin,
+    PA3, AF4, USART2, RxPin;
+    PA3, AF6, LPUART1, RxPin;
+    PA4, AF6, LPUART1, TxPin;
+    PA9, AF4, USART2, TxPin;
+    PA10, AF4, USART2, RxPin;
     PA13, AF6, LPUART1, RxPin;
-    PA14, AF4, USART2,  TxPin;
+    PA14, AF4, USART2, TxPin;
     PA14, AF6, LPUART1, TxPin;
-    PA15, AF4, USART2,  RxPin;
-    PB3,  AF6, USART5,  TxPin;
-    PB4,  AF6, USART5,  RxPin;
-    PB6,  AF0, USART1,  TxPin;
-    PB7,  AF0, USART1,  RxPin;
+    PA15, AF4, USART2, RxPin;
+    PB6, AF0, USART2, TxPin;
+    PB6, AF6, LPUART1, TxPin;
+    PB7, AF0, USART2, RxPin;
+    PB7, AF6, LPUART1, RxPin;
+    PB8, AF0, USART2, TxPin;
+);
+
+#[cfg(feature = "io-STM32L031")]
+impl_pins!(
+    PA2, AF4, USART2, TxPin;
+    PA2, AF6, LPUART1, TxPin;
+    PA3, AF4, USART2, RxPin;
+    PA3, AF6, LPUART1, RxPin;
+    PA9, AF4, USART2, TxPin;
+    PA10, AF4, USART2, RxPin;
+    PA13, AF6, LPUART1, RxPin;
+    PA14, AF4, USART2, TxPin;
+    PA14, AF6, LPUART1, TxPin;
+    PA15, AF4, USART2, RxPin;
+    PB6, AF0, USART2, TxPin;
+    PB7, AF0, USART2, RxPin;
+    PB10, AF6, LPUART1, TxPin;
+    PB11, AF6, LPUART1, RxPin;
+    PC0, AF6, LPUART1, RxPin;
+);
+
+#[cfg(feature = "io-STM32L051")]
+impl_pins!(
+    PA2, AF4, USART2, TxPin;
+    PA3, AF4, USART2, RxPin;
+    PA9, AF4, USART1, TxPin;
+    PA10, AF4, USART1, RxPin;
+    PA14, AF4, USART2, TxPin;
+    PA15, AF4, USART2, RxPin;
+    PB6, AF0, USART1, TxPin;
+    PB7, AF0, USART1, RxPin;
+    PB10, AF4, LPUART1, TxPin;
+    PB11, AF4, LPUART1, RxPin;
+    PC4, AF2, LPUART1, TxPin;
+    PC5, AF2, LPUART1, RxPin;
+    PC10, AF0, LPUART1, TxPin;
+    PC11, AF0, LPUART1, RxPin;
+);
+
+#[cfg(feature = "io-STM32L071")]
+impl_pins!(
+    PA0, AF6, USART4, TxPin;
+    PA1, AF6, USART4, RxPin;
+    PA2, AF4, USART2, TxPin;
+    PA2, AF6, LPUART1, TxPin;
+    PA3, AF4, USART2, RxPin;
+    PA3, AF6, LPUART1, RxPin;
+    PA9, AF4, USART1, TxPin;
+    PA10, AF4, USART1, RxPin;
+    PA13, AF6, LPUART1, RxPin;
+    PA14, AF4, USART2, TxPin;
+    PA14, AF6, LPUART1, TxPin;
+    PA15, AF4, USART2, RxPin;
+    PB3, AF6, USART5, TxPin;
+    PB4, AF6, USART5, RxPin;
+    PB6, AF0, USART1, TxPin;
+    PB7, AF0, USART1, RxPin;
     PB10, AF4, LPUART1, TxPin;
     PB10, AF7, LPUART1, RxPin;
     PB11, AF4, LPUART1, RxPin;
     PB11, AF7, LPUART1, TxPin;
-    PC0,  AF6, LPUART1, RxPin;
-    PC1,  AF6, LPUART1, TxPin;
-    PC4,  AF2, LPUART1, TxPin;
-    PC5,  AF2, LPUART1, RxPin;
+    PC0, AF6, LPUART1, RxPin;
+    PC1, AF6, LPUART1, TxPin;
+    PC4, AF2, LPUART1, TxPin;
+    PC5, AF2, LPUART1, RxPin;
     PC10, AF0, LPUART1, TxPin;
-    PC10, AF6, USART4,  TxPin;
+    PC10, AF6, USART4, TxPin;
     PC11, AF0, LPUART1, RxPin;
-    PC11, AF6, USART4,  RxPin;
-    PC12, AF2, USART5,  TxPin;
-    PD2,  AF6, USART5,  RxPin;
-    PD5,  AF0, USART2,  TxPin;
-    PD6,  AF0, USART2,  RxPin;
-    PD8,  AF0, LPUART1, TxPin;
-    PD9,  AF0, LPUART1, RxPin;
-    PE8,  AF6, USART4,  TxPin;
-    PE9,  AF6, USART4,  RxPin;
-    PE10, AF6, USART5,  TxPin;
-    PE11, AF6, USART5,  RxPin;
+    PC11, AF6, USART4, RxPin;
+    PC12, AF2, USART5, TxPin;
+    PD2, AF6, USART5, RxPin;
+    PD5, AF0, USART2, TxPin;
+    PD6, AF0, USART2, RxPin;
+    PD8, AF0, LPUART1, TxPin;
+    PD9, AF0, LPUART1, RxPin;
+    PE8, AF6, USART4, TxPin;
+    PE9, AF6, USART4, RxPin;
+    PE10, AF6, USART5, TxPin;
+    PE11, AF6, USART5, RxPin;
 );
 
 /// Serial abstraction
