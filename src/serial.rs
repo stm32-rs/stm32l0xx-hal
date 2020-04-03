@@ -3,6 +3,7 @@ use core::marker::PhantomData;
 use core::ptr;
 
 use crate::gpio::gpioa::*;
+use crate::gpio::gpiob::*;
 use crate::gpio::{PinMode, AltMode};
 use crate::hal;
 use crate::hal::prelude::*;
@@ -25,7 +26,6 @@ use as_slice::{AsMutSlice, AsSlice};
 #[cfg(any(feature = "stm32l0x2", feature = "stm32l0x3"))]
 pub use crate::{
     dma,
-    gpio::gpiob::*,
     gpio::gpioc::*,
     gpio::gpiod::*,
     gpio::gpioe::*,
@@ -172,7 +172,10 @@ macro_rules! impl_pins {
 #[cfg(feature = "stm32l0x1")]
 impl_pins!(
     LPUART1, PA2, PA3,  AF6;
+    USART2,  PA2, PA3,  AF4;
     USART2,  PA9, PA10, AF4;
+    USART2,  PA14, PA15, AF4; 
+    USART2,  PB6,  PB7,  AF0;
 );
 
 #[cfg(any(feature = "stm32l0x2", feature = "stm32l0x3"))]
