@@ -2,16 +2,14 @@ use core::fmt;
 use core::marker::PhantomData;
 use core::ptr;
 
-use crate::gpio::gpioa::*;
+use nb::block;
+
+use crate::gpio::{gpioa::*, gpiob::*, gpioc::*, gpiod::*, gpioe::*};
 use crate::gpio::{PinMode, AltMode};
 use crate::hal;
 use crate::hal::prelude::*;
-pub use crate::pac::USART2;
+pub use crate::pac::{LPUART1, USART1, USART2, USART4, USART5};
 use crate::rcc::Rcc;
-use nb::block;
-
-#[cfg(feature = "stm32l0x1")]
-pub use crate::pac::LPUART1;
 
 #[cfg(any(feature = "stm32l0x2", feature = "stm32l0x3"))]
 use core::{
@@ -23,17 +21,10 @@ use core::{
 use as_slice::{AsMutSlice, AsSlice};
 
 #[cfg(any(feature = "stm32l0x2", feature = "stm32l0x3"))]
-pub use crate::{
-    dma,
-    gpio::gpiob::*,
-    gpio::gpioc::*,
-    gpio::gpiod::*,
-    gpio::gpioe::*,
-    pac::{LPUART1, USART1, USART4, USART5},
-};
+pub use crate::dma;
 
 #[cfg(any(feature = "stm32l0x2", feature = "stm32l0x3"))]
-use dma::Buffer;
+use crate::dma::Buffer;
 
 /// Serial error
 #[derive(Debug)]
@@ -152,44 +143,130 @@ impl Default for Config {
     }
 }
 
-pub trait Pins<USART> {
+/// Trait to mark serial pins with transmit capability.
+pub trait TxPin<USART> {
     fn setup(&self);
 }
 
+/// Trait to mark serial pins with receive capability.
+pub trait RxPin<USART> {
+    fn setup(&self);
+}
+
+/// Macro to implement `TxPin` / `RxPin` for a certain pin, using a certain
+/// alternative function and for a certain serial peripheral.
 macro_rules! impl_pins {
-    ($($instance:ty, $tx:ident, $rx:ident, $alt:ident;)*) => {
+    ($($pin:ident, $alt:ident, $instance:ty, $trait:ident;)*) => {
         $(
-            impl<Tx: PinMode, Rx: PinMode> Pins<$instance> for ($tx<Tx>, $rx<Rx>) {
+            impl<MODE: PinMode> $trait<$instance> for $pin<MODE> {
                 fn setup(&self) {
-                    self.0.set_alt_mode(AltMode::$alt);
-                    self.1.set_alt_mode(AltMode::$alt);
+                    self.set_alt_mode(AltMode::$alt);
                 }
             }
         )*
     }
 }
 
-#[cfg(feature = "stm32l0x1")]
+#[cfg(feature = "io-STM32L021")]
 impl_pins!(
-    LPUART1, PA2, PA3,  AF6;
-    USART2,  PA9, PA10, AF4;
+    PA0, AF0, USART2, RxPin;
+    PA0, AF6, LPUART1, RxPin;
+    PA1, AF6, LPUART1, TxPin;
+    PA2, AF4, USART2, TxPin;
+    PA2, AF6, LPUART1, TxPin,
+    PA3, AF4, USART2, RxPin;
+    PA3, AF6, LPUART1, RxPin;
+    PA4, AF6, LPUART1, TxPin;
+    PA9, AF4, USART2, TxPin;
+    PA10, AF4, USART2, RxPin;
+    PA13, AF6, LPUART1, RxPin;
+    PA14, AF4, USART2, TxPin;
+    PA14, AF6, LPUART1, TxPin;
+    PA15, AF4, USART2, RxPin;
+    PB6, AF0, USART2, TxPin;
+    PB6, AF6, LPUART1, TxPin;
+    PB7, AF0, USART2, RxPin;
+    PB7, AF6, LPUART1, RxPin;
+    PB8, AF0, USART2, TxPin;
 );
 
-#[cfg(any(feature = "stm32l0x2", feature = "stm32l0x3"))]
+#[cfg(feature = "io-STM32L031")]
 impl_pins!(
-    LPUART1, PA2, PA3,  AF6;
-    LPUART1, PB10, PB11,  AF4;
-    LPUART1, PB11, PB10,  AF7;
-    USART1, PA9,  PA10, AF4;
-    USART1, PB6,  PB7,  AF0;
-    USART2, PA2,  PA3,  AF4;
-    USART2, PA14, PA15, AF4;
-    USART2, PD5,  PD6,  AF0;
-    USART4, PA0,  PA1,  AF6;
-    USART4, PC10, PC11, AF6;
-    USART4, PE8,  PE9,  AF6;
-    USART5, PB3,  PB4,  AF6;
-    USART5, PE10, PE11, AF6;
+    PA2, AF4, USART2, TxPin;
+    PA2, AF6, LPUART1, TxPin;
+    PA3, AF4, USART2, RxPin;
+    PA3, AF6, LPUART1, RxPin;
+    PA9, AF4, USART2, TxPin;
+    PA10, AF4, USART2, RxPin;
+    PA13, AF6, LPUART1, RxPin;
+    PA14, AF4, USART2, TxPin;
+    PA14, AF6, LPUART1, TxPin;
+    PA15, AF4, USART2, RxPin;
+    PB6, AF0, USART2, TxPin;
+    PB7, AF0, USART2, RxPin;
+    PB10, AF6, LPUART1, TxPin;
+    PB11, AF6, LPUART1, RxPin;
+    PC0, AF6, LPUART1, RxPin;
+);
+
+#[cfg(feature = "io-STM32L051")]
+impl_pins!(
+    PA2, AF4, USART2, TxPin;
+    PA3, AF4, USART2, RxPin;
+    PA9, AF4, USART1, TxPin;
+    PA10, AF4, USART1, RxPin;
+    PA14, AF4, USART2, TxPin;
+    PA15, AF4, USART2, RxPin;
+    PB6, AF0, USART1, TxPin;
+    PB7, AF0, USART1, RxPin;
+    PB10, AF4, LPUART1, TxPin;
+    PB11, AF4, LPUART1, RxPin;
+    PC4, AF2, LPUART1, TxPin;
+    PC5, AF2, LPUART1, RxPin;
+    PC10, AF0, LPUART1, TxPin;
+    PC11, AF0, LPUART1, RxPin;
+);
+
+#[cfg(feature = "io-STM32L071")]
+impl_pins!(
+    PA0, AF6, USART4, TxPin;
+    PA1, AF6, USART4, RxPin;
+    PA2, AF4, USART2, TxPin;
+    PA2, AF6, LPUART1, TxPin;
+    PA3, AF4, USART2, RxPin;
+    PA3, AF6, LPUART1, RxPin;
+    PA9, AF4, USART1, TxPin;
+    PA10, AF4, USART1, RxPin;
+    PA13, AF6, LPUART1, RxPin;
+    PA14, AF4, USART2, TxPin;
+    PA14, AF6, LPUART1, TxPin;
+    PA15, AF4, USART2, RxPin;
+    PB3, AF6, USART5, TxPin;
+    PB4, AF6, USART5, RxPin;
+    PB6, AF0, USART1, TxPin;
+    PB7, AF0, USART1, RxPin;
+    PB10, AF4, LPUART1, TxPin;
+    PB10, AF7, LPUART1, RxPin;
+    PB11, AF4, LPUART1, RxPin;
+    PB11, AF7, LPUART1, TxPin;
+    PC0, AF6, LPUART1, RxPin;
+    PC1, AF6, LPUART1, TxPin;
+    PC4, AF2, LPUART1, TxPin;
+    PC5, AF2, LPUART1, RxPin;
+    PC10, AF0, LPUART1, TxPin;
+    PC10, AF6, USART4, TxPin;
+    PC11, AF0, LPUART1, RxPin;
+    PC11, AF6, USART4, RxPin;
+    PC12, AF2, USART5, TxPin;
+    PD2, AF6, USART5, RxPin;
+    PD5, AF0, USART2, TxPin;
+    PD6, AF0, USART2, RxPin;
+    PD8, AF0, LPUART1, TxPin;
+    PD9, AF0, LPUART1, RxPin;
+    PE8, AF6, USART4, TxPin;
+    PE9, AF6, USART4, RxPin;
+    PE10, AF6, USART5, TxPin;
+    PE11, AF6, USART5, RxPin;
 );
 
 /// Serial abstraction
@@ -214,30 +291,34 @@ macro_rules! usart {
         $USARTX:ident: ($usartX:ident, $apbXenr:ident, $usartXen:ident, $pclkX:ident, $SerialExt:ident),
     )+) => {
         $(
-            pub trait $SerialExt<PINS> {
-                fn usart(self, pins: PINS, config: Config, rcc: &mut Rcc) -> Result<Serial<$USARTX>, InvalidConfig>;
+            pub trait $SerialExt<TX, RX> {
+                fn usart(self, tx: TX, rx: RX, config: Config, rcc: &mut Rcc) -> Result<Serial<$USARTX>, InvalidConfig>;
             }
 
-            impl<PINS> $SerialExt<PINS> for $USARTX
+            impl<TX, RX> $SerialExt<TX, RX> for $USARTX
                 where
-                    PINS: Pins<$USARTX>,
+                    TX: TxPin<$USARTX>,
+                    RX: RxPin<$USARTX>,
             {
-                fn usart(self, pins: PINS, config: Config, rcc: &mut Rcc) -> Result<Serial<$USARTX>, InvalidConfig> {
-                    Serial::$usartX(self, pins, config, rcc)
+                fn usart(self, tx: TX, rx: RX, config: Config, rcc: &mut Rcc) -> Result<Serial<$USARTX>, InvalidConfig> {
+                    Serial::$usartX(self, tx, rx, config, rcc)
                 }
             }
 
             impl Serial<$USARTX> {
-                pub fn $usartX<PINS>(
+                pub fn $usartX<TX, RX>(
                     usart: $USARTX,
-                    pins: PINS,
+                    tx: TX,
+                    rx: RX,
                     config: Config,
                     rcc: &mut Rcc,
                 ) -> Result<Self, InvalidConfig>
                 where
-                    PINS: Pins<$USARTX>,
+                    TX: TxPin<$USARTX>,
+                    RX: RxPin<$USARTX>,
                 {
-                    pins.setup();
+                    tx.setup();
+                    rx.setup();
 
                     // Enable clock for USART
                     rcc.rb.$apbXenr.modify(|_, w| w.$usartXen().set_bit());
@@ -562,7 +643,7 @@ macro_rules! usart {
                 }
             }
 
-#[cfg(any(feature = "stm32l0x2", feature = "stm32l0x3"))]
+            #[cfg(any(feature = "stm32l0x2", feature = "stm32l0x3"))]
             impl Tx<$USARTX> {
                 pub fn write_all<Buffer, Channel>(self,
                     dma:     &mut dma::Handle,
@@ -619,17 +700,27 @@ macro_rules! usart {
     }
 }
 
-#[cfg(feature = "stm32l0x1")]
+// LPUART1 and USART2 are available on category 1/2/3/5 MCUs
+#[cfg(any(
+    feature = "io-STM32L021",
+    feature = "io-STM32L031",
+    feature = "io-STM32L051",
+    feature = "io-STM32L071",
+))]
 usart! {
-    LPUART1: (lpuart1, apb1enr, lpuart1en, apb1_clk, Serial1Ext),
+    LPUART1: (lpuart1, apb1enr, lpuart1en, apb1_clk, Serial1LpExt),
     USART2: (usart2, apb1enr, usart2en, apb1_clk, Serial2Ext),
 }
 
-#[cfg(any(feature = "stm32l0x2", feature = "stm32l0x3"))]
+// USART1 is available on category 3/5 MCUs
+#[cfg(any(feature = "io-STM32L051", feature = "io-STM32L071"))]
 usart! {
-    LPUART1: (lpuart1, apb1enr, lpuart1en, apb1_clk, Serial1LpExt),
     USART1: (usart1, apb2enr, usart1en, apb1_clk, Serial1Ext),
-    USART2: (usart2, apb1enr, usart2en, apb1_clk, Serial2Ext),
+}
+
+// USART4 and USART5 are available on category 5 MCUs
+#[cfg(feature = "io-STM32L071")]
+usart! {
     USART4: (usart4, apb1enr, usart4en, apb1_clk, Serial4Ext),
     USART5: (usart5, apb1enr, usart5en, apb1_clk, Serial5Ext),
 }

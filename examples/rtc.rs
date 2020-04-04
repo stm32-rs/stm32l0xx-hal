@@ -45,7 +45,8 @@ fn main() -> ! {
 
     let serial = dp.USART2
         .usart(
-            (gpioa.pa2, gpioa.pa3),
+            gpioa.pa2,
+            gpioa.pa3,
             serial::Config::default()
                 .baudrate(115_200.bps()),
             &mut rcc,

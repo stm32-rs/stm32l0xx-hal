@@ -35,12 +35,28 @@ use crate::{
         I2C1,
         I2C2,
         I2C3,
-        USART1,
-        USART2,
     },
     rcc::Rcc,
-    serial,
 };
+
+#[cfg(any(feature = "io-STM32L051", feature = "io-STM32L071"))]
+use crate::pac::USART1;
+
+#[cfg(any(
+    feature = "io-STM32L021",
+    feature = "io-STM32L031",
+    feature = "io-STM32L051",
+    feature = "io-STM32L071",
+))]
+use crate::pac::USART2;
+
+#[cfg(any(
+    feature = "io-STM32L021",
+    feature = "io-STM32L031",
+    feature = "io-STM32L051",
+    feature = "io-STM32L071",
+))]
+use crate::serial;
 
 #[cfg(feature = "stm32l082")]
 use crate::aes;
@@ -521,13 +537,24 @@ impl_target!(
     // ADC
     adc::DmaToken, Channel1, 0;
     adc::DmaToken, Channel2, 0;
+);
 
+#[cfg(any(feature = "io-STM32L051", feature = "io-STM32L071"))]
+impl_target!(
     // USART1
     serial::Tx<USART1>, Channel2, 3;
     serial::Tx<USART1>, Channel4, 3;
     serial::Rx<USART1>, Channel3, 3;
     serial::Rx<USART1>, Channel5, 3;
+);
 
+#[cfg(any(
+    feature = "io-STM32L021",
+    feature = "io-STM32L031",
+    feature = "io-STM32L051",
+    feature = "io-STM32L071",
+))]
+impl_target!(
     // USART2
     serial::Tx<USART2>, Channel4, 4;
     serial::Tx<USART2>, Channel7, 4;
