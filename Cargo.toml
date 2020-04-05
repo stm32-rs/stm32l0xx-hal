@@ -94,6 +94,9 @@ wlcsp36 = []
 wlcsp49 = []
 
 # MCUs
+#
+# Note: These are just aliases for the proper io-* feature and physical
+# package. Do *not* use these features in any `cfg` attributes in the HAL!
 mcu-STM32L010C6Tx = ["io-STM32L031", "lqfp48"]
 mcu-STM32L010F4Px = ["io-STM32L021", "tssop20"]
 mcu-STM32L010K4Tx = ["io-STM32L021", "lqfp32"]
