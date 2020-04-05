@@ -15,38 +15,58 @@ use as_slice::{
     AsMutSlice,
 };
 
-use crate::hal::blocking::i2c::{Read, Write, WriteRead};
 
 #[cfg(feature = "stm32l0x2")]
 use crate::dma::{
     self,
     Buffer
 };
-use crate::gpio::gpioa::{PA10, PA9};
-use crate::gpio::gpiob::{PB6, PB7};
-use crate::gpio::{AltMode, OpenDrain, Output};
 use crate::pac::{
     i2c1::{
         RegisterBlock,
         cr2::RD_WRN_A,
     }
 };
-pub use crate::pac::I2C1;
 use crate::rcc::Rcc;
 use crate::time::Hertz;
 use cast::u8;
 
-#[cfg(feature = "stm32l0x1")]
-use crate::gpio::gpioa::{PA13, PA4};
+// I²C traits
+use crate::hal::blocking::i2c::{Read, Write, WriteRead};
 
-#[cfg(any(feature = "stm32l0x2", feature = "stm32l0x3"))]
+// I/O Imports
+use crate::gpio::{AltMode, OpenDrain, Output};
+#[cfg(feature = "io-STM32L021")]
 use crate::{
     gpio::{
-        gpioa::PA8,
-        gpiob::{PB10, PB11, PB13, PB14, PB4, PB8, PB9},
-        gpioc::{PC0, PC1},
+        gpioa::{PA4, PA9, PA10, PA13},
+        gpiob::{PB6, PB7, PB8},
     },
-    pac::{I2C2, I2C3},
+    pac::I2C1,
+};
+#[cfg(feature = "io-STM32L031")]
+use crate::{
+    gpio::{
+        gpioa::{PA9, PA10},
+        gpiob::{PB6, PB7, PB8, PB9},
+    },
+    pac::I2C1,
+};
+#[cfg(feature = "io-STM32L051")]
+use crate::{
+    gpio::{
+        gpiob::{PB6, PB7, PB8, PB9, PB10, PB11, PB13, PB14},
+    },
+    pac::{I2C1, I2C2},
+};
+#[cfg(feature = "io-STM32L071")]
+use crate::{
+    gpio::{
+        gpioa::{PA8, PA9, PA10},
+        gpiob::{PB4, PB6, PB7, PB8, PB9, PB10, PB11, PB13, PB14},
+        gpioc::{PC0, PC1, PC9},
+    },
+    pac::{I2C1, I2C2, I2C3},
 };
 
 /// I2C abstraction
@@ -488,45 +508,54 @@ macro_rules! i2c {
     };
 }
 
-#[cfg(feature = "stm32l0x1")]
-i2c!(
-    I2C1,
-    i2c1en,
-    i2c1rst,
-    sda: [
-        (PB7<Output<OpenDrain>>, AltMode::AF1),
-        (PA10<Output<OpenDrain>>, AltMode::AF6),
-        (PA13<Output<OpenDrain>>, AltMode::AF3),
-    ],
-    scl: [
-        (PB6<Output<OpenDrain>>, AltMode::AF1),
-        (PA9<Output<OpenDrain>>, AltMode::AF6),
-        (PA4<Output<OpenDrain>>, AltMode::AF3),
-    ],
-);
 
-#[cfg(any(feature = "stm32l0x2", feature = "stm32l0x3"))]
+#[cfg(feature = "io-STM32L021")]
 i2c!(
-    I2C1,
-    i2c1en,
-    i2c1rst,
+    I2C1, i2c1en, i2c1rst,
     sda: [
-        (PA10<Output<OpenDrain>>, AltMode::AF6),
-        (PB7<Output<OpenDrain>>,  AltMode::AF1),
-        (PB9<Output<OpenDrain>>,  AltMode::AF4),
+        (PA10<Output<OpenDrain>>, AltMode::AF1),
+        (PA13<Output<OpenDrain>>, AltMode::AF3),
+        (PB7<Output<OpenDrain>>, AltMode::AF1),
     ],
     scl: [
-        (PA9<Output<OpenDrain>>, AltMode::AF6),
+        (PA4<Output<OpenDrain>>, AltMode::AF3),
+        (PA9<Output<OpenDrain>>, AltMode::AF1),
         (PB6<Output<OpenDrain>>, AltMode::AF1),
         (PB8<Output<OpenDrain>>, AltMode::AF4),
     ],
 );
 
-#[cfg(any(feature = "stm32l0x2", feature = "stm32l0x3"))]
+#[cfg(feature = "io-STM32L031")]
 i2c!(
-    I2C2,
-    i2c2en,
-    i2c2rst,
+    I2C1, i2c1en, i2c1rst,
+    sda: [
+        (PA10<Output<OpenDrain>>, AltMode::AF1),
+        (PB7<Output<OpenDrain>>, AltMode::AF1),
+        (PB9<Output<OpenDrain>>, AltMode::AF4),
+    ],
+    scl: [
+        (PA9<Output<OpenDrain>>, AltMode::AF1),
+        (PB6<Output<OpenDrain>>, AltMode::AF1),
+        (PB8<Output<OpenDrain>>, AltMode::AF4),
+    ],
+);
+
+#[cfg(feature = "io-STM32L051")]
+i2c!(
+    I2C1, i2c1en, i2c1rst,
+    sda: [
+        (PB7<Output<OpenDrain>>, AltMode::AF1),
+        (PB9<Output<OpenDrain>>, AltMode::AF4),
+    ],
+    scl: [
+        (PB6<Output<OpenDrain>>, AltMode::AF1),
+        (PB8<Output<OpenDrain>>, AltMode::AF4),
+    ],
+);
+
+#[cfg(feature = "io-STM32L051")]
+i2c!(
+    I2C2, i2c2en, i2c2rst,
     sda: [
         (PB11<Output<OpenDrain>>, AltMode::AF6),
         (PB14<Output<OpenDrain>>, AltMode::AF5),
@@ -537,21 +566,47 @@ i2c!(
     ],
 );
 
-#[cfg(any(feature = "stm32l0x2", feature = "stm32l0x3"))]
+#[cfg(feature = "io-STM32L071")]
 i2c!(
-    I2C3,
-    i2c3en,
-    i2c3rst,
+    I2C1, i2c1en, i2c1rst,
+    sda: [
+        (PA10<Output<OpenDrain>>, AltMode::AF6),
+        (PB7<Output<OpenDrain>>, AltMode::AF1),
+        (PB9<Output<OpenDrain>>, AltMode::AF4),
+    ],
+    scl: [
+        (PA9<Output<OpenDrain>>, AltMode::AF6),
+        (PB6<Output<OpenDrain>>, AltMode::AF1),
+        (PB8<Output<OpenDrain>>, AltMode::AF4),
+    ],
+);
+
+#[cfg(feature = "io-STM32L071")]
+i2c!(
+    I2C2, i2c2en, i2c2rst,
+    sda: [
+        (PB11<Output<OpenDrain>>, AltMode::AF6),
+        (PB14<Output<OpenDrain>>, AltMode::AF5),
+    ],
+    scl: [
+        (PB10<Output<OpenDrain>>, AltMode::AF6),
+        (PB13<Output<OpenDrain>>, AltMode::AF5),
+    ],
+);
+
+#[cfg(feature = "io-STM32L071")]
+i2c!(
+    I2C3, i2c3en, i2c3rst,
     sda: [
         (PB4<Output<OpenDrain>>, AltMode::AF7),
         (PC1<Output<OpenDrain>>, AltMode::AF7),
+        (PC9<Output<OpenDrain>>, AltMode::AF7),
     ],
     scl: [
         (PA8<Output<OpenDrain>>, AltMode::AF7),
         (PC0<Output<OpenDrain>>, AltMode::AF7),
     ],
 );
-
 
 /// Token used for DMA transfers
 ///

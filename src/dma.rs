@@ -28,13 +28,9 @@ use as_slice::AsSlice;
 
 use crate::{
     adc,
-    i2c,
     pac::{
         self,
         dma1::ch::cr,
-        I2C1,
-        I2C2,
-        I2C3,
     },
     rcc::Rcc,
 };
@@ -48,15 +44,11 @@ use crate::pac::USART1;
     feature = "io-STM32L051",
     feature = "io-STM32L071",
 ))]
-use crate::pac::USART2;
-
-#[cfg(any(
-    feature = "io-STM32L021",
-    feature = "io-STM32L031",
-    feature = "io-STM32L051",
-    feature = "io-STM32L071",
-))]
-use crate::serial;
+use crate::{
+    i2c,
+    serial,
+    pac::{I2C1, I2C2, I2C3, USART2},
+};
 
 #[cfg(feature = "stm32l082")]
 use crate::aes;
@@ -563,6 +555,12 @@ impl_target!(
 );
 
 #[cfg(feature = "stm32l0x2")]
+#[cfg(any(
+    feature = "io-STM32L021",
+    feature = "io-STM32L031",
+    feature = "io-STM32L051",
+    feature = "io-STM32L071",
+))]
 impl_target!(
     // I2C1
     i2c::Tx<I2C1>, Channel2, 6;
