@@ -1,4 +1,4 @@
-Copyright (C) 2019 arko2600@gmail.com
+Copyright (C) 2020 arko2600@gmail.com
 
 Permission to use, copy, modify, and/or distribute this software for any
 purpose with or without fee is hereby granted.
