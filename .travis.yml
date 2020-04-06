@@ -4,9 +4,10 @@ rust:
   - stable
   - nightly
 env:
-  - MCU=stm32l0x1
-  - MCU=stm32l0x2 FEATURES=stm32-usbd
-  - MCU=stm32l0x3 FEATURES=stm32-usbd
+  - MCU=stm32l0x1 IO=io-STM32L021
+  - MCU=stm32l0x1 IO=io-STM32L031
+  - MCU=stm32l0x2 IO=io-STM32L051 FEATURES=stm32-usbd
+  - MCU=stm32l0x3 IO=io-STM32L071 FEATURES=stm32-usbd
 matrix:
   allow_failures:
     - rust: nightly
@@ -31,7 +32,7 @@ matrix:
     # - env: MCU=stm32l062 PACKAGE=ufqfpn32
     # - env: MCU=stm32l062 PACKAGE=wlcsp36
     # STM32L072
-    - env: MCU=stm32l072 PACKAGE=lqfp32
+    - env: MCU=stm32l072 IO=io-STM32L071 PACKAGE=lqfp32
     # - env: MCU=stm32l072 PACKAGE=lqfp48
     # - env: MCU=stm32l072 PACKAGE=lqfp64
     # - env: MCU=stm32l072 PACKAGE=lqfp100
@@ -41,10 +42,10 @@ matrix:
     # - env: MCU=stm32l072 PACKAGE=ufqfpn32
     # - env: MCU=stm32l072 PACKAGE=wlcsp49
     # STM32L082
-    - env: MCU=stm32l082 PACKAGE=lqfp32
+    - env: MCU=stm32l082 IO=io-STM32L071 PACKAGE=lqfp32
     # - env: MCU=stm32l082 PACKAGE=ufqfpn32
     # - env: MCU=stm32l082 PACKAGE=wlcsp49
 before_script:
   - rustup target add thumbv6m-none-eabi
 script:
-  - RUSTFLAGS="-D warnings" cargo build --release --examples --features="rt $MCU $PACKAGE $FEATURES"
+  - RUSTFLAGS="-D warnings" cargo build --release --examples --features="rt $MCU $IO $PACKAGE $FEATURES"
