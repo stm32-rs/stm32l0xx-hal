@@ -4,7 +4,6 @@ use core::ptr;
 
 use nb::block;
 
-use crate::gpio::{gpioa::*, gpiob::*, gpioc::*, gpiod::*, gpioe::*};
 use crate::gpio::{PinMode, AltMode};
 use crate::hal;
 use crate::hal::prelude::*;
@@ -25,6 +24,12 @@ pub use crate::dma;
 
 #[cfg(any(feature = "stm32l0x2", feature = "stm32l0x3"))]
 use crate::dma::Buffer;
+
+use crate::gpio::{gpioa::*, gpiob::*};
+#[cfg(any(feature = "io-STM32L031", feature = "io-STM32L051", feature = "io-STM32L071"))]
+use crate::gpio::gpioc::*;
+#[cfg(any(feature = "io-STM32L071"))]
+use crate::gpio::{gpiod::*, gpioe::*};
 
 /// Serial error
 #[derive(Debug)]
@@ -173,7 +178,7 @@ impl_pins!(
     PA0, AF6, LPUART1, RxPin;
     PA1, AF6, LPUART1, TxPin;
     PA2, AF4, USART2, TxPin;
-    PA2, AF6, LPUART1, TxPin,
+    PA2, AF6, LPUART1, TxPin;
     PA3, AF4, USART2, RxPin;
     PA3, AF6, LPUART1, RxPin;
     PA4, AF6, LPUART1, TxPin;
