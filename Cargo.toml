@@ -25,6 +25,7 @@ version = "0.6.0"
 
 [package.metadata.docs.rs]
 features = ["stm32l0x2", "rt", "stm32-usbd"]
+targets = ["thumbv6m-none-eabi"]
 
 [dependencies]
 stm32l0 = "0.10.0"
