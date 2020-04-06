@@ -47,7 +47,7 @@ fn main() -> ! {
     // Initialize USART for test output
     let (mut tx, _) = dp.USART2
         .usart(
-            (tx, rx),
+            tx, rx,
             serial::Config::default()
                 .baudrate(115_200.bps()),
             &mut rcc,
