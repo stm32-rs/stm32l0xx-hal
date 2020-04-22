@@ -30,7 +30,7 @@ use crate::gpio::{
 };
 
 pub struct Timer<I> {
-    _instance: I,
+    instance: I,
 
     pub channel1: Pwm<I, C1, Unassigned>,
     pub channel2: Pwm<I, C2, Unassigned>,
@@ -42,33 +42,61 @@ impl<I> Timer<I>
 where
     I: Instance,
 {
+    /// Create new timer instance that is automatically started with given frequency
     pub fn new(timer: I, frequency: Hertz, rcc: &mut Rcc) -> Self {
         timer.enable(rcc);
 
-        let clk = timer.clock_frequency(rcc);
-        let freq = frequency.0;
-        let ticks = clk / freq;
-        let psc = u16((ticks - 1) / (1 << 16)).unwrap();
-        let arr = u16(ticks / u32(psc + 1)).unwrap();
-        timer.psc.write(|w| w.psc().bits(psc));
-        timer.arr.write(|w| w.arr().bits(arr.into()));
-        timer.cr1.write(|w| w.cen().set_bit());
-
-        Self {
-            _instance: timer,
-
+        let mut tim = Self {
+            instance: timer,
             channel1: Pwm::new(),
             channel2: Pwm::new(),
             channel3: Pwm::new(),
             channel4: Pwm::new(),
-        }
+        };
+        tim.set_frequency(frequency, rcc);
+        tim
     }
+
+    /// Starts the PWM timer
+    pub fn start(&mut self) {
+        self.instance.cr1.write(|w| w.cen().set_bit());
+    }
+
+    /// Stops the PWM timer
+    pub fn stop(&mut self) {
+        self.instance.cr1.write(|w| w.cen().clear_bit());
+    }
+
+    /// Update frequency of the timer
+    /// # Note
+    /// In order to do this operation properly the function stop the timer and then starts it again.
+    /// The duty cycle that was set before for given pin needs to adjusted according to the
+    /// frequency
+    pub fn set_frequency(&mut self, frequency: Hertz, rcc: &Rcc) {
+        self.stop();
+        let (psc, arr) = get_clock_config(frequency.0, self.instance.clock_frequency(rcc));
+        self.instance.psc.write(|w| w.psc().bits(psc));
+        self.instance.arr.write(|w| w.arr().bits(arr.into()));
+        self.start();
+    }
+
+    /// Returns the timer, so it can be used by any else
+    pub fn free(self) -> I {
+        self.instance
+    }
+}
+
+fn get_clock_config(freq: u32, clk: u32) -> (u16, u16) {
+    let ticks = clk / freq;
+    let psc = u16((ticks - 1) / (1 << 16)).unwrap();
+    let arr = u16(ticks / u32(psc + 1)).unwrap();
+    return (psc, arr);
 }
 
 pub trait Instance: Deref<Target = tim2::RegisterBlock> {
     fn ptr() -> *const tim2::RegisterBlock;
     fn enable(&self, _: &mut Rcc);
-    fn clock_frequency(&self, _: &mut Rcc) -> u32;
+    fn clock_frequency(&self, _: &Rcc) -> u32;
 }
 
 macro_rules! impl_instance {
@@ -94,7 +122,7 @@ macro_rules! impl_instance {
                     rcc.rb.$apbXrstr.modify(|_, w| w.$timXrst().clear_bit());
                 }
 
-                fn clock_frequency(&self, rcc: &mut Rcc) -> u32 {
+                fn clock_frequency(&self, rcc: &Rcc) -> u32 {
                     rcc.clocks.$apbX_clk().0
                 }
             }
