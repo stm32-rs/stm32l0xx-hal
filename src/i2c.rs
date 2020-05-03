@@ -198,6 +198,12 @@ where
     }
     
     fn start_transfer(&mut self, addr: u8, len: usize, direction: RD_WRN_A, autoend : AUTOEND_A) {
+        // Ensure that TX/RX buffers are empty
+        self.i2c.isr.write(|w| w.txe().set_bit());
+        while self.i2c.isr.read().rxne().bit_is_set() {
+            self.i2c.rxdr.read();
+        };
+        
         self.i2c.cr2.write(|w|
             w
                 // Start transfer
