@@ -16,15 +16,25 @@ pub enum ClockSrc {
     HSI16,
 }
 
-/// MSI Range
+/// MSI Clock Range
+///
+/// These ranges control the frequency of the MSI. Internally, these ranges map
+/// to the `MSIRANGE` bits in the `RCC_ICSCR` register.
 #[derive(Clone, Copy)]
 pub enum MSIRange {
+    /// Around 65.536 kHz
     Range0 = 0,
+    /// Around 131.072 kHz
     Range1 = 1,
+    /// Around 262.144 kHz
     Range2 = 2,
+    /// Around 524.288 kHz
     Range3 = 3,
+    /// Around 1.048 MHz
     Range4 = 4,
+    /// Around 2.097 MHz (reset value)
     Range5 = 5,
+    /// Around 4.194 MHz
     Range6 = 6,
 }
 
