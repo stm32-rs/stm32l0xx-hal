@@ -1,7 +1,6 @@
 //! # Analog to Digital converter
 
 
-#[cfg(feature = "stm32l0x2")]
 use core::{
     ops::DerefMut,
     pin::Pin,
@@ -11,7 +10,6 @@ use core::{
     },
 };
 
-#[cfg(feature = "stm32l0x2")]
 use as_slice::AsMutSlice;
 
 use crate::{
@@ -21,7 +19,6 @@ use crate::{
     rcc::Rcc,
 };
 
-#[cfg(feature = "stm32l0x2")]
 use crate::dma::{
     self,
     Buffer as _,
@@ -155,7 +152,6 @@ impl Adc<Ready> {
     /// # Panics
     ///
     /// Panics, if `buffer` is larger than 65535.
-    #[cfg(feature = "stm32l0x2")]
     pub fn start<DmaChan, Buf>(mut self,
         channels: impl Into<Channels>,
         trigger:  Option<Trigger>,
@@ -225,7 +221,6 @@ impl Adc<Ready> {
     }
 }
 
-#[cfg(feature = "stm32l0x2")]
 impl<DmaChan, Buffer> Adc<Active<DmaChan, Buffer>>
     where DmaChan: dma::Channel,
 {
@@ -337,7 +332,6 @@ where
 pub struct Ready;
 
 /// Indicates that the ADC peripheral is performing conversions
-#[cfg(feature = "stm32l0x2")]
 pub struct Active<DmaChan, Buf> {
     transfer: dma::Transfer<DmaToken, DmaChan, Buf, dma::Started>,
     buffer:   Buffer,
@@ -407,7 +401,6 @@ pub enum Trigger {
 ///
 /// Since the DMA transfer takes ownership of the buffer, we need to access it
 /// with unsafe means. This struct is a safe wrapper around this unsafe access.
-#[cfg(feature = "stm32l0x2")]
 struct Buffer {
     ptr: *const u16,
     len: u16,
@@ -424,7 +417,6 @@ struct Buffer {
     r_gt_w: bool,
 }
 
-#[cfg(feature = "stm32l0x2")]
 impl Buffer {
     fn read<T, C, B>(&mut self, transfer: &dma::Transfer<T, C, B, dma::Started>)
         -> Option<Result<u16, Error>>
@@ -578,13 +570,11 @@ struct TransferState {
 
 
 /// Iterator over buffered ADC values
-#[cfg(feature = "stm32l0x2")]
 pub struct ReadAvailable<'r, T, C, B> {
     buffer:   &'r mut Buffer,
     transfer: &'r dma::Transfer<T, C, B, dma::Started>,
 }
 
-#[cfg(feature = "stm32l0x2")]
 impl<T, C, B> Iterator for ReadAvailable<'_, T, C, B>
     where C: dma::Channel
 {
