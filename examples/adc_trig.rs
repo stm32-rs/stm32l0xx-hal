@@ -27,6 +27,10 @@ use stm32l0xx_hal::{
     serial,
 };
 
+use stm32l0xx_hal::serial::Serial1Ext;
+
+const BUFSIZE : usize = 8; 	// the size of the buffer to use
+const FREQUENCY : u32 = 1; // the frequency to sample at
 
 #[entry]
 fn main() -> ! {
@@ -36,16 +40,17 @@ fn main() -> ! {
     let     adc   = dp.ADC.constrain(&mut rcc);
     let mut dma   = DMA::new(dp.DMA1, &mut rcc);
     let     gpioa = dp.GPIOA.split(&mut rcc);
+    let     gpiob = dp.GPIOB.split(&mut rcc);
 
     // The A0 connector on the B-L072Z-LRWAN1 Discovery kit
-    let a0 = gpioa.pa0.into_analog();
+    let a0 = gpioa.pa5.into_analog();
 
     // Connected to the host computer via the ST-LINK
-    let tx = gpioa.pa2;
-    let rx = gpioa.pa3;
+    let tx = gpiob.pb6;
+    let rx = gpiob.pb7;
 
     // Initialize USART for test output
-    let (mut tx, _) = dp.USART2
+    let (mut tx, _) = dp.USART1
         .usart(
             tx, rx,
             serial::Config::default()
@@ -58,8 +63,8 @@ fn main() -> ! {
     // Create the buffer we're going to use for DMA.
     //
     // This is safe, since this is the main function, and it's only executed
-    // once. This means there is no other code accessing this `static`.
-    static mut BUFFER: [u16; 256] = [0; 256];
+    // once. This means there is no other code accessing this `static`.   
+    static mut BUFFER: [u16; BUFSIZE] = [0; BUFSIZE];
     let buffer = Pin::new(unsafe { &mut BUFFER });
 
     // Start reading ADC values
@@ -74,7 +79,7 @@ fn main() -> ! {
     // Enable trigger output for TIM2. This must happen after ADC has been
     // configured.
     dp.TIM2
-        .timer(1u32.hz(), &mut rcc)
+        .timer(FREQUENCY.hz(), &mut rcc)
         .select_master_mode(MMS_A::UPDATE);
 
     loop {

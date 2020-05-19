@@ -278,9 +278,6 @@ required-features = ["stm32l0x2", "io-STM32L071"]
 name = "adc_multi"
 required-features = ["stm32l0x2", "io-STM32L071"]
 
-[[example]]
-name = "adc_trig"
-required-features = ["stm32l0x2", "io-STM32L071"]
 
 [[example]]
 name = "aes_ecb"
