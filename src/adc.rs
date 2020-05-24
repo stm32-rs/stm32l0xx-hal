@@ -8,6 +8,7 @@ use core::{
         compiler_fence,
         Ordering,
     },
+    fmt,
 };
 
 use as_slice::AsMutSlice;
@@ -20,6 +21,7 @@ use crate::{
 };
 
 use crate::dma::{
+    TransferResources,
     self,
     Buffer as _,
 };
@@ -132,6 +134,7 @@ impl Adc<Ready> {
         self.precision = precision;
     }
 
+    
     /// Starts a continuous conversion process
     ///
     /// The `channel` argument specifies which channel should be converted.
@@ -219,6 +222,87 @@ impl Adc<Ready> {
             _state:      ActiveContinuousDMA { buffer: buffer_unsafe, transfer },
         }
     }
+
+        /// Starts a oneshot conversion process
+    ///
+    /// The `channel` argument specifies which channel should be converted.
+    ///
+    /// The `trigger` argument specifies the trigger that will start each
+    /// conversion sequence. This only configures the ADC peripheral to accept
+    /// this trigger. The trigger itself must also be configured using its own
+    /// peripheral API.
+    ///
+    /// In addition to the preceeding arguments that configure the ADC,
+    /// additional arguments are required to configure the DMA transfer that is
+    /// used to read the results from the ADC:
+    /// - `dma` is a handle to the DMA peripheral.
+    /// - `dma_chan` is the DMA channel used for the transfer. It needs to be
+    ///   one of the channels that supports the ADC peripheral.
+    /// - `buffer` is the buffer used to buffer the conversion results.
+    ///
+    /// # Panics
+    ///
+    /// Panics, if `buffer` is larger than 65535.
+    pub fn read_all<DmaChan, AdcChan, Buf>(mut self,
+        channel: AdcChan,
+        trigger:  Option<Trigger>,
+        dma:      &mut dma::Handle,
+        dma_chan: DmaChan,
+        buffer:   Pin<Buf>,
+    )
+        -> Adc<ActiveOneShotDMA<DmaChan, AdcChan, Buf>>
+        where
+            DmaToken:    dma::Target<DmaChan>,
+            Buf:         DerefMut + 'static,
+            Buf::Target: AsMutSlice<Element=u16>,
+            DmaChan:     dma::Channel,
+            AdcChan:     Channel<Adc<Ready>, ID = u8>,
+    {
+        // The ADC can support only one DMA transfer at a time, so only one of
+        // these DMA tokens must exist at a time. We guarantee this by only
+        // creating it in this method, that can only be called in the ADC's
+        // `Ready` state. The DMA transfer is ended and the token associated
+        // with it is dropped before we return to the `Ready` state.
+        let dma_token = DmaToken(());
+
+        let num_words = (*buffer).len();
+
+        // Safe, because we're only taking the address of a register.
+        let address = &self.rb.dr as *const _ as u32;
+
+
+        // Safe, because the trait bounds of this method guarantee that the
+        // buffer can be written to.
+        let transfer =
+            unsafe {
+                dma::Transfer::new(
+                    dma,
+                    dma_token,
+                    dma_chan,
+                    buffer,
+                    num_words,
+                    address,
+                    dma::Priority::high(),
+                    dma::Direction::peripheral_to_memory(),
+                    true,
+                )
+            }
+            .start();
+
+        let continous = trigger.is_none();
+
+        self.power_up();
+	let channels = Channels { flags: 0x1 << AdcChan::channel() };
+        self.configure(channels, continous, trigger);
+
+        Adc {
+            rb:          self.rb,
+            sample_time: self.sample_time,
+            align:       self.align,
+            precision:   self.precision,
+            _state:      ActiveOneShotDMA { adc_chan: channel, transfer },
+        }
+    }
 }
 
 
@@ -248,6 +332,42 @@ impl<DmaChan, Buffer> Adc<ActiveContinuousDMA<DmaChan, Buffer>>
     }
 }
 
+impl<DmaChan, AdcChan, Buffer> Adc<ActiveOneShotDMA<DmaChan, AdcChan, Buffer>>
+    where DmaChan: dma::Channel,
+{
+    pub fn is_active(&self) -> bool {
+        self._state.transfer.is_active()
+    }
+
+    /// waits for transfer to finish and returns adc in ready state and transfer resources
+    pub fn wait(self) -> Result<
+            (Adc<Ready>, AdcChan, TransferResources<DmaToken, DmaChan, Buffer>),
+        (Adc<Ready>, AdcChan,TransferResources<DmaToken, DmaChan, Buffer>, Error)>
+    {
+        // wait for dma transfer to complete
+        let res =  self._state.transfer.wait();
+        let adc_chan = self._state.adc_chan;
+
+        // build a new adc object that is back in the "ready" state
+        let mut new_adc = Adc::<Ready> {
+            rb: self.rb,
+            sample_time: self.sample_time,
+            align: self.align,
+            precision : self.precision,
+            _state : Ready
+        };
+
+        // power down the ADC, since we are finishing up
+        new_adc.power_down();
+
+        // if we had an error before, return it
+        match res {
+            Err((t,e)) => Err((new_adc, adc_chan, t,Error::DmaError(e))),
+            Ok(t) => Ok((new_adc,adc_chan, t))
+        }
+    }
+}
+
 impl<State> Adc<State> {
     pub fn release(self) -> ADC {
         self.rb
@@ -265,18 +385,19 @@ impl<State> Adc<State> {
         while self.rb.cr.read().aden().bit_is_set() {}
     }
 
-    fn configure(&mut self,
-        channels: impl Into<Channels>,
+    fn configure<AdcChan : Into<Channels>>(&mut self,
+        channels: AdcChan,
         cont:     bool,
         trigger:  Option<Trigger>,
-    ) {
+    )
+    {
         self.rb.cfgr1.write(|w| {
             w
                 .res().bits(self.precision as u8)
                 .cont().bit(cont)
                 .align().bit(self.align == Align::Left)
-                // DMA circular mode
-                .dmacfg().set_bit()
+                // If we are doing a continuous DMA, then we enable this bit
+                .dmacfg().bit(cont)
                 // Generate DMA requests
                 .dmaen().set_bit();
 
@@ -297,7 +418,7 @@ impl<State> Adc<State> {
         self.rb.chselr.write(|w|
             // Safe, as long as there are no `Channel` implementations that
             // define invalid values.
-            unsafe { w.bits(channels.into().flags) }
+            unsafe { w.bits(Into::<Channels>::into(channels).flags) }
         );
 
         self.rb.isr.modify(|_, w| w.eos().set_bit());
@@ -330,14 +451,31 @@ where
     }
 }
 
+// Since `Adc` is used in the error variant of a `Result`, it needs to
+// implement `Debug` for methods like `unwrap` to work. We can't just
+// derive `Debug`, without requiring all type parameters to be
+// `Debug`, which seems to restrictive. So we make a version that only
+// prints out the _state, which seeems more useful anyways
+impl<State :  fmt::Debug> fmt::Debug for Adc<State> {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        write!(f, "Adc <{:?}>", self._state)
+    }
+}
 
 /// Indicates that the ADC peripheral is ready
+#[derive(Debug)]
 pub struct Ready;
 
-/// Indicates that the ADC peripheral is performing conversions
+/// Indicates that the ADC peripheral is performing continuous DMA conversions
 pub struct ActiveContinuousDMA<DmaChan, Buf> {
     transfer: dma::Transfer<DmaToken, DmaChan, Buf, dma::Started>,
     buffer:   Buffer,
+}
+
+/// Indicates that the ADC peripheral is performing a single set of DMA conversions
+pub struct ActiveOneShotDMA<DmaChan, AdcChan, Buf> {
+    transfer: dma::Transfer<DmaToken, DmaChan, Buf, dma::Started>,
+    adc_chan: AdcChan,
 }
 
 
@@ -611,6 +749,8 @@ pub enum Error {
     /// just keeps writing more values. It does mean that some values in the
     /// buffer were overwritten though.
     BufferOverrun,
+    ///we also inherit dma errors
+    DmaError(dma::Error),
 }
 
 
@@ -737,4 +877,5 @@ adc_pins! {
 adc_pins! {
     Channel14: (gpioc::PC4<Analog>, 14u8),
     Channel15: (gpioc::PC5<Analog>, 15u8),
+
 }
