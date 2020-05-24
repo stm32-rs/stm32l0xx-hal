@@ -14,31 +14,39 @@ pub trait GpioExt {
 }
 
 /// Input mode (type state)
+#[derive(Debug)]
 pub struct Input<MODE> {
     _mode: PhantomData<MODE>,
 }
 
 /// Floating input (type state)
+#[derive(Debug)]
 pub struct Floating;
 
 /// Pulled down input (type state)
+#[derive(Debug)]
 pub struct PullDown;
 
 /// Pulled up input (type state)
+#[derive(Debug)]
 pub struct PullUp;
 
 /// Open drain input or output (type state)
+#[derive(Debug)]
 pub struct OpenDrain;
 
 /// Analog mode (type state)
+#[derive(Debug)]
 pub struct Analog;
 
 /// Output mode (type state)
+#[derive(Debug)]
 pub struct Output<MODE> {
     _mode: PhantomData<MODE>,
 }
 
 /// Push pull output (type state)
+#[derive(Debug)]
 pub struct PushPull;
 
 mod sealed {
@@ -254,6 +262,7 @@ macro_rules! gpio {
 
             $(
                 /// Pin
+		#[derive(Debug)]
                 pub struct $PXi<MODE> {
                     _mode: PhantomData<MODE>,
                 }
