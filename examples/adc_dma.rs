@@ -29,7 +29,7 @@ use stm32l0xx_hal::{
 
 use stm32l0xx_hal::serial::Serial1Ext;
 
-const BUFSIZE : usize = 8; 	// the size of the buffer to use
+const BUFSIZE : usize = 20; 	// the size of the buffer to use
 const FREQUENCY : u32 = 200; // the frequency to sample at
 
 #[entry]
@@ -64,8 +64,12 @@ fn main() -> ! {
     //
     // This is safe, since this is the main function, and it's only executed
     // once. This means there is no other code accessing this `static`.   
-    static mut BUFFER: [u16; BUFSIZE] = [0; BUFSIZE];
-    let mut buffer = Pin::new(unsafe { &mut BUFFER });
+    static mut BUFFER0: [u16; BUFSIZE] = [0; BUFSIZE];
+    static mut BUFFER1: [u16; BUFSIZE] = [0; BUFSIZE];
+    let mut buffers : [Option<Pin<&mut [u16; BUFSIZE]>> ; 2] = [None, None];
+    
+    buffers[0] = Some(Pin::new(unsafe { &mut BUFFER0 }));
+    buffers[1] = Some(Pin::new(unsafe { &mut BUFFER1 }));
 
 
     let mut adc_chan = dma.channels.channel1;
@@ -78,26 +82,43 @@ fn main() -> ! {
     dp.TIM2
         .timer(FREQUENCY.hz(), &mut rcc)
         .select_master_mode(MMS_A::UPDATE);
+    // Kick off an ADC read
+    let mut active_adc = adc.read_all(
+	a0,
+	Some(adc::Trigger::TIM2_TRGO),
+	&mut dma.handle,
+	adc_chan,
+	buffers[0].take().unwrap(),
+    );
 
     loop {
-            // Start reading ADC values
-        let active_adc = adc.read_all(
-            a0,
-            Some(adc::Trigger::TIM2_TRGO),
-            &mut dma.handle,
-            adc_chan,
-            buffer,
-        );
+	for i in 0..2 {
 
-        while active_adc.is_active() {}
-        let (new_adc, new_a0, res) = active_adc.wait().unwrap();
-        buffer = res.buffer;
-        adc_chan = res.channel;
-	adc = new_adc;
-	a0 = new_a0;
-        for val in buffer.iter() {     // fixme: figure out how to used Pinned version
-            write!(tx, "{:4},", val).unwrap();
-        }
-	write!(tx,"\r\n").unwrap();
+	    // wait for the first ADC read to complete
+	    while active_adc.is_active() {}
+	    let (new_adc, new_a0, res) = active_adc.wait().unwrap();
+
+	    // restore everything
+	    buffers[i] = Some(res.buffer);
+	    adc_chan = res.channel;
+	    adc = new_adc;
+	    a0 = new_a0;
+
+	    // Kick off an ADC read
+	    active_adc = adc.read_all(
+		a0,
+		Some(adc::Trigger::TIM2_TRGO),
+		&mut dma.handle,
+		adc_chan,
+		buffers[(i+1)%2].take().unwrap(),
+	    );
+
+
+	    // print out the values from buf0
+	    for val in buffers[i].as_ref().unwrap().iter() {
+		write!(tx, "{}\r\n", val).unwrap();
+	    }
+//	    write!(tx,"\r\n").unwrap();
+	}
     }
 }
