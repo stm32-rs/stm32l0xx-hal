@@ -159,7 +159,7 @@ impl Adc<Ready> {
         dma_chan: DmaChan,
         buffer:   Pin<Buf>,
     )
-        -> Adc<Active<DmaChan, Buf>>
+        -> Adc<ActiveContinuousDMA<DmaChan, Buf>>
         where
             DmaToken:    dma::Target<DmaChan>,
             Buf:         DerefMut + 'static,
@@ -216,12 +216,15 @@ impl Adc<Ready> {
             sample_time: self.sample_time,
             align:       self.align,
             precision:   self.precision,
-            _state:      Active { buffer: buffer_unsafe, transfer },
+            _state:      ActiveContinuousDMA { buffer: buffer_unsafe, transfer },
         }
     }
 }
 
-impl<DmaChan, Buffer> Adc<Active<DmaChan, Buffer>>
+
+
+
+impl<DmaChan, Buffer> Adc<ActiveContinuousDMA<DmaChan, Buffer>>
     where DmaChan: dma::Channel,
 {
     /// Returns an iterator over all currently available values
@@ -332,7 +335,7 @@ where
 pub struct Ready;
 
 /// Indicates that the ADC peripheral is performing conversions
-pub struct Active<DmaChan, Buf> {
+pub struct ActiveContinuousDMA<DmaChan, Buf> {
     transfer: dma::Transfer<DmaToken, DmaChan, Buf, dma::Started>,
     buffer:   Buffer,
 }
