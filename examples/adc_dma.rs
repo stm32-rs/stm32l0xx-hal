@@ -30,7 +30,7 @@ use stm32l0xx_hal::{
 use stm32l0xx_hal::serial::Serial1Ext;
 
 const BUFSIZE : usize = 20; 	// the size of the buffer to use
-const FREQUENCY : u32 = 200; // the frequency to sample at
+const FREQUENCY : u32 = 256; // the frequency to sample at
 
 #[entry]
 fn main() -> ! {
@@ -42,10 +42,12 @@ fn main() -> ! {
     let     gpioa = dp.GPIOA.split(&mut rcc);
     let     gpiob = dp.GPIOB.split(&mut rcc);
 
-    // The A0 connector on the B-L072Z-LRWAN1 Discovery kit
-    let mut a0 = gpioa.pa5.into_analog();
 
-    // Connected to the host computer via the ST-LINK
+    let mut apin = gpioa.pa4.into_analog();
+    // LED1 on dev board. LED is set high at beginning of adc
+    // conversion, and low when conversion is complete
+    let mut led = gpioa.pa5.into_push_pull_output();
+    // secondary USART: need serial port to read values
     let tx = gpiob.pb6;
     let rx = gpiob.pb7;
 
@@ -82,9 +84,13 @@ fn main() -> ! {
     dp.TIM2
         .timer(FREQUENCY.hz(), &mut rcc)
         .select_master_mode(MMS_A::UPDATE);
+
+    
+    
     // Kick off an ADC read
+    led.set_high().ok();
     let mut active_adc = adc.read_all(
-	a0,
+	apin,
 	Some(adc::Trigger::TIM2_TRGO),
 	&mut dma.handle,
 	adc_chan,
@@ -96,17 +102,20 @@ fn main() -> ! {
 
 	    // wait for the first ADC read to complete
 	    while active_adc.is_active() {}
-	    let (new_adc, new_a0, res) = active_adc.wait().unwrap();
+	    // we have finished the conversion
+	    led.set_low().ok();
+	    let (new_adc, new_apin, res) = active_adc.wait().unwrap();
 
 	    // restore everything
 	    buffers[i] = Some(res.buffer);
 	    adc_chan = res.channel;
 	    adc = new_adc;
-	    a0 = new_a0;
+	    apin = new_apin;
 
 	    // Kick off an ADC read
+	    led.set_high().ok();
 	    active_adc = adc.read_all(
-		a0,
+		apin,
 		Some(adc::Trigger::TIM2_TRGO),
 		&mut dma.handle,
 		adc_chan,
