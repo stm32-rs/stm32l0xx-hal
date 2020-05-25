@@ -29,8 +29,8 @@ use stm32l0xx_hal::{
 
 use stm32l0xx_hal::serial::Serial1Ext;
 
-const BUFSIZE : usize = 20; 	// the size of the buffer to use
-const FREQUENCY : u32 = 256; // the frequency to sample at
+const BUFSIZE : usize = 2; 	// the size of the buffer to use
+const FREQUENCY : u32 = 200; // the frequency to sample at
 
 #[entry]
 fn main() -> ! {
@@ -43,9 +43,16 @@ fn main() -> ! {
     let     gpiob = dp.GPIOB.split(&mut rcc);
 
 
+    // Unused analog input pin. If a length of wire is connected to
+    // this pin, you should be able to pick up mains hum directly in
+    // the values measured
     let apin = gpioa.pa4.into_analog();
+    // Pin connected to momentary button on discovery board. Should be
+    // pulled down.
+    let button = gpioa.pa0.into_analog();
+
     // LED1 on dev board. LED is set high at beginning of adc
-    // conversion, and low when conversion is complete
+    // conversion, and low when conversion is complete. 
     let mut led = gpioa.pa5.into_push_pull_output();
     // secondary USART: need serial port to read values
     let tx = gpiob.pb6;
@@ -73,11 +80,11 @@ fn main() -> ! {
     buffers[0] = Some(Pin::new(unsafe { &mut BUFFER0 }));
     buffers[1] = Some(Pin::new(unsafe { &mut BUFFER1 }));
 
-
+    // reserve the DMA channel for the ADC. Could also use channel2
     let adc_chan = dma.channels.channel1;
 
     let mut adc = adc.with_dma(
-	apin,
+	(apin, button),
 	Some(adc::Trigger::TIM2_TRGO),	
 	adc_chan,
     );    
@@ -100,6 +107,7 @@ fn main() -> ! {
 
 	    // wait for the first ADC read to complete
 	    while active_adc.is_active() {}
+
 	    // we have finished the conversion
 	    led.set_low().ok();
 	    let (new_adc, buffer) = active_adc.wait().unwrap();
@@ -112,12 +120,11 @@ fn main() -> ! {
 	    led.set_high().ok();
 	    active_adc = adc.read_all(&mut dma.handle, buffers[(i+1)%2].take().unwrap());
 
-
-	    // print out the values from buf0
+	    // print out the values from buffer
 	    for val in buffers[i].as_ref().unwrap().iter() {
-		write!(tx, "{}\r\n", val).unwrap();
+		write!(tx, "{:4},", val).unwrap();
 	    }
-//	    write!(tx,"\r\n").unwrap();
+	    write!(tx,"\r\n").unwrap();
 	}
     }
 }

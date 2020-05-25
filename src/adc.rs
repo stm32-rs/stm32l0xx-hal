@@ -224,7 +224,9 @@ impl Adc<Ready> {
 
     /// Prepare ADC for use with DMA
     ///
-    /// The `channel` argument specifies which channels should be converted.
+    /// The `channel` argument specifies which channels should be
+    /// converted.  Usually, this will be an `Input<Analog>` value, or
+    /// a tuple of those values
     ///
     /// The `trigger` argument specifies the trigger that will start each
     /// conversion sequence. This only configures the ADC peripheral to accept
@@ -243,7 +245,7 @@ impl Adc<Ready> {
     )
         -> Adc<ReadyOneShotDMA<DmaChan, AdcChan>>
         where
-            AdcChan:     Channel<Adc<Ready>, ID = u8>,
+            AdcChan:     IntoChannels,
     {
 
 
@@ -251,7 +253,7 @@ impl Adc<Ready> {
         let continous = trigger.is_none();
 
         self.power_up();
-	let channels = Channels { flags: 0x1 << AdcChan::channel() };
+	let channels = channel.into_channels();
         self.configure(channels, continous, trigger);
 
         Adc {
@@ -298,7 +300,6 @@ impl<DmaChan, AdcChan> Adc<ReadyOneShotDMA<DmaChan, AdcChan>> {
         Buf:         DerefMut + 'static,
         Buf::Target: AsMutSlice<Element=u16>,
         DmaChan:     dma::Channel,
-        AdcChan:     Channel<Adc<Ready>, ID = u8>,
     {
 	// The ADC can support only one DMA transfer at a time, so only one of
         // these DMA tokens must exist at a time. We guarantee this by only
@@ -524,6 +525,7 @@ pub struct ReadyOneShotDMA<DmaChan, AdcChan> {
 /// A collection of channels
 ///
 /// Used to set up multi-channel conversions.
+#[derive(Copy,Clone)]
 pub struct Channels {
     flags: u32,
 }
@@ -534,6 +536,11 @@ impl Channels {
         where C: Channel<Adc<Ready>, ID=u8>
     {
         self.flags |= 0x1 << C::channel()
+    }
+
+    /// constructor for empty channels object
+    pub fn new() -> Self {
+	Channels {flags: 0}
     }
 }
 
@@ -546,6 +553,56 @@ impl<C> From<C> for Channels
         c
     }
 }
+
+/// Helper trait to convert something into a channels value.  This is
+/// necessary, because we need to have a channels value to set up the
+/// ADC scanning, but also we need to "keep" the original value in the
+/// ADC until the conversion completes
+pub trait IntoChannels {
+    fn into_channels(&self) -> Channels;
+}
+
+impl IntoChannels for Channels {
+    fn into_channels(&self) -> Channels {
+	self.clone()
+    }
+}
+
+impl<C> IntoChannels for C
+    where C: Channel<Adc<Ready>, ID=u8>
+{
+    fn into_channels(&self) -> Channels {
+        Channels{flags: 0x1 << C::channel()}
+    }
+}
+
+macro_rules! channel_tuples {
+    ($($Chan:ident),+) => {
+	/// Implement  for tuples of adc channel targets 
+	impl<$($Chan,)+> IntoChannels for ($($Chan,)+)
+	where
+	    $($Chan: Channel<Adc<Ready>, ID=u8>,)+
+	{
+	    fn into_channels(&self) -> Channels {
+		let mut c = Channels::new();
+		$(c.flags+=0x1 << $Chan::channel();)+
+		c
+	    }
+	}
+    };
+}
+	
+channel_tuples!(C0);
+channel_tuples!(C0,C1);
+channel_tuples!(C0,C1,C2);
+channel_tuples!(C0,C1,C2,C3);
+channel_tuples!(C0,C1,C2,C3,C4);
+channel_tuples!(C0,C1,C2,C3,C4,C5);
+channel_tuples!(C0,C1,C2,C3,C4,C5,C6);
+channel_tuples!(C0,C1,C2,C3,C4,C5,C6,C7);
+channel_tuples!(C0,C1,C2,C3,C4,C5,C6,C7,C8);
+
+
 
 
 /// Hardware triggers that can start an ADC conversion
