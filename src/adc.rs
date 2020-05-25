@@ -345,6 +345,22 @@ impl<DmaChan, AdcChan> Adc<ReadyOneShotDMA<DmaChan, AdcChan>> {
 
 	new_adc
     }
+
+    /// Returns the adc to the ready state, freeing the DMA resources
+    pub fn split(mut self) -> (Adc<Ready>, DmaChan, AdcChan) {
+
+	self.power_down();
+	
+	(Adc {
+            rb:          self.rb,
+            sample_time: self.sample_time,
+            align:       self.align,
+            precision:   self.precision,
+            _state:      Ready,
+        },
+	 self._state.dma_chan,
+	 self._state.adc_chan)
+    }
 }
 
 impl<DmaChan, AdcChan, Buffer> Adc<ActiveOneShotDMA<DmaChan, AdcChan, Buffer>>
