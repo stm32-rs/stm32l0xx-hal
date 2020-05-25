@@ -21,7 +21,6 @@ use crate::{
 };
 
 use crate::dma::{
-    TransferResources,
     self,
     Buffer as _,
 };
@@ -213,7 +212,7 @@ impl Adc<Ready> {
 
         self.power_up();
         self.configure(channels, continous, trigger);
-
+	self.start_conversion();
         Adc {
             rb:          self.rb,
             sample_time: self.sample_time,
@@ -223,9 +222,9 @@ impl Adc<Ready> {
         }
     }
 
-        /// Starts a oneshot conversion process
+    /// Prepare ADC for use with DMA
     ///
-    /// The `channel` argument specifies which channel should be converted.
+    /// The `channel` argument specifies which channels should be converted.
     ///
     /// The `trigger` argument specifies the trigger that will start each
     /// conversion sequence. This only configures the ADC peripheral to accept
@@ -235,59 +234,19 @@ impl Adc<Ready> {
     /// In addition to the preceeding arguments that configure the ADC,
     /// additional arguments are required to configure the DMA transfer that is
     /// used to read the results from the ADC:
-    /// - `dma` is a handle to the DMA peripheral.
     /// - `dma_chan` is the DMA channel used for the transfer. It needs to be
     ///   one of the channels that supports the ADC peripheral.
-    /// - `buffer` is the buffer used to buffer the conversion results.
-    ///
-    /// # Panics
-    ///
-    /// Panics, if `buffer` is larger than 65535.
-    pub fn read_all<DmaChan, AdcChan, Buf>(mut self,
+    pub fn with_dma<DmaChan, AdcChan>(mut self,
         channel: AdcChan,
         trigger:  Option<Trigger>,
-        dma:      &mut dma::Handle,
         dma_chan: DmaChan,
-        buffer:   Pin<Buf>,
     )
-        -> Adc<ActiveOneShotDMA<DmaChan, AdcChan, Buf>>
+        -> Adc<ReadyOneShotDMA<DmaChan, AdcChan>>
         where
-            DmaToken:    dma::Target<DmaChan>,
-            Buf:         DerefMut + 'static,
-            Buf::Target: AsMutSlice<Element=u16>,
-            DmaChan:     dma::Channel,
             AdcChan:     Channel<Adc<Ready>, ID = u8>,
     {
-        // The ADC can support only one DMA transfer at a time, so only one of
-        // these DMA tokens must exist at a time. We guarantee this by only
-        // creating it in this method, that can only be called in the ADC's
-        // `Ready` state. The DMA transfer is ended and the token associated
-        // with it is dropped before we return to the `Ready` state.
-        let dma_token = DmaToken(());
-
-        let num_words = (*buffer).len();
-
-        // Safe, because we're only taking the address of a register.
-        let address = &self.rb.dr as *const _ as u32;
 
 
-        // Safe, because the trait bounds of this method guarantee that the
-        // buffer can be written to.
-        let transfer =
-            unsafe {
-                dma::Transfer::new(
-                    dma,
-                    dma_token,
-                    dma_chan,
-                    buffer,
-                    num_words,
-                    address,
-                    dma::Priority::high(),
-                    dma::Direction::peripheral_to_memory(),
-                    false,
-                )
-            }
-            .start();
 
         let continous = trigger.is_none();
 
@@ -300,11 +259,10 @@ impl Adc<Ready> {
             sample_time: self.sample_time,
             align:       self.align,
             precision:   self.precision,
-            _state:      ActiveOneShotDMA { adc_chan: channel, transfer },
+            _state:      ReadyOneShotDMA { adc_chan: channel, dma_chan },
         }
     }
 }
-
 
 
 
@@ -332,6 +290,63 @@ impl<DmaChan, Buffer> Adc<ActiveContinuousDMA<DmaChan, Buffer>>
     }
 }
 
+impl<DmaChan, AdcChan> Adc<ReadyOneShotDMA<DmaChan, AdcChan>> {
+    /// start a dma conversion sequence into the given buffer
+    pub fn read_all<Buf>(self, dma: &mut dma::Handle, buffer: Pin<Buf>) -> Adc<ActiveOneShotDMA<DmaChan, AdcChan, Buf>>
+    where
+	DmaToken:    dma::Target<DmaChan>,
+        Buf:         DerefMut + 'static,
+        Buf::Target: AsMutSlice<Element=u16>,
+        DmaChan:     dma::Channel,
+        AdcChan:     Channel<Adc<Ready>, ID = u8>,
+    {
+	// The ADC can support only one DMA transfer at a time, so only one of
+        // these DMA tokens must exist at a time. We guarantee this by only
+        // creating it in this method, that can only be called in the ADC's
+        // `Ready` state. The DMA transfer is ended and the token associated
+        // with it is dropped before we return to the `Ready` state.
+        let dma_token = DmaToken(());
+
+        let num_words = (*buffer).len();
+
+        // Safe, because we're only taking the address of a register.
+        let address = &self.rb.dr as *const _ as u32;
+
+
+        // Safe, because the trait bounds of this method guarantee that the
+        // buffer can be written to.
+        let transfer =
+            unsafe {
+                dma::Transfer::new(
+                    dma,
+                    dma_token,
+                    self._state.dma_chan,
+                    buffer,
+                    num_words,
+                    address,
+                    dma::Priority::high(),
+                    dma::Direction::peripheral_to_memory(),
+                    true,
+                )
+            }
+            .start();
+
+	
+        let mut new_adc = Adc {
+            rb:          self.rb,
+            sample_time: self.sample_time,
+            align:       self.align,
+            precision:   self.precision,
+            _state:      ActiveOneShotDMA { adc_chan: self._state.adc_chan, transfer },
+        };
+
+	// start the adc conversion sequence
+	new_adc.start_conversion();
+
+	new_adc
+    }
+}
+
 impl<DmaChan, AdcChan, Buffer> Adc<ActiveOneShotDMA<DmaChan, AdcChan, Buffer>>
     where DmaChan: dma::Channel,
 {
@@ -341,29 +356,31 @@ impl<DmaChan, AdcChan, Buffer> Adc<ActiveOneShotDMA<DmaChan, AdcChan, Buffer>>
 
     /// waits for transfer to finish and returns adc in ready state and transfer resources
     pub fn wait(self) -> Result<
-            (Adc<Ready>, AdcChan, TransferResources<DmaToken, DmaChan, Buffer>),
-        (Adc<Ready>, AdcChan,TransferResources<DmaToken, DmaChan, Buffer>, Error)>
+            (Adc<ReadyOneShotDMA<DmaChan, AdcChan>>, Pin<Buffer>),
+        (Adc<ReadyOneShotDMA<DmaChan, AdcChan>>, Pin<Buffer>, Error)>
     {
         // wait for dma transfer to complete
         let res =  self._state.transfer.wait();
-        let adc_chan = self._state.adc_chan;
+	
+	let (res,err) = match res {
+            Err((t,e)) => (t,Some(e)),
+            Ok(t) => (t,None),
+        };
 
-        // build a new adc object that is back in the "ready" state
-        let mut new_adc = Adc::<Ready> {
+	
+        // build a new adc object that is back in the "readydma" state
+        let new_adc = Adc::<ReadyOneShotDMA<DmaChan, AdcChan>> {
             rb: self.rb,
             sample_time: self.sample_time,
             align: self.align,
             precision : self.precision,
-            _state : Ready
+            _state : ReadyOneShotDMA {adc_chan:self._state.adc_chan, dma_chan:res.channel}
         };
 
-        // power down the ADC, since we are finishing up
-        new_adc.power_down();
-
         // if we had an error before, return it
-        match res {
-            Err((t,e)) => Err((new_adc, adc_chan, t,Error::DmaError(e))),
-            Ok(t) => Ok((new_adc,adc_chan, t))
+        match err {
+            Some(e) => Err((new_adc,res.buffer,Error::DmaError(e))),
+            None => Ok((new_adc,res.buffer))
         }
     }
 }
@@ -421,6 +438,10 @@ impl<State> Adc<State> {
             unsafe { w.bits(Into::<Channels>::into(channels).flags) }
         );
 
+    }
+
+    // helper function to start a conversion
+    fn start_conversion (&mut self) {
         self.rb.isr.modify(|_, w| w.eos().set_bit());
         self.rb.cr.modify(|_, w| w.adstart().set_bit());
     }
@@ -453,17 +474,16 @@ where
 
 // Since `Adc` is used in the error variant of a `Result`, it needs to
 // implement `Debug` for methods like `unwrap` to work. We can't just
-// derive `Debug`, without requiring all type parameters to be
-// `Debug`, which seems to restrictive. So we make a version that only
-// prints out the _state, which seeems more useful anyways
-impl<State :  fmt::Debug> fmt::Debug for Adc<State> {
+// derive `Debug`, without requiring all fields of all typestates to
+// be Debug, and right now stuff like GPIO pins are DMA channels are
+// not `Debug`
+impl<State> fmt::Debug for Adc<State> {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        write!(f, "Adc <{:?}>", self._state)
+        write!(f, "Adc {{ ... }}")
     }
 }
 
 /// Indicates that the ADC peripheral is ready
-#[derive(Debug)]
 pub struct Ready;
 
 /// Indicates that the ADC peripheral is performing continuous DMA conversions
@@ -476,6 +496,12 @@ pub struct ActiveContinuousDMA<DmaChan, Buf> {
 pub struct ActiveOneShotDMA<DmaChan, AdcChan, Buf> {
     transfer: dma::Transfer<DmaToken, DmaChan, Buf, dma::Started>,
     adc_chan: AdcChan,
+}
+
+/// Indicates that the ADC peripheral is Ready to perform a DMA conversion
+pub struct ReadyOneShotDMA<DmaChan, AdcChan> {
+    adc_chan: AdcChan,
+    dma_chan: DmaChan,
 }
 
 

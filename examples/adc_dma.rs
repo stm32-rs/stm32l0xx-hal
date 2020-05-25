@@ -37,13 +37,13 @@ fn main() -> ! {
     let dp = pac::Peripherals::take().unwrap();
 
     let mut rcc   = dp.RCC.freeze(rcc::Config::hsi16());
-    let mut adc   = dp.ADC.constrain(&mut rcc);
+    let adc   = dp.ADC.constrain(&mut rcc);
     let mut dma   = DMA::new(dp.DMA1, &mut rcc);
     let     gpioa = dp.GPIOA.split(&mut rcc);
     let     gpiob = dp.GPIOB.split(&mut rcc);
 
 
-    let mut apin = gpioa.pa4.into_analog();
+    let apin = gpioa.pa4.into_analog();
     // LED1 on dev board. LED is set high at beginning of adc
     // conversion, and low when conversion is complete
     let mut led = gpioa.pa5.into_push_pull_output();
@@ -74,9 +74,13 @@ fn main() -> ! {
     buffers[1] = Some(Pin::new(unsafe { &mut BUFFER1 }));
 
 
-    let mut adc_chan = dma.channels.channel1;
+    let adc_chan = dma.channels.channel1;
 
-    
+    let mut adc = adc.with_dma(
+	apin,
+	Some(adc::Trigger::TIM2_TRGO),	
+	adc_chan,
+    );    
 
 
     // Enable trigger output for TIM2. This must happen after ADC has been
@@ -89,13 +93,7 @@ fn main() -> ! {
     
     // Kick off an ADC read
     led.set_high().ok();
-    let mut active_adc = adc.read_all(
-	apin,
-	Some(adc::Trigger::TIM2_TRGO),
-	&mut dma.handle,
-	adc_chan,
-	buffers[0].take().unwrap(),
-    );
+    let mut active_adc = adc.read_all(&mut dma.handle, buffers[0].take().unwrap());
 
     loop {
 	for i in 0..2 {
@@ -104,23 +102,15 @@ fn main() -> ! {
 	    while active_adc.is_active() {}
 	    // we have finished the conversion
 	    led.set_low().ok();
-	    let (new_adc, new_apin, res) = active_adc.wait().unwrap();
+	    let (new_adc, buffer) = active_adc.wait().unwrap();
 
 	    // restore everything
-	    buffers[i] = Some(res.buffer);
-	    adc_chan = res.channel;
+	    buffers[i] = Some(buffer);
 	    adc = new_adc;
-	    apin = new_apin;
 
 	    // Kick off an ADC read
 	    led.set_high().ok();
-	    active_adc = adc.read_all(
-		apin,
-		Some(adc::Trigger::TIM2_TRGO),
-		&mut dma.handle,
-		adc_chan,
-		buffers[(i+1)%2].take().unwrap(),
-	    );
+	    active_adc = adc.read_all(&mut dma.handle, buffers[(i+1)%2].take().unwrap());
 
 
 	    // print out the values from buf0
