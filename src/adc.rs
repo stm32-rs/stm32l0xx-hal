@@ -284,7 +284,7 @@ impl Adc<Ready> {
                     address,
                     dma::Priority::high(),
                     dma::Direction::peripheral_to_memory(),
-                    true,
+                    false,
                 )
             }
             .start();
