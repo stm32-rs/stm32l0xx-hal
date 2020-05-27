@@ -1,6 +1,5 @@
 use core::fmt;
 
-
 #[derive(Debug, PartialEq, PartialOrd, Clone, Copy)]
 pub struct Bps(pub u32);
 
@@ -9,7 +8,6 @@ impl fmt::Display for Bps {
         write!(f, "{} bps", self.0)
     }
 }
-
 
 #[derive(Debug, PartialEq, PartialOrd, Clone, Copy)]
 pub struct Hertz(pub u32);
@@ -20,7 +18,6 @@ impl fmt::Display for Hertz {
     }
 }
 
-
 #[derive(Debug, PartialEq, PartialOrd, Clone, Copy)]
 pub struct MicroSeconds(pub u32);
 
@@ -29,7 +26,6 @@ impl fmt::Display for MicroSeconds {
         write!(f, "{} µs", self.0)
     }
 }
-
 
 /// Extension trait that adds convenience methods to the `u32` type
 pub trait U32Ext {
@@ -69,12 +65,12 @@ impl U32Ext for u32 {
         Hertz(self * 1_000_000)
     }
 
-    fn ms(self) -> MicroSeconds {
-        MicroSeconds(self * 1_000)
-    }
-
     fn us(self) -> MicroSeconds {
         MicroSeconds(self)
+    }
+
+    fn ms(self) -> MicroSeconds {
+        MicroSeconds(self * 1_000)
     }
 }
 
