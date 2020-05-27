@@ -1,6 +1,6 @@
 //! Timers
 use crate::hal::timer::{CountDown, Periodic};
-use crate::pac::{TIM2, TIM21, TIM22, TIM3, tim2, tim21, tim22};
+use crate::pac::{tim2, tim21, tim22, tim6, TIM2, TIM21, TIM22, TIM3, TIM6};
 use crate::rcc::{Clocks, Rcc};
 use crate::time::Hertz;
 use cast::{u16, u32};
@@ -212,6 +212,8 @@ timers! {
         tim2::cr2::MMS_A),
     TIM3: (tim3, tim3en, tim3rst, apb1enr, apb1rstr, apb1_tim_clk,
         tim2::cr2::MMS_A),
+    TIM6: (tim6, tim6en, tim6rst, apb1enr, apb1rstr, apb1_tim_clk,
+        tim6::cr2::MMS_A),
     TIM21: (tim21, tim21en, tim21rst, apb2enr, apb2rstr, apb2_tim_clk,
         tim21::cr2::MMS_A),
     TIM22: (tim22, tim22en, tim22rst, apb2enr, apb2rstr, apb2_tim_clk,
