@@ -1,12 +1,9 @@
 pub use embedded_hal::{
-    prelude::*,
-    digital::v2::*,
     adc::OneShot as _,
+    digital::v2::*,
+    prelude::*,
     timer::Cancel as _,
-    watchdog::{
-        Watchdog as _,
-        WatchdogEnable as _,
-    },
+    watchdog::{Watchdog as _, WatchdogEnable as _},
 };
 
 pub use crate::{
@@ -18,10 +15,7 @@ pub use crate::{
     spi::SpiExt as _,
     time::U32Ext as _,
     timer::TimerExt as _,
-    watchdog::{
-        IndependedWatchdogExt as _,
-        WindowWatchdogExt as _,
-    },
+    watchdog::{IndependedWatchdogExt as _, WindowWatchdogExt as _},
 };
 
 #[cfg(any(
@@ -32,25 +26,14 @@ pub use crate::{
 ))]
 pub use crate::i2c::I2cExt as _;
 
+#[cfg(any(feature = "io-STM32L051", feature = "io-STM32L071",))]
+pub use crate::serial::Serial1LpExt as _;
 #[cfg(any(
     feature = "io-STM32L021",
     feature = "io-STM32L031",
     feature = "io-STM32L051",
     feature = "io-STM32L071",
 ))]
-pub use crate::serial::{
-    Serial1LpExt as _,
-    Serial2Ext as _,
-};
-#[cfg(any(
-    feature = "io-STM32L051",
-    feature = "io-STM32L071",
-))]
-pub use crate::serial::Serial1LpExt as _;
-#[cfg(any(
-    feature = "io-STM32L071",
-))]
-pub use crate::serial::{
-    Serial4Ext as _,
-    Serial5Ext as _,
-};
+pub use crate::serial::{Serial1LpExt as _, Serial2Ext as _};
+#[cfg(any(feature = "io-STM32L071",))]
+pub use crate::serial::{Serial4Ext as _, Serial5Ext as _};

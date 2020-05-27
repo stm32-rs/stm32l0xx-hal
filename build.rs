@@ -49,7 +49,6 @@ fn main() {
 
     println!("cargo:rerun-if-changed=build.rs");
 
-
     // Copy the binary blob required by the Flash API somewhere the linker can
     // find it, and tell Cargo to link it.
 
@@ -57,11 +56,8 @@ fn main() {
     let blob_file = format!("lib{}.a", blob_name);
     let blob_path = format!("flash-code/{}", blob_file);
 
-    fs::copy(
-        &blob_path,
-        out.join(format!("{}", blob_file)),
-    )
-    .expect("Failed to copy binary blob for Flash API");
+    fs::copy(&blob_path, out.join(format!("{}", blob_file)))
+        .expect("Failed to copy binary blob for Flash API");
 
     println!("cargo:rustc-link-lib=static={}", blob_name);
     println!("cargo:rustc-link-search={}", out.display());
