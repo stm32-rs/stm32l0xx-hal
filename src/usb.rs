@@ -25,14 +25,7 @@ pub use stm32_usbd::UsbBus;
 pub struct USB(());
 
 impl USB {
-    pub fn new(
-        _: pac::USB,
-        _dm: PA11<Analog>,
-        _dp: PA12<Analog>,
-        _: HSI48
-    )
-        -> Self
-    {
+    pub fn new(_: pac::USB, _dm: PA11<Analog>, _dp: PA12<Analog>, _: HSI48) -> Self {
         Self(())
     }
 }
