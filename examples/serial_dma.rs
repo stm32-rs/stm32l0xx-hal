@@ -1,40 +1,27 @@
 #![no_main]
 #![no_std]
 
-
 extern crate panic_halt;
-
 
 use core::pin::Pin;
 
-use cortex_m::{
-    asm,
-    interrupt,
-    peripheral::NVIC
-};
+use cortex_m::{asm, interrupt, peripheral::NVIC};
 use cortex_m_rt::entry;
 use stm32l0xx_hal::{
+    dma::{self, DMA},
+    pac::{self, Interrupt},
     prelude::*,
-    dma::{
-        self,
-        DMA,
-    },
-    pac::{
-        self,
-        Interrupt,
-    },
     rcc::Config,
     serial,
 };
 
-
 #[entry]
 fn main() -> ! {
-    let     dp = pac::Peripherals::take().unwrap();
+    let dp = pac::Peripherals::take().unwrap();
 
-    let mut rcc   = dp.RCC.freeze(Config::hsi16());
-    let mut dma   = DMA::new(dp.DMA1, &mut rcc);
-    let     gpioa = dp.GPIOA.split(&mut rcc);
+    let mut rcc = dp.RCC.freeze(Config::hsi16());
+    let mut dma = DMA::new(dp.DMA1, &mut rcc);
+    let gpioa = dp.GPIOA.split(&mut rcc);
 
     let mut tx_channel = dma.channels.channel4;
     let mut rx_channel = dma.channels.channel5;
@@ -58,20 +45,18 @@ fn main() -> ! {
 
     loop {
         // Prepare read transfer
-        let mut transfer = rx.read_all(
-            &mut dma.handle,
-            buffer,
-            rx_channel,
-        );
+        let mut transfer = rx.read_all(&mut dma.handle, buffer, rx_channel);
 
         // Start DMA transfer and wait for it to finish
         let res = interrupt::free(|_| {
-            unsafe { NVIC::unmask(Interrupt::DMA1_CHANNEL4_7); }
+            unsafe {
+                NVIC::unmask(Interrupt::DMA1_CHANNEL4_7);
+            }
 
             transfer.enable_interrupts(dma::Interrupts {
-                transfer_error:    true,
+                transfer_error: true,
                 transfer_complete: true,
-                .. dma::Interrupts::default()
+                ..dma::Interrupts::default()
             });
 
             let transfer = transfer.start();
@@ -85,25 +70,23 @@ fn main() -> ! {
 
         // Re-assign reception resources to their variables, so they're
         // available again in the next loop iteration.
-        rx         = res.target;
+        rx = res.target;
         rx_channel = res.channel;
-        buffer     = res.buffer;
+        buffer = res.buffer;
 
         // Prepare write transfer
-        let mut transfer = tx.write_all(
-            &mut dma.handle,
-            buffer,
-            tx_channel,
-        );
+        let mut transfer = tx.write_all(&mut dma.handle, buffer, tx_channel);
 
         // Start DMA transfer and wait for it to finish
         let res = interrupt::free(|_| {
-            unsafe { NVIC::unmask(Interrupt::DMA1_CHANNEL4_7); }
+            unsafe {
+                NVIC::unmask(Interrupt::DMA1_CHANNEL4_7);
+            }
 
             transfer.enable_interrupts(dma::Interrupts {
-                transfer_error:    true,
+                transfer_error: true,
                 transfer_complete: true,
-                .. dma::Interrupts::default()
+                ..dma::Interrupts::default()
             });
 
             let transfer = transfer.start();
@@ -117,8 +100,8 @@ fn main() -> ! {
 
         // Re-assign transmission resources to their variables, so they're
         // available again in the next loop iteration.
-        tx         = res.target;
+        tx = res.target;
         tx_channel = res.channel;
-        buffer     = res.buffer;
+        buffer = res.buffer;
     }
 }

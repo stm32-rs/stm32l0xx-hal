@@ -9,7 +9,7 @@ use heapless::consts::*;
 use heapless::spsc::Queue;
 use stm32l0xx_hal::{
     dma::{self, DMA},
-    pac::self,
+    pac,
     prelude::*,
     rcc::Config,
     serial,
@@ -89,13 +89,13 @@ fn main() -> ! {
                 }
             }
             RxState::RECEIVING(transfer) => {
-                if !transfer.is_active(){
+                if !transfer.is_active() {
                     let res = transfer.wait().unwrap();
                     // pass the buffer to the tx queue
                     tx_buffers.enqueue(res.buffer).unwrap();
                     // set back ready state
                     RxState::READY(res.target, res.channel)
-                    // next loop will setup next receive DMA
+                // next loop will setup next receive DMA
                 } else {
                     RxState::RECEIVING(transfer)
                 }
@@ -119,18 +119,17 @@ fn main() -> ! {
                 }
             }
             TxState::TRANSMITTING(transfer) => {
-                if !transfer.is_active(){
+                if !transfer.is_active() {
                     let res = transfer.wait().unwrap();
                     // give the buffer back to the rx_buffer queue
                     rx_buffers.enqueue(res.buffer).unwrap();
                     // set self back to ready state
                     TxState::READY(res.target, res.channel)
-                    // next loop around will check for another buffer
+                // next loop around will check for another buffer
                 } else {
                     TxState::TRANSMITTING(transfer)
                 }
             }
         };
     }
-
 }

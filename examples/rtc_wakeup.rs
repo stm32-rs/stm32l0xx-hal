@@ -5,7 +5,7 @@ extern crate panic_halt;
 
 use cortex_m_rt::entry;
 use stm32l0xx_hal::{
-    exti::{Exti, ConfigurableLine, TriggerEdge},
+    exti::{ConfigurableLine, Exti, TriggerEdge},
     pac,
     prelude::*,
     pwr::PWR,
@@ -28,7 +28,7 @@ fn main() -> ! {
     // Enable LED to signal that MCU is running
     led.set_high().unwrap();
 
-    let mut scb  = cp.SCB;
+    let mut scb = cp.SCB;
     let mut exti = Exti::new(dp.EXTI);
     let mut pwr = PWR::new(dp.PWR, &mut rcc);
 
@@ -48,19 +48,13 @@ fn main() -> ! {
         wakeup_timer: true,
         ..rtc::Interrupts::default()
     });
-    exti.listen_configurable(
-        exti_line,
-        TriggerEdge::Rising,
-    );
+    exti.listen_configurable(exti_line, TriggerEdge::Rising);
 
     while button.is_low().unwrap() {}
 
     rtc.wakeup_timer().start(1u32);
 
-    exti.wait_for_irq(
-        exti_line,
-        pwr.standby_mode(&mut scb),
-    );
+    exti.wait_for_irq(exti_line, pwr.standby_mode(&mut scb));
 
     // Waking up from Standby mode resets the microcontroller, so we should
     // never reach this point.

@@ -5,7 +5,7 @@
 extern crate panic_semihosting;
 
 use cortex_m_rt::entry;
-use stm32l0xx_hal::usb::{USB, UsbBus};
+use stm32l0xx_hal::usb::{UsbBus, USB};
 use stm32l0xx_hal::{pac, prelude::*, rcc, syscfg::SYSCFG};
 use usb_device::prelude::*;
 use usbd_serial::{SerialPort, USB_CLASS_CDC};

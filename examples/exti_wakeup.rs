@@ -5,7 +5,8 @@ extern crate panic_halt;
 
 use cortex_m_rt::entry;
 use stm32l0xx_hal::{
-    exti::{Exti, TriggerEdge, GpioLine, ExtiLine}, pac,
+    exti::{Exti, ExtiLine, GpioLine, TriggerEdge},
+    pac,
     prelude::*,
     pwr::{self, PWR},
     rcc::Config,
@@ -22,7 +23,7 @@ fn main() -> ! {
     let mut exti = Exti::new(dp.EXTI);
     let mut pwr = PWR::new(dp.PWR, &mut rcc);
     let mut delay = cp.SYST.delay(rcc.clocks);
-    let mut scb   = cp.SCB;
+    let mut scb = cp.SCB;
 
     // Those are the user button and blue LED on the B-L072Z-LRWAN1 Discovery
     // board.
@@ -33,12 +34,7 @@ fn main() -> ! {
 
     let line = GpioLine::from_raw_line(button.pin_number()).unwrap();
 
-    exti.listen_gpio(
-        &mut syscfg,
-        button.port(),
-        line,
-        TriggerEdge::Falling,
-    );
+    exti.listen_gpio(&mut syscfg, button.port(), line, TriggerEdge::Falling);
 
     loop {
         exti.wait_for_irq(

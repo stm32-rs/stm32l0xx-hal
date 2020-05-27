@@ -11,7 +11,7 @@ use cortex_m::interrupt::Mutex;
 use cortex_m::peripheral::NVIC;
 use cortex_m_rt::entry;
 use stm32l0xx_hal::{
-    exti::{TriggerEdge, GpioLine, ExtiLine, Exti},
+    exti::{Exti, ExtiLine, GpioLine, TriggerEdge},
     gpio::*,
     pac::{self, interrupt, Interrupt},
     prelude::*,
@@ -52,7 +52,9 @@ fn main() -> ! {
     });
 
     // Enable the external interrupt in the NVIC.
-    unsafe { NVIC::unmask(Interrupt::EXTI2_3); }
+    unsafe {
+        NVIC::unmask(Interrupt::EXTI2_3);
+    }
 
     loop {
         asm::wfi();

@@ -1,37 +1,24 @@
 //! Example showing continuous ADC
 
-
 #![no_main]
 #![no_std]
 
-
 extern crate panic_halt;
 
-
-use core::{
-    fmt::Write as _,
-    pin::Pin,
-};
+use core::{fmt::Write as _, pin::Pin};
 
 use cortex_m_rt::entry;
 // use nb::block;
-use stm32l0xx_hal::{
-    prelude::*,
-    dma::DMA,
-    pac,
-    rcc,
-    serial,
-};
-
+use stm32l0xx_hal::{dma::DMA, pac, prelude::*, rcc, serial};
 
 #[entry]
 fn main() -> ! {
     let dp = pac::Peripherals::take().unwrap();
 
-    let mut rcc   = dp.RCC.freeze(rcc::Config::hsi16());
-    let     adc   = dp.ADC.constrain(&mut rcc);
-    let mut dma   = DMA::new(dp.DMA1, &mut rcc);
-    let     gpioa = dp.GPIOA.split(&mut rcc);
+    let mut rcc = dp.RCC.freeze(rcc::Config::hsi16());
+    let adc = dp.ADC.constrain(&mut rcc);
+    let mut dma = DMA::new(dp.DMA1, &mut rcc);
+    let gpioa = dp.GPIOA.split(&mut rcc);
 
     // The A0 connector on the B-L072Z-LRWAN1 Discovery kit
     let a0 = gpioa.pa0.into_analog();
@@ -41,11 +28,12 @@ fn main() -> ! {
     let rx = gpioa.pa3;
 
     // Initialize USART for test output
-    let (mut tx, _) = dp.USART2
+    let (mut tx, _) = dp
+        .USART2
         .usart(
-            tx, rx,
-            serial::Config::default()
-                .baudrate(115_200.bps()),
+            tx,
+            rx,
+            serial::Config::default().baudrate(115_200.bps()),
             &mut rcc,
         )
         .unwrap()
@@ -59,19 +47,11 @@ fn main() -> ! {
     let buffer = Pin::new(unsafe { &mut BUFFER });
 
     // Start reading ADC values
-    let mut adc = adc.start(
-        a0,
-        None,
-        &mut dma.handle,
-        dma.channels.channel1,
-        buffer,
-    );
+    let mut adc = adc.start(a0, None, &mut dma.handle, dma.channels.channel1, buffer);
 
     loop {
         let read_available = match adc.read_available() {
-            Ok(read_available) => {
-                read_available
-            }
+            Ok(read_available) => read_available,
             Err(err) => {
                 write!(tx, "Error reading available values: {:?}\r\n", err).unwrap();
                 continue;
