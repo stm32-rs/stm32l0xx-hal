@@ -14,13 +14,17 @@ use stm32l0xx_hal::{
     syscfg::SYSCFG,
 };
 
-#[app(device = stm32l0xx_hal::pac)]
+#[app(device = stm32l0xx_hal::pac, peripherals = true)]
 const APP: () = {
-    static mut LED: gpiob::PB6<Output<PushPull>> = ();
-    static mut INT: Exti = ();
+    struct Resources {
+        led: gpiob::PB<Output<PushPull>>,
+        int: Exti,
+    }
 
     #[init]
-    fn init() -> init::LateResources {
+    fn init(ctx: init::Context) -> init::LateResources {
+        let device = ctx.device;
+
         // Configure the clock.
         let mut rcc = device.RCC.freeze(Config::hsi16());
 
@@ -29,7 +33,7 @@ const APP: () = {
         let gpiob = device.GPIOB.split(&mut rcc);
 
         // Configure PB6 as output.
-        let led = gpiob.pb6.into_push_pull_output();
+        let led = gpiob.pb6.into_push_pull_output().downgrade();
 
         // Configure PB2 as input.
         let button = gpiob.pb2.into_pull_up_input();
@@ -43,13 +47,13 @@ const APP: () = {
 
         // Return the initialised resources.
         init::LateResources {
-            LED: led,
-            INT: exti,
+            led,
+            int: exti,
         }
     }
 
-    #[interrupt(resources = [LED, INT])]
-    fn EXTI0_1() {
+    #[task(binds = EXTI0_1, resources = [led])]
+    fn EXTI0_1(ctx: EXTI0_1::Context) {
         static mut STATE: bool = false;
 
         // Clear the interrupt flag.
@@ -57,10 +61,10 @@ const APP: () = {
 
         // Change the LED state on each interrupt.
         if *STATE {
-            resources.LED.set_low().unwrap();
+            ctx.resources.led.set_low().unwrap();
             *STATE = false;
         } else {
-            resources.LED.set_high().unwrap();
+            ctx.resources.led.set_high().unwrap();
             *STATE = true;
         }
     }
