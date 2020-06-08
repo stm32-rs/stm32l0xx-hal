@@ -220,7 +220,6 @@ timers! {
         tim22::cr2::MMS_A),
 }
 
-
 pub trait GeneralPurposeTimer {
     type MasterMode;
 

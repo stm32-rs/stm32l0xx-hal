@@ -2,24 +2,19 @@
 //!
 //! See STM32L0x2 reference manual, chapter 26.
 
-
 use void::Void;
 
 use crate::{
-    hal::timer::{
-        self,
-        Cancel as _,
-    },
+    hal::timer::{self, Cancel as _},
     pac,
     pwr::PWR,
     rcc::Rcc,
     time::U32Ext,
 };
 
-
 /// Entry point to the RTC API
 pub struct RTC {
-    rtc:        pac::RTC,
+    rtc: pac::RTC,
     read_twice: bool,
 }
 
@@ -35,14 +30,7 @@ impl RTC {
     /// Panics, if the ABP1 clock frequency is lower than the RTC clock
     /// frequency. The RTC is currently hardcoded to use the LSE as clock source
     /// which runs at 32768 Hz.
-    pub fn new(
-        rtc:  pac::RTC,
-        rcc:  &mut Rcc,
-        _:    &PWR,
-        init: Instant,
-    )
-        -> Self
-    {
+    pub fn new(rtc: pac::RTC, rcc: &mut Rcc, _: &PWR, init: Instant) -> Self {
         // Backup write protection must be disabled by setting th DBP bit in
         // PWR_CR, otherwise it's not possible to access the RTC registers. We
         // assume that this was done during PWR initialization. To make sure it
@@ -61,26 +49,23 @@ impl RTC {
             // Select LSE as RTC clock source.
             // This is safe, as we're writing a valid bit pattern.
             w.rtcsel().bits(0b01);
-
-            w
-                // Enable RTC clock
-                .rtcen().set_bit()
-                // Enable LSE clock
-                .lseon().set_bit()
+            // Enable RTC clock
+            w.rtcen().set_bit();
+            // Enable LSE clock
+            w.lseon().set_bit()
         });
 
         // Wait for LSE to be ready
         while rcc.rb.csr.read().lserdy().bit_is_clear() {}
 
         let apb1_clk = rcc.clocks.apb1_clk();
-        let rtc_clk  = 32_768u32.hz(); // LSE crystal frequency
+        let rtc_clk = 32_768u32.hz(); // LSE crystal frequency
 
         // The APB1 clock must not be slower than the RTC clock.
         if apb1_clk < rtc_clk {
             panic!(
                 "APB1 clock ({}) is slower than RTC clock ({})",
-                apb1_clk,
-                rtc_clk,
+                apb1_clk, rtc_clk,
             );
         }
 
@@ -88,10 +73,7 @@ impl RTC {
         // frequency, special care must be taken when reading some registers.
         let read_twice = apb1_clk.0 < 7 * rtc_clk.0;
 
-        let mut rtc = RTC {
-            rtc,
-            read_twice,
-        };
+        let mut rtc = RTC { rtc, read_twice };
 
         if rtc.rtc.isr.read().inits().bit_is_clear() {
             // RTC not yet initialized. Do that now.
@@ -133,11 +115,9 @@ impl RTC {
             rtc.prer.write(|w|
                 // Safe, because we're only writing valid values to the fields.
                 unsafe {
-                    w
-                        .prediv_a().bits(0x7f)
-                        .prediv_s().bits(0xff)
-                }
-            );
+                    w.prediv_a().bits(0x7f);
+                    w.prediv_s().bits(0xff)
+                });
 
             // Write time
             rtc.tr.write(|w|
@@ -156,8 +136,7 @@ impl RTC {
                     // Second tens
                     .st().bits(instant.second / 10)
                     // Second units
-                    .su().bits(instant.second % 10)
-            );
+                    .su().bits(instant.second % 10));
 
             // Write date
             rtc.dr.write(|w|
@@ -174,8 +153,7 @@ impl RTC {
                     // Date tens
                     .dt().bits(instant.day / 10)
                     // Date units
-                    .du().bits(instant.day % 10)
-            );
+                    .du().bits(instant.day % 10));
 
             // Exit initialization
             rtc.isr.modify(|_, w| w.init().clear_bit());
@@ -210,8 +188,7 @@ impl RTC {
 
                 if tr.bits() == tr2.bits() && dr.bits() == dr2.bits() {
                     break;
-                }
-                else {
+                } else {
                     tr = tr2;
                     dr = dr2;
                 }
@@ -224,13 +201,13 @@ impl RTC {
         });
 
         Instant {
-            year:  dr.yt().bits()      * 10 + dr.yu().bits(),
+            year: dr.yt().bits() * 10 + dr.yu().bits(),
             month: dr.mt().bit() as u8 * 10 + dr.mu().bits(),
-            day:   dr.dt().bits()      * 10 + dr.du().bits(),
+            day: dr.dt().bits() * 10 + dr.du().bits(),
 
-            hour:    tr.ht().bits() * 10 +  tr.hu().bits(),
+            hour: tr.ht().bits() * 10 + tr.hu().bits(),
             minute: tr.mnt().bits() * 10 + tr.mnu().bits(),
-            second:  tr.st().bits() * 10 +  tr.su().bits(),
+            second: tr.st().bits() * 10 + tr.su().bits(),
         }
     }
 
@@ -241,10 +218,18 @@ impl RTC {
     pub fn enable_interrupts(&mut self, interrupts: Interrupts) {
         self.write(|rtc| {
             rtc.cr.modify(|_, w| {
-                if interrupts.timestamp { w.tsie().set_bit(); }
-                if interrupts.wakeup_timer { w.wutie().set_bit(); }
-                if interrupts.alarm_b { w.alrbie().set_bit(); }
-                if interrupts.alarm_a { w.alraie().set_bit(); }
+                if interrupts.timestamp {
+                    w.tsie().set_bit();
+                }
+                if interrupts.wakeup_timer {
+                    w.wutie().set_bit();
+                }
+                if interrupts.alarm_b {
+                    w.alrbie().set_bit();
+                }
+                if interrupts.alarm_a {
+                    w.alraie().set_bit();
+                }
                 w
             });
         })
@@ -257,10 +242,18 @@ impl RTC {
     pub fn disable_interrupts(&mut self, interrupts: Interrupts) {
         self.write(|rtc| {
             rtc.cr.modify(|_, w| {
-                if interrupts.timestamp { w.tsie().clear_bit(); }
-                if interrupts.wakeup_timer { w.wutie().clear_bit(); }
-                if interrupts.alarm_b { w.alrbie().clear_bit(); }
-                if interrupts.alarm_a { w.alraie().clear_bit(); }
+                if interrupts.timestamp {
+                    w.tsie().clear_bit();
+                }
+                if interrupts.wakeup_timer {
+                    w.wutie().clear_bit();
+                }
+                if interrupts.alarm_b {
+                    w.alrbie().clear_bit();
+                }
+                if interrupts.alarm_a {
+                    w.alraie().clear_bit();
+                }
                 w
             });
         })
@@ -268,13 +261,12 @@ impl RTC {
 
     /// Access the wakeup timer
     pub fn wakeup_timer(&mut self) -> WakeupTimer {
-        WakeupTimer {
-            rtc: self,
-        }
+        WakeupTimer { rtc: self }
     }
 
     fn write<F, R>(&mut self, f: F) -> R
-        where F: FnOnce(&pac::RTC) -> R
+    where
+        F: FnOnce(&pac::RTC) -> R,
     {
         // Disable write protection.
         // This is safe, as we're only writin the correct and expected values.
@@ -291,18 +283,17 @@ impl RTC {
     }
 }
 
-
 /// An instant in time
 ///
 /// You can create an instance of this struct using [`Instant::new`] or
 /// [`RTC::now`].
 #[derive(Clone, Copy, Debug)]
 pub struct Instant {
-    year:  u8,
+    year: u8,
     month: u8,
-    day:   u8,
+    day: u8,
 
-    hour:   u8,
+    hour: u8,
     minute: u8,
     second: u8,
 }
@@ -321,11 +312,11 @@ impl Instant {
     /// possible to create an `Instant` set to  February 31, for example.
     pub fn new() -> Self {
         Instant {
-            year:  1,
+            year: 1,
             month: 1,
-            day:   1,
+            day: 1,
 
-            hour:   0,
+            hour: 0,
             minute: 0,
             second: 0,
         }
@@ -422,25 +413,23 @@ impl Instant {
     }
 }
 
-
 pub struct Interrupts {
-    pub timestamp:    bool,
+    pub timestamp: bool,
     pub wakeup_timer: bool,
-    pub alarm_a:      bool,
-    pub alarm_b:      bool,
+    pub alarm_a: bool,
+    pub alarm_b: bool,
 }
 
 impl Default for Interrupts {
     fn default() -> Self {
         Self {
-            timestamp:    false,
+            timestamp: false,
             wakeup_timer: false,
-            alarm_a:      false,
-            alarm_b:      false,
+            alarm_a: false,
+            alarm_b: false,
         }
     }
 }
-
 
 /// The RTC wakeup timer
 ///
@@ -474,10 +463,11 @@ impl timer::CountDown for WakeupTimer<'_> {
     /// The `delay` argument must be in the range `1 <= delay <= 2^17`.
     /// Panics, if `delay` is outside of that range.
     fn start<T>(&mut self, delay: T)
-        where T: Into<Self::Time>
+    where
+        T: Into<Self::Time>,
     {
         let delay = delay.into();
-        assert!(1 <= delay && delay <= 2^17);
+        assert!(1 <= delay && delay <= 2 ^ 17);
 
         let delay = delay - 1;
 
@@ -490,15 +480,17 @@ impl timer::CountDown for WakeupTimer<'_> {
                 // Write the lower 16 bits of `delay`. The 17th bit is taken
                 // care of via WUCKSEL in CR (see below).
                 // This is safe, as the field accepts a full 16 bit value.
-                w.wut().bits(delay as u16)
-            );
+                w.wut().bits(delay as u16));
             // This is safe, as we're only writing valid bit patterns.
             rtc.cr.modify(|_, w| {
                 if delay & 0x1_00_00 != 0 {
-                    unsafe { w.wucksel().bits(0b110); }
-                }
-                else {
-                    unsafe { w.wucksel().bits(0b100); }
+                    unsafe {
+                        w.wucksel().bits(0b110);
+                    }
+                } else {
+                    unsafe {
+                        w.wucksel().bits(0b100);
+                    }
                 }
 
                 // Enable wakeup timer

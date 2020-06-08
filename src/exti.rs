@@ -2,10 +2,10 @@
 //!
 //! For convenience, this module reexports the EXTI peripheral from the PAC.
 
-use crate::{gpio, pac};
+use crate::pac::EXTI;
 use crate::pwr::PowerMode;
 use crate::syscfg::SYSCFG;
-use crate::pac::EXTI;
+use crate::{gpio, pac};
 use cortex_m::{interrupt, peripheral::NVIC};
 
 /// Edges that can trigger a configurable interrupt line.
@@ -224,7 +224,9 @@ impl Exti {
     /// Please note that this method will return after _any_ interrupt that can
     /// wake up the microcontroller from the given power mode.
     pub fn wait_for_irq<L, M>(&mut self, line: L, mut power_mode: M)
-        where L: ExtiLine, M: PowerMode,
+    where
+        L: ExtiLine,
+        M: PowerMode,
     {
         let interrupt = line.interrupt();
 
@@ -233,7 +235,9 @@ impl Exti {
         interrupt::free(|_| {
             // Safety: Interrupts are globally disabled, and we re-mask and unpend the interrupt
             // before reenabling interrupts and returning.
-            unsafe { NVIC::unmask(interrupt); }
+            unsafe {
+                NVIC::unmask(interrupt);
+            }
 
             power_mode.enter();
 

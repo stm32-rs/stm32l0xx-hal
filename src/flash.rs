@@ -2,17 +2,12 @@
 //!
 //! See STM32L0x2 reference manual, chapter 3.
 
-
 use cortex_m::interrupt;
 
 use crate::{
-    pac::{
-        self,
-        flash::acr::LATENCY_A,
-    },
+    pac::{self, flash::acr::LATENCY_A},
     rcc::Rcc,
 };
-
 
 /// The first address of flash memory
 pub const FLASH_START: u32 = 0x0800_0000;
@@ -20,13 +15,12 @@ pub const FLASH_START: u32 = 0x0800_0000;
 /// The size of a Flash memory page, in bytes
 pub const PAGE_SIZE: u32 = 128;
 
-
 /// Entry point to the non-volatile memory (NVM) API
 pub struct FLASH {
-    flash:        pac::FLASH,
-    flash_end:    u32,
+    flash: pac::FLASH,
+    flash_end: u32,
     eeprom_start: u32,
-    eeprom_end:   u32,
+    eeprom_end: u32,
 }
 
 impl FLASH {
@@ -40,24 +34,21 @@ impl FLASH {
         // This is safe, as we're reading from a valid address (as per the
         // reference manual) which is aligned to 16 bits.
         let flash_size_in_kb = flash_size_in_kb();
-        let flash_end        = FLASH_START + flash_size_in_kb * 1024;
+        let flash_end = FLASH_START + flash_size_in_kb * 1024;
 
         // As of this writing, this module is only enabled for STM32L0x2.
         // According to the STM32L0x2 reference manual, section 1.4, the
         // following should determine whether this is a Category 5 device.
         // Please make sure to adapt this when porting this module to other
         // targets.
-        let is_category_5 = cfg!(
-            any(feature = "stm32l072", feature = "stm32l082")
-        );
+        let is_category_5 = cfg!(any(feature = "stm32l072", feature = "stm32l082"));
 
         // Determine the start of the EEPROM, according to the tables in the
         // STM32L0x2 reference manual, section 3.3.1.
         let eeprom_start = if is_category_5 && flash_size_in_kb == 64 {
             // See table 10.
             0x0808_0C00
-        }
-        else {
+        } else {
             0x0808_0000
         };
 
@@ -66,8 +57,7 @@ impl FLASH {
         // first byte after it.
         let eeprom_end = if is_category_5 {
             0x0808_1800
-        }
-        else {
+        } else {
             0x0808_0800
         };
 
@@ -95,7 +85,9 @@ impl FLASH {
     /// This is explained, for example, in the STM32L0x2 Reference Manual,
     /// section 3.3.3.
     pub fn set_wait_states(&mut self, wait_states: LATENCY_A) {
-        self.flash.acr.modify(|_, w| w.latency().variant(wait_states));
+        self.flash
+            .acr
+            .modify(|_, w| w.latency().variant(wait_states));
     }
 
     /// Erases a page of flash memory
@@ -186,9 +178,7 @@ impl FLASH {
     /// - `address` points to Flash memory
     /// - `address` is aligned to a half-page boundary (16 words, 64 bytes)
     /// - `words` has a length of 16
-    pub fn write_flash_half_page(&mut self, address: *mut u32, words: &[u32])
-        -> Result
-    {
+    pub fn write_flash_half_page(&mut self, address: *mut u32, words: &[u32]) -> Result {
         self.unlock(|self_| {
             let memory = self_.verify_address(address);
 
@@ -222,7 +212,9 @@ impl FLASH {
             interrupt::free(|_| {
                 // Safe, because we've verified the valididty of `address` and
                 // the length of `words`.
-                unsafe { write_half_page(address, words.as_ptr()); }
+                unsafe {
+                    write_half_page(address, words.as_ptr());
+                }
             });
 
             // Wait for operation to complete
@@ -249,18 +241,15 @@ impl FLASH {
         self.flash.pecr.reset();
 
         result
-    }  
+    }
 
     fn verify_address(&self, address: *mut u32) -> Memory {
         let address = address as u32;
 
         let memory = match address {
-            _ if FLASH_START <= address && address < self.flash_end =>
-                Memory::Flash,
-            _ if self.eeprom_start <= address && address < self.eeprom_end =>
-                Memory::Eeprom,
-            _ =>
-                Memory::Other,
+            _ if FLASH_START <= address && address < self.flash_end => Memory::Flash,
+            _ if self.eeprom_start <= address && address < self.eeprom_end => Memory::Eeprom,
+            _ => Memory::Other,
         };
 
         if memory.is_other() {
@@ -320,7 +309,6 @@ impl FLASH {
     }
 }
 
-
 pub fn flash_size_in_kb() -> u32 {
     // Determine size of the flash memory. According to the STM32L0x2 reference
     // manual, section 33.1, there's a register that we can get that information
@@ -329,13 +317,10 @@ pub fn flash_size_in_kb() -> u32 {
     //
     // This is safe, as we're reading from a valid address (as per the
     // reference manual) which is aligned to 16 bits.
-    unsafe {
-        (0x1FF8_007C as *const u16).read() as u32
-    }
+    unsafe { (0x1FF8_007C as *const u16).read() as u32 }
 }
 
-
-extern {
+extern "C" {
     /// Writes a half-page at the given address
     ///
     /// Unfortunately this function had to be implemented in C. No access to
@@ -355,7 +340,6 @@ extern {
     /// we could use a Rust function with inline assembly).
     fn write_half_page(address: *mut u32, words: *const u32);
 }
-
 
 #[derive(Copy, Clone, Eq, PartialEq)]
 enum Memory {
@@ -379,7 +363,6 @@ impl Memory {
         *self == Memory::Other
     }
 }
-
 
 type Result = core::result::Result<(), Error>;
 

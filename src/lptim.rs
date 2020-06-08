@@ -2,12 +2,12 @@
 
 use crate::hal;
 use crate::pac::LPTIM;
-use crate::rcc::Rcc;
 use crate::pwr::PWR;
+use crate::rcc::Rcc;
 use crate::time::{Hertz, MicroSeconds};
 use cast::{u32, u64};
-use core::marker::PhantomData;
 use core::convert::TryFrom;
+use core::marker::PhantomData;
 use void::Void;
 
 mod sealed {
@@ -113,7 +113,7 @@ impl<M: CountMode> LpTimer<M> {
 
         // Enable selected clock and determine its frequency
         let input_freq = match clk {
-            ClockSrc::Apb1 => rcc.clocks.apb1_clk(),    // always enabled
+            ClockSrc::Apb1 => rcc.clocks.apb1_clk(), // always enabled
             ClockSrc::Lsi => {
                 // Turn on LSI
                 rcc.rb.csr.modify(|_, w| w.lsion().set_bit());
@@ -177,9 +177,7 @@ impl<M: CountMode> LpTimer<M> {
         cortex_m::asm::delay(5000);
 
         // ARR can only be changed while the timer is *en*abled
-        self.lptim
-            .arr
-            .write(|w| w.arr().bits(conf.arr));
+        self.lptim.arr.write(|w| w.arr().bits(conf.arr));
     }
 
     /// Disables and destructs the timer, returning the raw `LPTIM` peripheral.
@@ -193,13 +191,27 @@ impl<M: CountMode> LpTimer<M> {
         // IER can only be modified when the timer is disabled
         self.lptim.cr.reset();
         self.lptim.ier.modify(|_, w| {
-            if interrupts.enc_dir_down { w.downie().enabled(); }
-            if interrupts.enc_dir_up { w.upie().enabled(); }
-            if interrupts.autoreload_update_ok { w.arrokie().enabled(); }
-            if interrupts.compare_update_ok { w.cmpokie().enabled(); }
-            if interrupts.ext_trig { w.exttrigie().enabled(); }
-            if interrupts.autoreload_match { w.arrmie().enabled(); }
-            if interrupts.compare_match { w.cmpmie().enabled(); }
+            if interrupts.enc_dir_down {
+                w.downie().enabled();
+            }
+            if interrupts.enc_dir_up {
+                w.upie().enabled();
+            }
+            if interrupts.autoreload_update_ok {
+                w.arrokie().enabled();
+            }
+            if interrupts.compare_update_ok {
+                w.cmpokie().enabled();
+            }
+            if interrupts.ext_trig {
+                w.exttrigie().enabled();
+            }
+            if interrupts.autoreload_match {
+                w.arrmie().enabled();
+            }
+            if interrupts.compare_match {
+                w.cmpmie().enabled();
+            }
             w
         })
     }
@@ -209,13 +221,27 @@ impl<M: CountMode> LpTimer<M> {
         // IER can only be modified when the timer is disabled
         self.lptim.cr.reset();
         self.lptim.ier.modify(|_, w| {
-            if interrupts.enc_dir_down { w.downie().disabled(); }
-            if interrupts.enc_dir_up { w.upie().disabled(); }
-            if interrupts.autoreload_update_ok { w.arrokie().disabled(); }
-            if interrupts.compare_update_ok { w.cmpokie().disabled(); }
-            if interrupts.ext_trig { w.exttrigie().disabled(); }
-            if interrupts.autoreload_match { w.arrmie().disabled(); }
-            if interrupts.compare_match { w.cmpmie().disabled(); }
+            if interrupts.enc_dir_down {
+                w.downie().disabled();
+            }
+            if interrupts.enc_dir_up {
+                w.upie().disabled();
+            }
+            if interrupts.autoreload_update_ok {
+                w.arrokie().disabled();
+            }
+            if interrupts.compare_update_ok {
+                w.cmpokie().disabled();
+            }
+            if interrupts.ext_trig {
+                w.exttrigie().disabled();
+            }
+            if interrupts.autoreload_match {
+                w.arrmie().disabled();
+            }
+            if interrupts.compare_match {
+                w.cmpmie().disabled();
+            }
             w
         })
     }
@@ -305,7 +331,7 @@ impl TimeConf {
 
         // Add `ARR_MAX - 1` to round the result upwards
         let psc = ((input_freq.0 / output_freq.0) + (u32(Self::ARR_MAX) - 1)) / u32(Self::ARR_MAX);
-        let psc = psc.next_power_of_two();  // always >= 1
+        let psc = psc.next_power_of_two(); // always >= 1
         assert!(psc <= 128);
 
         // This calculation must be in u16 range because we assume the max. ARR value above ^
@@ -314,10 +340,7 @@ impl TimeConf {
         // PSC encoding is N where `psc = 2^N`
         let psc_encoded = psc.trailing_zeros() as u8;
 
-        Self {
-            psc_encoded,
-            arr,
-        }
+        Self { psc_encoded, arr }
     }
 
     /// Calculates prescaler and autoreload value for producing overflows after every
@@ -354,8 +377,8 @@ impl TimeConf {
         let fi_po = u32(u64(input_freq.0) * u64(output_period.0) / 1_000_000).unwrap();
         // Add `ARR_MAX - 1` to round the result upwards
         let psc = (fi_po + (u32(Self::ARR_MAX) - 1)) / u32(Self::ARR_MAX);
-        assert!(psc > 0);  // if 0, the output period is too short to be produced from input_freq
-        let psc = psc.next_power_of_two();  // always >= 1
+        assert!(psc > 0); // if 0, the output period is too short to be produced from input_freq
+        let psc = psc.next_power_of_two(); // always >= 1
         assert!(psc <= 128); // if > 128, the output period is too long to be produced from input_freq
 
         // This calculation must be in u16 range because we assume the max. ARR value above ^
@@ -364,10 +387,7 @@ impl TimeConf {
         // PSC encoding is N where `psc = 2^N`
         let psc_encoded = psc.trailing_zeros() as u8;
 
-        Self {
-            psc_encoded,
-            arr,
-        }
+        Self { psc_encoded, arr }
     }
 }
 
@@ -389,7 +409,9 @@ mod tests {
         }
 
         fn output_period(&self, input_freq: Hertz) -> MicroSeconds {
-            MicroSeconds(u32(u64(self.psc()) * u64(self.arr) * 1_000_000 / u64(input_freq.0)).unwrap())
+            MicroSeconds(
+                u32(u64(self.psc()) * u64(self.arr) * 1_000_000 / u64(input_freq.0)).unwrap(),
+            )
         }
     }
 

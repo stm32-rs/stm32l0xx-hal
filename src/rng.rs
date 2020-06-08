@@ -1,10 +1,9 @@
-use crate::rcc::{HSI48, Rcc};
+use crate::rcc::{Rcc, HSI48};
 
 pub use crate::pac::{rng, RNG};
 
-
 pub struct Rng {
-    rng: RNG
+    rng: RNG,
 }
 
 impl Rng {
@@ -17,15 +16,9 @@ impl Rng {
         // Enable peripheral clock
         rcc.rb.ahbenr.modify(|_, w| w.rngen().set_bit());
 
-        rng.cr.write(|w| 
-            w
-                .rngen().set_bit()
-                .ie().clear_bit()
-        );
+        rng.cr.write(|w| w.rngen().set_bit().ie().clear_bit());
 
-        let mut ret = Self {
-            rng
-        };
+        let mut ret = Self { rng };
 
         ret.enable();
 
@@ -33,19 +26,13 @@ impl Rng {
     }
 
     pub fn enable(&mut self) {
-        self.rng.cr.write(|w| 
-            w
-                .rngen().set_bit()
-                .ie().clear_bit()
-        );
+        self.rng.cr.write(|w| w.rngen().set_bit().ie().clear_bit());
     }
 
     pub fn disable(&mut self) {
-        self.rng.cr.modify(|_, w| 
-            w
-                .rngen().clear_bit()
-                .ie().clear_bit()
-        );
+        self.rng
+            .cr
+            .modify(|_, w| w.rngen().clear_bit().ie().clear_bit());
     }
 
     pub fn wait(&mut self) {

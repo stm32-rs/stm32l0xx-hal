@@ -1,24 +1,17 @@
 //! Encryption/decryption using the AES peripheral
 
-
 #![no_main]
 #![no_std]
 
-
 extern crate panic_semihosting;
-
 
 use cortex_m_rt::entry;
 use stm32l0xx_hal::{
-    prelude::*,
-    aes::{
-        self,
-        AES,
-    },
+    aes::{self, AES},
     pac,
+    prelude::*,
     rcc::Config,
 };
-
 
 #[entry]
 fn main() -> ! {
@@ -31,10 +24,8 @@ fn main() -> ! {
     let ivr = [0xfedcba98, 0x76543210, 0xfedcba98];
 
     let data = [
-        0x00, 0x11, 0x22, 0x33,
-        0x44, 0x55, 0x66, 0x77,
-        0x88, 0x99, 0xaa, 0xbb,
-        0xcc, 0xdd, 0xee, 0xff,
+        0x00, 0x11, 0x22, 0x33, 0x44, 0x55, 0x66, 0x77, 0x88, 0x99, 0xaa, 0xbb, 0xcc, 0xdd, 0xee,
+        0xff,
     ];
 
     loop {

@@ -4,7 +4,7 @@ use core::ptr;
 
 use nb::block;
 
-use crate::gpio::{PinMode, AltMode};
+use crate::gpio::{AltMode, PinMode};
 use crate::hal;
 use crate::hal::prelude::*;
 pub use crate::pac::{LPUART1, USART1, USART2, USART4, USART5};
@@ -25,9 +25,13 @@ pub use crate::dma;
 #[cfg(any(feature = "stm32l0x2", feature = "stm32l0x3"))]
 use crate::dma::Buffer;
 
-use crate::gpio::{gpioa::*, gpiob::*};
-#[cfg(any(feature = "io-STM32L031", feature = "io-STM32L051", feature = "io-STM32L071"))]
+#[cfg(any(
+    feature = "io-STM32L031",
+    feature = "io-STM32L051",
+    feature = "io-STM32L071"
+))]
 use crate::gpio::gpioc::*;
+use crate::gpio::{gpioa::*, gpiob::*};
 #[cfg(any(feature = "io-STM32L071"))]
 use crate::gpio::{gpiod::*, gpioe::*};
 

@@ -47,7 +47,9 @@ fn main() -> ! {
     });
 
     // Enable the timer interrupt in the NVIC.
-    unsafe { NVIC::unmask(Interrupt::TIM2); }
+    unsafe {
+        NVIC::unmask(Interrupt::TIM2);
+    }
 
     loop {
         asm::wfi();

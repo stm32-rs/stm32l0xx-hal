@@ -2,22 +2,12 @@
 //!
 //! See STM32L0x2 reference manual, chapter 6.
 
-
-use cortex_m::{
-    asm,
-    peripheral::SCB,
-};
+use cortex_m::{asm, peripheral::SCB};
 
 use crate::{
     pac,
-    rcc::{
-        Clocks,
-        ClockSrc,
-        PLLSource,
-        Rcc,
-    },
+    rcc::{ClockSrc, Clocks, PLLSource, Rcc},
 };
-
 
 /// Entry point to the PWR API
 pub struct PWR(pac::PWR);
@@ -54,7 +44,9 @@ impl PWR {
         while self.0.csr.read().vosf().bit_is_set() {}
 
         // Safe, as `VcoreRange` only provides valid bit patterns.
-        self.0.cr.modify(|_, w| unsafe { w.vos().bits(range as u8) });
+        self.0
+            .cr
+            .modify(|_, w| unsafe { w.vos().bits(range as u8) });
 
         while self.0.csr.read().vosf().bit_is_set() {}
     }
@@ -111,10 +103,7 @@ impl PWR {
 
     /// Returns a struct that can be used to enter Sleep mode
     pub fn sleep_mode<'r>(&'r mut self, scb: &'r mut SCB) -> SleepMode<'r> {
-        SleepMode {
-            pwr: self,
-            scb,
-        }
+        SleepMode { pwr: self, scb }
     }
 
     /// Returns a struct that can be used to enter low-power sleep mode
@@ -124,31 +113,26 @@ impl PWR {
     /// To enter low-power sleep mode, the system clock frequency should not
     /// exceed the MSI frequency range 1 (131.072 kHz). This method will panic,
     /// if that is the case.
-    pub fn low_power_sleep_mode<'r>(&'r mut self,
+    pub fn low_power_sleep_mode<'r>(
+        &'r mut self,
         scb: &'r mut SCB,
         rcc: &mut Rcc,
-    )
-        -> LowPowerSleepMode<'r>
-    {
+    ) -> LowPowerSleepMode<'r> {
         // Panic, if system clock frequency is outside of allowed range. See
         // STM32L0x1/STM32L0x2/STM32L0x3 reference manuals, sections 6.3.8 and
         // 7.2.3.
         assert!(rcc.clocks.sys_clk().0 <= 131_072);
 
-        LowPowerSleepMode {
-            pwr: self,
-            scb,
-        }
+        LowPowerSleepMode { pwr: self, scb }
     }
 
     /// Returns a struct that can be used to enter Stop mode
-    pub fn stop_mode<'r>(&'r mut self,
-        scb:    &'r mut SCB,
-        rcc:    &'r mut Rcc,
+    pub fn stop_mode<'r>(
+        &'r mut self,
+        scb: &'r mut SCB,
+        rcc: &'r mut Rcc,
         config: StopModeConfig,
-    )
-        -> StopMode<'r>
-    {
+    ) -> StopMode<'r> {
         StopMode {
             pwr: self,
             scb,
@@ -159,10 +143,7 @@ impl PWR {
 
     /// Returns a struct that can be used to enter Standby mode
     pub fn standby_mode<'r>(&'r mut self, scb: &'r mut SCB) -> StandbyMode<'r> {
-        StandbyMode {
-            pwr: self,
-            scb,
-        }
+        StandbyMode { pwr: self, scb }
     }
 
     /// Private method to set LPSDSR
@@ -175,7 +156,6 @@ impl PWR {
         self.0.cr.modify(|_, w| w.lpsdsr().main_mode());
     }
 }
-
 
 /// Voltage range selection for internal voltage regulator
 ///
@@ -209,13 +189,11 @@ impl VcoreRange {
     }
 }
 
-
 /// Implemented for all low-power modes
 pub trait PowerMode {
     /// Enters the low-power mode
     fn enter(&mut self);
 }
-
 
 /// Sleep mode
 ///
@@ -240,7 +218,6 @@ impl PowerMode for SleepMode<'_> {
         asm::wfi();
     }
 }
-
 
 /// Low-power sleep mode
 ///
@@ -276,7 +253,6 @@ impl PowerMode for LowPowerSleepMode<'_> {
     }
 }
 
-
 /// Stop mode
 ///
 /// You can get an instance of this struct by calling [`PWR::stop_mode`].
@@ -297,9 +273,9 @@ impl PowerMode for LowPowerSleepMode<'_> {
 /// that might require special handling. This is explained in the STM32L0x2
 /// Reference Manual, section 6.3.9.
 pub struct StopMode<'r> {
-    pwr:    &'r mut PWR,
-    scb:    &'r mut SCB,
-    rcc:    &'r mut Rcc,
+    pwr: &'r mut PWR,
+    scb: &'r mut SCB,
+    rcc: &'r mut Rcc,
     config: StopModeConfig,
 }
 
@@ -308,61 +284,58 @@ impl PowerMode for StopMode<'_> {
         self.scb.set_sleepdeep();
 
         // Restore current clock source after waking up from Stop mode.
-        self.rcc.rb.cfgr.modify(|_, w|
-            match self.rcc.clocks.source() {
-                ClockSrc::MSI(_) =>
-                    // Use MSI as clock source after wake-up
-                    w.stopwuck().clear_bit(),
-                ClockSrc::HSI16 | ClockSrc::PLL(PLLSource::HSI16, _, _) =>
-                    // Use HSI16 as clock source after wake-up
-                    w.stopwuck().set_bit(),
-                _ =>
-                    // External clock selected
-                    //
-                    // Unfortunately handling the external clock is not as
-                    // straight-forward as handling MSI or HSI16. We need to
-                    // know whether the external clock is going to be shut down
-                    // during Stop mode. If it is, we need to either shut it
-                    // down before entering Stop mode, or enable the clock
-                    // security system (CSS) and handle any failures using it.
-                    // This is explained in sectoin 6.3.9 of the STM32L0x2
-                    // Reference Manual.
-                    //
-                    // In principle, we could ask the user (through
-                    // `StopModeConfig`), whether to shut down the external
-                    // clock then restore is after we wake up again. However, to
-                    // do this we'd either need to refactor the `rcc` module,
-                    // making it more flexible so we can reuse the relevant code
-                    // here, or duplicate that code. I (hannobraun) am not to
-                    // keen on either right now, given that I don't have a test
-                    // setup with an external clock source at hand.
-                    //
-                    // One might ask why we need to restore the configuration at
-                    // all after waking up, but that's absolutely required. This
-                    // HAL's architecture assumes that the clocks are configured
-                    // once, then never changed again. If we left Stop mode with
-                    // a different clock frequency than we entered it with, a
-                    // lot of peripheral would stop working correctly.
-                    //
-                    // For now, I've decided to just not support this case and
-                    // panic, which is also documented in this method's doc
-                    // comment.
-                    panic!("External clock not supported for Stop mode"),
-            }
-        );
+        self.rcc
+            .rb
+            .cfgr
+            .modify(|_, w| match self.rcc.clocks.source() {
+                // Use MSI as clock source after wake-up
+                ClockSrc::MSI(_) => w.stopwuck().clear_bit(),
+                // Use HSI16 as clock source after wake-up
+                ClockSrc::HSI16 | ClockSrc::PLL(PLLSource::HSI16, _, _) => w.stopwuck().set_bit(),
+                // External clock selected
+                //
+                // Unfortunately handling the external clock is not as
+                // straight-forward as handling MSI or HSI16. We need to
+                // know whether the external clock is going to be shut down
+                // during Stop mode. If it is, we need to either shut it
+                // down before entering Stop mode, or enable the clock
+                // security system (CSS) and handle any failures using it.
+                // This is explained in sectoin 6.3.9 of the STM32L0x2
+                // Reference Manual.
+                //
+                // In principle, we could ask the user (through
+                // `StopModeConfig`), whether to shut down the external
+                // clock then restore is after we wake up again. However, to
+                // do this we'd either need to refactor the `rcc` module,
+                // making it more flexible so we can reuse the relevant code
+                // here, or duplicate that code. I (hannobraun) am not to
+                // keen on either right now, given that I don't have a test
+                // setup with an external clock source at hand.
+                //
+                // One might ask why we need to restore the configuration at
+                // all after waking up, but that's absolutely required. This
+                // HAL's architecture assumes that the clocks are configured
+                // once, then never changed again. If we left Stop mode with
+                // a different clock frequency than we entered it with, a
+                // lot of peripheral would stop working correctly.
+                //
+                // For now, I've decided to just not support this case and
+                // panic, which is also documented in this method's doc
+                // comment.
+                _ => panic!("External clock not supported for Stop mode"),
+            });
 
         // Configure Stop mode
-        self.pwr.0.cr.modify(|_, w|
-            w
-                // Ultra-low-power mode
-                .ulp().bit(self.config.ultra_low_power)
-                // Clear WUF
-                .cwuf().set_bit()
-                // Enter Stop mode
-                .pdds().stop_mode()
-                // Disable internal voltage regulator
-                .lpds().set_bit()
-        );
+        self.pwr.0.cr.modify(|_, w| {
+            // Ultra-low-power mode
+            w.ulp().bit(self.config.ultra_low_power);
+            // Clear WUF
+            w.cwuf().set_bit();
+            // Enter Stop mode
+            w.pdds().stop_mode();
+            // Disable internal voltage regulator
+            w.lpds().set_bit()
+        });
 
         // Wait for WUF to be cleared
         while self.pwr.0.csr.read().wuf().bit_is_set() {}
@@ -372,7 +345,6 @@ impl PowerMode for StopMode<'_> {
         asm::wfi();
     }
 }
-
 
 /// Configuration for entering Stop mode
 ///
@@ -388,7 +360,6 @@ pub struct StopModeConfig {
     /// - Internal temperature sensor
     pub ultra_low_power: bool,
 }
-
 
 /// Standby mode
 ///
@@ -407,13 +378,12 @@ impl PowerMode for StandbyMode<'_> {
     fn enter(&mut self) {
         // Configure Standby mode
         self.scb.set_sleepdeep();
-        self.pwr.0.cr.modify(|_, w|
-            w
-                // Clear WUF
-                .cwuf().set_bit()
-                // Standby mode
-                .pdds().standby_mode()
-        );
+        self.pwr.0.cr.modify(|_, w| {
+            // Clear WUF
+            w.cwuf().set_bit();
+            // Standby mode
+            w.pdds().standby_mode()
+        });
 
         // Wait for WUF to be cleared
         while self.pwr.0.csr.read().wuf().bit_is_set() {}

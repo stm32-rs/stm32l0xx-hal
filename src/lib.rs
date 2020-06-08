@@ -49,6 +49,9 @@ pub mod spi;
 pub mod syscfg;
 pub mod time;
 pub mod timer;
-#[cfg(all(feature = "stm32-usbd", any(feature = "stm32l0x2", feature = "stm32l0x3")))]
+#[cfg(all(
+    feature = "stm32-usbd",
+    any(feature = "stm32l0x2", feature = "stm32l0x3")
+))]
 pub mod usb;
 pub mod watchdog;

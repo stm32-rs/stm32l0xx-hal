@@ -2,7 +2,6 @@
 //!
 //! See STM32L0x2 Reference Manual, chapter 11.
 
-
 // Currently the only module using DMA is STM32L082-only, which leads to unused
 // warnings when compiling for STM32L0x2. Rather than making the whole DMA
 // module STM32L082-only, which wouldn't reflect the reality, I've added this
@@ -14,24 +13,17 @@
 
 
 use core::{
-    fmt,
-    mem,
+    fmt, mem,
     ops::Deref,
     pin::Pin,
-    sync::atomic::{
-        compiler_fence,
-        Ordering,
-    }
+    sync::atomic::{compiler_fence, Ordering},
 };
 
 use as_slice::AsSlice;
 
 use crate::{
     adc,
-    pac::{
-        self,
-        dma1::ch::cr,
-    },
+    pac::{self, dma1::ch::cr},
     rcc::Rcc,
 };
 
@@ -46,13 +38,12 @@ use crate::pac::USART1;
 ))]
 use crate::{
     i2c,
-    serial,
     pac::{I2C1, I2C2, I2C3, USART2},
+    serial,
 };
 
 #[cfg(feature = "stm32l082")]
 use crate::aes;
-
 
 /// Entry point to the DMA API
 pub struct DMA {
@@ -60,7 +51,7 @@ pub struct DMA {
     pub handle: Handle,
 
     /// DMA channels
-    pub channels: Channels
+    pub channels: Channels,
 }
 
 impl DMA {
@@ -74,28 +65,26 @@ impl DMA {
         rcc.rb.ahbenr.modify(|_, w| w.dmaen().set_bit());
 
         Self {
-            handle:   Handle { dma },
+            handle: Handle { dma },
             channels: Channels::new(),
         }
     }
 }
-
 
 /// Handle to the DMA peripheral
 pub struct Handle {
     dma: pac::DMA1,
 }
 
-
 pub struct Transfer<T, C, B, State> {
-    res:    TransferResources<T, C, B>,
+    res: TransferResources<T, C, B>,
     _state: State,
 }
 
 impl<T, C, B> Transfer<T, C, B, Ready>
-    where
-        T: Target<C>,
-        C: Channel,
+where
+    T: Target<C>,
+    C: Channel,
 {
     /// Internal constructor
     ///
@@ -113,21 +102,20 @@ impl<T, C, B> Transfer<T, C, B, Ready>
     ///
     /// Panics, if the buffer is not aligned to the word size.
     pub(crate) unsafe fn new<Word>(
-        handle:    &mut Handle,
-        target:    T,
-        channel:   C,
-        buffer:    Pin<B>,
+        handle: &mut Handle,
+        target: T,
+        channel: C,
+        buffer: Pin<B>,
         num_words: usize,
-        address:   u32,
-        priority:  Priority,
-        dir:       Direction,
-        circular:  bool,
-    )
-        -> Self
-        where
-            B:         Deref,
-            B::Target: Buffer<Word>,
-            Word:      SupportedWordSize,
+        address: u32,
+        priority: Priority,
+        dir: Direction,
+        circular: bool,
+    ) -> Self
+    where
+        B: Deref,
+        B::Target: Buffer<Word>,
+        Word: SupportedWordSize,
     {
         assert!(buffer.len() >= num_words);
         assert!(num_words <= u16::max_value() as usize);
@@ -167,14 +155,15 @@ impl<T, C, B> Transfer<T, C, B, Ready>
         self.res.channel.start();
 
         Transfer {
-            res:    self.res,
+            res: self.res,
             _state: Started,
         }
     }
 }
 
 impl<T, C, B> Transfer<T, C, B, Started>
-    where C: Channel
+where
+    C: Channel,
 {
     /// Indicates whether the transfer is still ongoing
     pub fn is_active(&self) -> bool {
@@ -189,12 +178,7 @@ impl<T, C, B> Transfer<T, C, B, Started>
     ///
     /// This function will return immediately, if [`Transfer::is_active`]
     /// returns `false`.
-    pub fn wait(self)
-        -> Result<
-            TransferResources<T, C, B>,
-            (TransferResources<T, C, B>, Error)
-        >
-    {
+    pub fn wait(self) -> Result<TransferResources<T, C, B>, (TransferResources<T, C, B>, Error)> {
         while self.res.channel.is_active() {
             if self.res.channel.error_occured() {
                 return Err((self.res, Error));
@@ -229,11 +213,10 @@ impl<T, C, B> Transfer<T, C, B, Started>
     }
 }
 
-
 pub struct TransferResources<T, C, B> {
-    pub target:  T,
+    pub target: T,
     pub channel: C,
-    pub buffer:  Pin<B>,
+    pub buffer: Pin<B>,
 }
 
 // Since `TransferResources` is used in the error variant of a `Result`, it
@@ -245,7 +228,6 @@ impl<T, C, B> fmt::Debug for TransferResources<T, C, B> {
         write!(f, "TransferResources {{ ... }}")
     }
 }
-
 
 /// The priority of the DMA transfer
 pub struct Priority(cr::PL_A);
@@ -268,7 +250,6 @@ impl Priority {
     }
 }
 
-
 /// The direction of the DMA transfer
 pub(crate) struct Direction(cr::DIR_A);
 
@@ -282,23 +263,17 @@ impl Direction {
     }
 }
 
-
 #[derive(Debug)]
 pub struct Error;
-
 
 pub trait Channel: Sized {
     fn select_target<T: Target<Self>>(&self, _: &mut Handle, target: &T);
     fn set_peripheral_address(&self, _: &mut Handle, address: u32);
     fn set_memory_address(&self, _: &mut Handle, address: u32);
     fn set_transfer_len(&self, _: &mut Handle, len: u16);
-    fn configure<Word>(&self,
-        _:        &mut Handle,
-        priority: cr::PL_A,
-        dir:      cr::DIR_A,
-        circular: bool,
-    )
-        where Word: SupportedWordSize;
+    fn configure<Word>(&self, _: &mut Handle, priority: cr::PL_A, dir: cr::DIR_A, circular: bool)
+    where
+        Word: SupportedWordSize;
     fn enable_interrupts(&self, interrupts: Interrupts);
     fn start(&self);
     fn is_active(&self) -> bool;
@@ -509,7 +484,6 @@ impl_channel!(
         c7s, htif7, tcif7, teif7, chtif7, ctcif7, cteif7;
 );
 
-
 pub trait Target<Channel> {
     const REQUEST: u8;
 }
@@ -588,13 +562,11 @@ impl_target!(
     aes::Rx, Channel3, 11;
 );
 
-
 /// Indicates that a DMA transfer is ready
 pub struct Ready;
 
 /// Indicates that a DMA transfer has been started
 pub struct Started;
-
 
 /// Implemented for types, that can be used as a buffer for DMA transfers
 pub(crate) trait Buffer<Word> {
@@ -603,7 +575,8 @@ pub(crate) trait Buffer<Word> {
 }
 
 impl<T, Word> Buffer<Word> for T
-    where T: ?Sized + AsSlice<Element=Word>
+where
+    T: ?Sized + AsSlice<Element = Word>,
 {
     fn as_ptr(&self) -> *const Word {
         self.as_slice().as_ptr()
@@ -613,7 +586,6 @@ impl<T, Word> Buffer<Word> for T
         self.as_slice().len()
     }
 }
-
 
 /// Can be used as a fallback [`Buffer`], if safer implementations can't be used
 pub(crate) struct PtrBuffer<Word> {
@@ -641,7 +613,6 @@ impl<Word> Buffer<Word> for PtrBuffer<Word> {
     }
 }
 
-
 pub trait SupportedWordSize {
     fn size() -> cr::MSIZE_A;
 }
@@ -664,19 +635,18 @@ impl SupportedWordSize for u32 {
     }
 }
 
-
 #[derive(Clone, Copy)]
 pub struct Interrupts {
-    pub transfer_error:    bool,
-    pub half_transfer:     bool,
+    pub transfer_error: bool,
+    pub half_transfer: bool,
     pub transfer_complete: bool,
 }
 
 impl Default for Interrupts {
     fn default() -> Self {
         Self {
-            transfer_error:    false,
-            half_transfer:     false,
+            transfer_error: false,
+            half_transfer: false,
             transfer_complete: false,
         }
     }

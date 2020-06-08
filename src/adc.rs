@@ -1,14 +1,10 @@
 //! # Analog to Digital converter
 
-
 #[cfg(feature = "stm32l0x2")]
 use core::{
     ops::DerefMut,
     pin::Pin,
-    sync::atomic::{
-        compiler_fence,
-        Ordering,
-    },
+    sync::atomic::{compiler_fence, Ordering},
 };
 
 #[cfg(feature = "stm32l0x2")]
@@ -22,11 +18,7 @@ use crate::{
 };
 
 #[cfg(feature = "stm32l0x2")]
-use crate::dma::{
-    self,
-    Buffer as _,
-};
-
+use crate::dma::{self, Buffer as _};
 
 pub trait AdcExt {
     fn constrain(self, rcc: &mut Rcc) -> Adc<Ready>;
@@ -37,7 +29,6 @@ impl AdcExt for ADC {
         Adc::new(self, rcc)
     }
 }
-
 
 /// ADC Result Alignment
 #[derive(PartialEq)]
@@ -156,19 +147,19 @@ impl Adc<Ready> {
     ///
     /// Panics, if `buffer` is larger than 65535.
     #[cfg(feature = "stm32l0x2")]
-    pub fn start<DmaChan, Buf>(mut self,
+    pub fn start<DmaChan, Buf>(
+        mut self,
         channels: impl Into<Channels>,
-        trigger:  Option<Trigger>,
-        dma:      &mut dma::Handle,
+        trigger: Option<Trigger>,
+        dma: &mut dma::Handle,
         dma_chan: DmaChan,
-        buffer:   Pin<Buf>,
-    )
-        -> Adc<Active<DmaChan, Buf>>
-        where
-            DmaToken:    dma::Target<DmaChan>,
-            Buf:         DerefMut + 'static,
-            Buf::Target: AsMutSlice<Element=u16>,
-            DmaChan:     dma::Channel,
+        buffer: Pin<Buf>,
+    ) -> Adc<Active<DmaChan, Buf>>
+    where
+        DmaToken: dma::Target<DmaChan>,
+        Buf: DerefMut + 'static,
+        Buf::Target: AsMutSlice<Element = u16>,
+        DmaChan: dma::Channel,
     {
         // The ADC can support only one DMA transfer at a time, so only one of
         // these DMA tokens must exist at a time. We guarantee this by only
@@ -194,21 +185,20 @@ impl Adc<Ready> {
 
         // Safe, because the trait bounds of this method guarantee that the
         // buffer can be written to.
-        let transfer =
-            unsafe {
-                dma::Transfer::new(
-                    dma,
-                    dma_token,
-                    dma_chan,
-                    buffer,
-                    num_words,
-                    address,
-                    dma::Priority::high(),
-                    dma::Direction::peripheral_to_memory(),
-                    true,
-                )
-            }
-            .start();
+        let transfer = unsafe {
+            dma::Transfer::new(
+                dma,
+                dma_token,
+                dma_chan,
+                buffer,
+                num_words,
+                address,
+                dma::Priority::high(),
+                dma::Direction::peripheral_to_memory(),
+                true,
+            )
+        }
+        .start();
 
         let continous = trigger.is_none();
 
@@ -216,37 +206,39 @@ impl Adc<Ready> {
         self.configure(channels, continous, trigger);
 
         Adc {
-            rb:          self.rb,
+            rb: self.rb,
             sample_time: self.sample_time,
-            align:       self.align,
-            precision:   self.precision,
-            _state:      Active { buffer: buffer_unsafe, transfer },
+            align: self.align,
+            precision: self.precision,
+            _state: Active {
+                buffer: buffer_unsafe,
+                transfer,
+            },
         }
     }
 }
 
 #[cfg(feature = "stm32l0x2")]
 impl<DmaChan, Buffer> Adc<Active<DmaChan, Buffer>>
-    where DmaChan: dma::Channel,
+where
+    DmaChan: dma::Channel,
 {
     /// Returns an iterator over all currently available values
     ///
     /// The iterator iterates over all buffered values. It returns `None`, once
     /// the end of the buffer has been reached.
-    pub fn read_available(&mut self)
-        -> Result<impl Iterator<Item=Result<u16, Error>> + '_, Error>
-    {
+    pub fn read_available(
+        &mut self,
+    ) -> Result<impl Iterator<Item = Result<u16, Error>> + '_, Error> {
         if self.rb.isr.read().ovr().is_overrun() {
             self.rb.isr.write(|w| w.ovr().clear());
             return Err(Error::AdcOverrun);
         }
 
-        Ok(
-            ReadAvailable {
-                buffer:   &mut self._state.buffer,
-                transfer: &mut self._state.transfer,
-            }
-        )
+        Ok(ReadAvailable {
+            buffer: &mut self._state.buffer,
+            transfer: &mut self._state.transfer,
+        })
     }
 }
 
@@ -267,20 +259,15 @@ impl<State> Adc<State> {
         while self.rb.cr.read().aden().bit_is_set() {}
     }
 
-    fn configure(&mut self,
-        channels: impl Into<Channels>,
-        cont:     bool,
-        trigger:  Option<Trigger>,
-    ) {
+    fn configure(&mut self, channels: impl Into<Channels>, cont: bool, trigger: Option<Trigger>) {
         self.rb.cfgr1.write(|w| {
-            w
-                .res().bits(self.precision as u8)
-                .cont().bit(cont)
-                .align().bit(self.align == Align::Left)
-                // DMA circular mode
-                .dmacfg().set_bit()
-                // Generate DMA requests
-                .dmaen().set_bit();
+            w.res().bits(self.precision as u8);
+            w.cont().bit(cont);
+            w.align().bit(self.align == Align::Left);
+            // DMA circular mode
+            w.dmacfg().set_bit();
+            // Generate DMA requests
+            w.dmaen().set_bit();
 
             if let Some(trigger) = trigger {
                 // Select hardware trigger
@@ -299,8 +286,7 @@ impl<State> Adc<State> {
         self.rb.chselr.write(|w|
             // Safe, as long as there are no `Channel` implementations that
             // define invalid values.
-            unsafe { w.bits(channels.into().flags) }
-        );
+            unsafe { w.bits(channels.into().flags) });
 
         self.rb.isr.modify(|_, w| w.eos().set_bit());
         self.rb.cr.modify(|_, w| w.adstart().set_bit());
@@ -316,7 +302,13 @@ where
 
     fn read(&mut self, _: &mut PIN) -> nb::Result<WORD, Self::Error> {
         self.power_up();
-        self.configure(Channels { flags: 0x1 << PIN::channel() }, false, None);
+        self.configure(
+            Channels {
+                flags: 0x1 << PIN::channel(),
+            },
+            false,
+            None,
+        );
 
         while self.rb.isr.read().eos().bit_is_clear() {}
 
@@ -332,7 +324,6 @@ where
     }
 }
 
-
 /// Indicates that the ADC peripheral is ready
 pub struct Ready;
 
@@ -340,9 +331,8 @@ pub struct Ready;
 #[cfg(feature = "stm32l0x2")]
 pub struct Active<DmaChan, Buf> {
     transfer: dma::Transfer<DmaToken, DmaChan, Buf, dma::Started>,
-    buffer:   Buffer,
+    buffer: Buffer,
 }
-
 
 /// A collection of channels
 ///
@@ -354,14 +344,16 @@ pub struct Channels {
 impl Channels {
     /// Adds a channel to the collection
     pub fn add<C>(&mut self, _: C)
-        where C: Channel<Adc<Ready>, ID=u8>
+    where
+        C: Channel<Adc<Ready>, ID = u8>,
     {
         self.flags |= 0x1 << C::channel()
     }
 }
 
 impl<C> From<C> for Channels
-    where C: Channel<Adc<Ready>, ID=u8>
+where
+    C: Channel<Adc<Ready>, ID = u8>,
 {
     fn from(channel: C) -> Self {
         let mut c = Channels { flags: 0 };
@@ -369,7 +361,6 @@ impl<C> From<C> for Channels
         c
     }
 }
-
 
 /// Hardware triggers that can start an ADC conversion
 #[repr(u8)]
@@ -402,7 +393,6 @@ pub enum Trigger {
     EXTI11 = 0b111,
 }
 
-
 /// Provides access to the buffer that the DMA writes ADC values into
 ///
 /// Since the DMA transfer takes ownership of the buffer, we need to access it
@@ -426,9 +416,12 @@ struct Buffer {
 
 #[cfg(feature = "stm32l0x2")]
 impl Buffer {
-    fn read<T, C, B>(&mut self, transfer: &dma::Transfer<T, C, B, dma::Started>)
-        -> Option<Result<u16, Error>>
-        where C: dma::Channel
+    fn read<T, C, B>(
+        &mut self,
+        transfer: &dma::Transfer<T, C, B, dma::Started>,
+    ) -> Option<Result<u16, Error>>
+    where
+        C: dma::Channel,
     {
         let transfer_state = self.transfer_state(transfer);
         if self.check_overrun(transfer_state) {
@@ -470,18 +463,19 @@ impl Buffer {
         if self.pos == 0 || self.pos >= self.len {
             // We advanced beyond the end of the buffer, which means we need to
             // wrap around to the beginning.
-            self.pos    = 0;
+            self.pos = 0;
             self.r_gt_w = false;
         }
 
         Some(Ok(value))
     }
 
-    fn transfer_state<T, C, B>(&self,
+    fn transfer_state<T, C, B>(
+        &self,
         transfer: &dma::Transfer<T, C, B, dma::Started>,
-    )
-        -> TransferState
-        where C: dma::Channel
+    ) -> TransferState
+    where
+        C: dma::Channel,
     {
         let (remaining, half, complete) = transfer.state();
         transfer.clear_flags();
@@ -515,7 +509,7 @@ impl Buffer {
             // buffer is full, to minimize lost values, would be better. But
             // then we should give the user the option to empty the buffer
             // manually. I've chosen to go with the simpler option for now.
-            self.pos    = transfer_state.pos;
+            self.pos = transfer_state.pos;
             self.r_gt_w = false;
         }
 
@@ -560,33 +554,31 @@ impl Buffer {
         // have an overrun.
         if self.r_gt_w {
             self.pos <= transfer_state.pos
-        }
-        else {
+        } else {
             self.pos > transfer_state.pos
         }
     }
 }
 
-
 /// Internal struct to represent the current state of the DMA transfer
 #[derive(Clone, Copy, Debug)]
 struct TransferState {
-    pos:      u16,
-    half:     bool,
+    pos: u16,
+    half: bool,
     complete: bool,
 }
-
 
 /// Iterator over buffered ADC values
 #[cfg(feature = "stm32l0x2")]
 pub struct ReadAvailable<'r, T, C, B> {
-    buffer:   &'r mut Buffer,
+    buffer: &'r mut Buffer,
     transfer: &'r dma::Transfer<T, C, B, dma::Started>,
 }
 
 #[cfg(feature = "stm32l0x2")]
 impl<T, C, B> Iterator for ReadAvailable<'_, T, C, B>
-    where C: dma::Channel
+where
+    C: dma::Channel,
 {
     type Item = Result<u16, Error>;
 
@@ -595,13 +587,11 @@ impl<T, C, B> Iterator for ReadAvailable<'_, T, C, B>
     }
 }
 
-
 /// Used for DMA transfers
 ///
 /// This is an internal implementation detail. It is only public because it
 /// leaks out of a public API in the form of a `where` clause.
 pub struct DmaToken(());
-
 
 /// Represents an ADC error
 #[derive(Debug)]
@@ -619,7 +609,6 @@ pub enum Error {
     /// buffer were overwritten though.
     BufferOverrun,
 }
-
 
 macro_rules! int_adc {
     ($($Chan:ident: ($chan:expr, $en:ident)),+ $(,)*) => {

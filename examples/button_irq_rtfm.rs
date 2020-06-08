@@ -7,7 +7,7 @@ extern crate panic_halt;
 
 use rtfm::app;
 use stm32l0xx_hal::{
-    exti::{TriggerEdge, Exti, GpioLine, ExtiLine},
+    exti::{Exti, ExtiLine, GpioLine, TriggerEdge},
     gpio::*,
     prelude::*,
     rcc::Config,
@@ -46,10 +46,7 @@ const APP: () = {
         exti.listen_gpio(&mut syscfg, button.port(), line, TriggerEdge::Falling);
 
         // Return the initialised resources.
-        init::LateResources {
-            led,
-            int: exti,
-        }
+        init::LateResources { led, int: exti }
     }
 
     #[task(binds = EXTI0_1, resources = [led])]
