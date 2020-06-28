@@ -347,6 +347,10 @@ name = "timer_interrupt_rtic"
 required-features = ["rt"]
 
 [[example]]
+name = "linked_timer_rtic"
+required-features = ["rt", "stm32l0x1", "io-STM32L071"]
+
+[[example]]
 name = "adc_pwm"
 required-features = ["stm32l0x1"]
 
