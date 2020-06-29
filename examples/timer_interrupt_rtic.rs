@@ -5,7 +5,7 @@
 
 extern crate panic_halt;
 
-use rtfm::app;
+use rtic::app;
 use stm32l0xx_hal::{gpio::*, pac, prelude::*, rcc::Config, timer::Timer};
 
 #[app(device = stm32l0xx_hal::pac, peripherals = true)]

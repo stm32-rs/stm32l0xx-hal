@@ -44,7 +44,7 @@ aligned = "0.3.1"
 heapless = "0.5.0"
 panic-halt = "0.2.0"
 panic-semihosting = "0.5.1"
-cortex-m-rtfm = "0.5.1"
+cortex-m-rtic = "0.5.3"
 usb-device = "0.2.3"
 usbd-serial = "0.1.0"
 
@@ -303,7 +303,7 @@ name = "button_irq"
 required-features = ["rt"]
 
 [[example]]
-name = "button_irq_rtfm"
+name = "button_irq_rtic"
 required-features = ["rt"]
 
 [[example]]
@@ -343,7 +343,7 @@ name = "timer"
 required-features = ["rt"]
 
 [[example]]
-name = "timer_interrupt_rtfm"
+name = "timer_interrupt_rtic"
 required-features = ["rt"]
 
 [[example]]
