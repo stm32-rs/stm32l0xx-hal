@@ -237,6 +237,9 @@ pub trait LinkedTimer {
 
     /// Return the current 32 bit counter value.
     fn get_counter(&self) -> u32;
+
+    /// Reset the counter to 0.
+    fn reset(&mut self);
 }
 
 /// A pair of timers that can be linked.
@@ -327,6 +330,18 @@ macro_rules! linked_timers {
                             return (msb << 16) | lsb;
                         }
                     }
+                }
+
+                fn reset(&mut self) {
+                    // Pause
+                    self.tim_primary.cr1.modify(|_, w| w.cen().clear_bit());
+                    self.tim_secondary.cr1.modify(|_, w| w.cen().clear_bit());
+                    // Reset counter
+                    self.tim_primary.cnt.reset();
+                    self.tim_secondary.cnt.reset();
+                    // Continue
+                    self.tim_secondary.cr1.modify(|_, w| w.cen().set_bit());
+                    self.tim_primary.cr1.modify(|_, w| w.cen().set_bit());
                 }
             }
         )+

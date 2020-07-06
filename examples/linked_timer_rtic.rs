@@ -73,8 +73,21 @@ const APP: () = {
         static mut PREV_TIM2_TIM3: u32 = 0;
         static mut PREV_TIM21_TIM22: u32 = 0;
 
+        // Reset after ~3 seconds
+        static mut TIMES_UNTIL_RESET: u32 = 3 * LOGGER_FREQUENCY;
+
         // Clear the interrupt flag
         ctx.resources.timer.clear_irq();
+
+        // Check reset count
+        if *TIMES_UNTIL_RESET > 1 {
+            *TIMES_UNTIL_RESET -= 1;
+        } else if *TIMES_UNTIL_RESET == 1 {
+            writeln!(ctx.resources.serial, "Reset",).ok();
+            ctx.resources.linked_tim2_tim3.reset();
+            ctx.resources.linked_tim21_tim22.reset();
+            *TIMES_UNTIL_RESET -= 1;
+        }
 
         // Print timer counter
         print_timer(
