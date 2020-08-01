@@ -14,6 +14,7 @@ Based on the [stm32l1xx-hal](https://github.com/stm32-rs/stm32l1xx-hal) crate
 by Vitaly Domnikov and the [stm32f4xx-hal](https://github.com/stm32-rs/stm32f4xx-hal)
 crate by Daniel Egger.
 
+
 # Usage
 
 Add the [`stm32l0xx-hal` crate](https://crates.io/crates/stm32l0xx-hal) to your
@@ -27,6 +28,7 @@ For example, when using the STM32L071KBTx MCU:
 [dependencies]
 stm32l0xx-hal = { version = "0.6.2", features = ["mcu-STM32L071KBTx", "rt"] }
 ```
+
 
 # Supported Configurations
 
@@ -117,6 +119,7 @@ for example the `STM32L062K8Tx` uses the GPIO peripheral version named
 
 	https://github.com/cyrus-and/gdb-dashboard
 
+
 # Flashing
 
 The following instructions outline how-to on flashing the 'serial' example code. This can be extended to any other example code.
@@ -134,6 +137,7 @@ The following instructions outline how-to on flashing the 'serial' example code.
     ``` 
     $ ./openocd_flash.sh target/thumbv6m-none-eabi/release/examples/serial
     ```
+
 
 # Debugging
 
@@ -166,12 +170,13 @@ The following instructions outline how-to on flashing the 'serial' example code.
     >>> dashboard -output /dev/ttys001
     ```
 
-Contibutor Notes
----------
 
-- Revert local dependencies to external cargo and uncomment configurations before committing
+# Contibutor Notes
 
-License
--------
+- Revert local dependencies to external cargo and uncomment configurations
+  before committing
+
+
+# License
 
 0-Clause BSD License, see [LICENSE-0BSD.txt](LICENSE-0BSD.txt) for more details.
