@@ -78,51 +78,46 @@ for example the `STM32L062K8Tx` uses the GPIO peripheral version named
 `io-STM32L051`.
 
 
-# Build Dependencies
+# Toolchain Setup
 
-1. Rustup toolchain installer
+In order to use this HAL, you need the following Setup:
 
-    https://rustup.rs
+1. Install Rustup
 
+    See [rustup.rs](https://rustup.rs/) for details. You may als be able to
+    install Rustup directly through your distro.
 
-# Toolchain Configuration
+2. Install the `arm-none-eabi` compiler toolchain
 
-`$ rustup target add thumbv6m-none-eabi`
+	https://developer.arm.com/open-source/gnu-toolchain/gnu-rm/downloads
+
+    If you cannot install the toolchain directly through your OS / distro, we
+    recommend installing the precompiled binaries to '/usr/local/opt'.  Add the
+    bin folders (/bin & /arm-none-eabi/bin) to your environments variable 'PATH'.
+
+3. Install the `thumbv6m-none-eabi` target for Rust
+
+    Simply run `rustup target add thumbv6m-none-eabi`
+
+For more instructions on how to get started with ARM / Cortex-M programming
+using Rust, check out the [Embedded Rust
+Book](https://rust-embedded.github.io/book/).
 
 
 # Build Examples
 
-`$ cargo build --release --examples --features stm32l0x1,rt`
+You can build examples through Cargo:
+
+    $ cargo build --release --examples --features stm32l0x1,rt
+
+Note that not all examples are compatible with all MCUs. You might need to peek
+into the example source code.
 
 
-# Dependecies for Flashing
+# Flashing Using Helper Scripts
 
-1. Download and install the arm-none-eabi toolchain
-
-	https://developer.arm.com/open-source/gnu-toolchain/gnu-rm/downloads
-	We recommend installing the precompiled binaries to '/usr/local/opt'. 
-	Add the bin folders (/bin & /arm-none-eabi/bin) to your environments variable 'PATH'.
-
-2. Install STLink Tool (>=v1.5.1)
-
-	https://github.com/texane/stlink
-
-3. Install OpenOCD (OPTIONAL)
-
-    NOTE: OpenOCD v0.10.0 does not fully support the stm32l0 family MCU. We recommend using `gnu-mcu-eclipse/openocd` instead:
-
-    https://gnu-mcu-eclipse.github.io/openocd/install/
-    We recommend installing the precompiled binaries to '/usr/local/opt'. 
-	Add the bin folders (i.e. - /usr/local/opt/gnu-mcu-eclipse/openocd/0.10.0-12-20190422-2015/bin) to your environments variable 'PATH'.
-
-4. Install GDB Dashboard (OPTIONAL)
-
-	https://github.com/cyrus-and/gdb-dashboard
-
-
-# Flashing
-
-The following instructions outline how-to on flashing the 'serial' example code. This can be extended to any other example code.
+The following instructions outline how-to on flashing the 'serial' example
+code. This can be extended to any other example code.
 
 ## Flashing with ST-Flash:
 
@@ -139,7 +134,7 @@ The following instructions outline how-to on flashing the 'serial' example code.
     ```
 
 
-# Debugging
+# Debugging Using Helper Scripts
 
 ## Debugging with GDB
 
