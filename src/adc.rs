@@ -482,7 +482,7 @@ impl Buffer {
 
         // Let's translate what we got from the DMA peripheral into a write
         // position that we can compare with our read position.
-        let pos = self.len - remaining;
+        let pos = self.len.saturating_sub(remaining) % self.len;
 
         TransferState {
             pos,
