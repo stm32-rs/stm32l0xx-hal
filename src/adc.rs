@@ -337,7 +337,7 @@ pub struct Channels {
 
 impl Channels {
     pub fn new() -> Channels {
-        Channels{flags: 0}
+        Channels { flags: 0 }
     }
 
     /// Adds a channel to the collection
