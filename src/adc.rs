@@ -175,6 +175,7 @@ impl Adc<Ready> {
             ptr: buffer.as_ptr(),
             len: buffer.len() as u16,
             pos: 0,
+            dma_pos: 0,
 
             r_gt_w: false,
         };
@@ -399,6 +400,7 @@ struct Buffer {
     ptr: *const u16,
     len: u16,
     pos: u16,
+    dma_pos: u16,
 
     /// Indicates order of read and write indices
     ///
@@ -489,6 +491,7 @@ impl Buffer {
 
     fn check_overrun(&mut self, transfer_state: TransferState) -> bool {
         let overrun = self.check_overrun_inner(transfer_state);
+        self.dma_pos = transfer_state.pos; // Update our state of the DMA
 
         if overrun {
             // An overrun occured, but that is not a catastrophic error. Values
@@ -527,7 +530,16 @@ impl Buffer {
             return true;
         }
 
-        if transfer_state.complete {
+        if transfer_state.complete && self.dma_pos < transfer_state.pos {
+            // If the complete flag is set and our previous position is less than
+            // the current position then an overrun must have occurred
+            // This is because the DMA must have wrapped to 0 and then ran past us again
+            return true;
+        }
+
+        // Don't use the transfer complete flag to detect wrap (aside from the overrun above)
+        // There is a timing issue with reading and clearing it so depend on relative positions
+        if transfer_state.pos < self.dma_pos {
             // The write has wrapped beyond the buffer boundary and started
             // again at the beginning of the buffer. This is completely normal,
             // but it affects how we detect an overrun.
