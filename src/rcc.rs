@@ -2,7 +2,7 @@ use crate::pac::RCC;
 use crate::time::{Hertz, U32Ext};
 
 #[cfg(any(feature = "stm32l0x2", feature = "stm32l0x3"))]
-use crate::{pac::CRS, syscfg::SYSCFG};
+use crate::{pac::CRS, pwr::PWR, syscfg::SYSCFG};
 
 /// System clock mux source
 #[derive(Clone, Copy)]
@@ -223,6 +223,14 @@ impl Rcc {
         while self.rb.crrcr.read().hsi48rdy().bit_is_clear() {}
 
         HSI48(())
+    }
+
+    pub fn enable_lse(&mut self, _: &PWR) {
+        self.rb.csr.modify(|_, w| {
+            // Enable LSE clock
+            w.lseon().set_bit()
+        });
+        while self.rb.csr.read().lserdy().bit_is_clear() {}
     }
 }
 
