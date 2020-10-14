@@ -196,12 +196,13 @@ pub struct Rcc {
 }
 
 impl Rcc {
-    pub fn enable_lse(&mut self, _: &PWR) {
+    pub fn enable_lse(&mut self, _: &PWR) -> LSE {
         self.rb.csr.modify(|_, w| {
             // Enable LSE clock
             w.lseon().set_bit()
         });
         while self.rb.csr.read().lserdy().bit_is_clear() {}
+        LSE(())
     }
 }
 
@@ -466,3 +467,9 @@ pub struct HSI48(());
 /// You can get an instance of this struct by calling [`Rcc::configure_mco`].
 #[derive(Clone, Copy)]
 pub struct MCOEnabled(());
+
+/// Token that exists only, if the LSE clock has been enabled
+///
+/// You can get an instance of this struct by calling [`Rcc::enable_lse`].
+#[derive(Clone, Copy)]
+pub struct LSE(());
