@@ -8,7 +8,7 @@ use crate::gpio::{AltMode, PinMode};
 use crate::hal;
 use crate::hal::prelude::*;
 pub use crate::pac::{LPUART1, USART1, USART2, USART4, USART5};
-use crate::rcc::Rcc;
+use crate::rcc::{Rcc, LSE};
 
 #[cfg(any(feature = "stm32l0x2", feature = "stm32l0x3"))]
 use core::{
@@ -732,6 +732,32 @@ usart! {
 usart! {
     USART4: (usart4, apb1enr, usart4en, apb1_clk, Serial4Ext),
     USART5: (usart5, apb1enr, usart5en, apb1_clk, Serial5Ext),
+}
+
+impl Serial<LPUART1> {
+    pub fn use_lse(&self, rcc: &mut Rcc, _: &LSE) {
+        //Disable transmitter
+        self.usart.cr1.modify(|_, w| w.te().disabled());
+        while self.usart.isr.read().tc().bit_is_clear() {}
+
+        //Disable LPUART1
+        self.usart.cr1.modify(|_, w| w.ue().disabled());
+
+        //Reconfigure LPUART to use LSE
+        rcc.rb.ccipr.modify(|_, w| w.lpuart1sel().lse());
+
+        //Recalculate baudrate
+        //TODO requested baudrate value from the config should be stored somehow and used here
+        //but at the moment hardcoded 9600 will be used
+        //LSE is assumed to be 32768Hz, as RM says that LSE should only be 32768.
+        let brr = 256 * 32768 / 9600;
+        self.usart.brr.write(|w| unsafe { w.bits(brr) });
+
+        // Enable LPUART1
+        self.usart
+            .cr1
+            .write(|w| w.ue().set_bit().te().set_bit().re().set_bit());
+    }
 }
 
 impl<USART> fmt::Write for Serial<USART>
