@@ -348,6 +348,10 @@ name = "serial_dma_async"
 required-features = ["stm32l0x2", "io-STM32L071"]
 
 [[example]]
+name = "serial_lse"
+required-features = ["stm32l0x2", "io-STM32L071"]
+
+[[example]]
 name = "timer"
 required-features = ["rt"]
 
