@@ -17,6 +17,7 @@ pub use stm32l0::stm32l0x3 as pac;
 
 pub mod adc;
 pub mod aes;
+pub mod calibration;
 pub mod delay;
 pub mod dma;
 pub mod exti;
