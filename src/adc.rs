@@ -382,7 +382,7 @@ pub enum Trigger {
     /// TRG5
     ///
     /// Only available on Category 5 devices.
-    #[cfg(any(feature = "stm32l072", feature = "stm32l082"))]
+    #[cfg(feature = "io-STM32L071")]
     TIM2_CH3 = 0b101,
 
     /// TRG6
@@ -676,7 +676,13 @@ adc_pins! {
     Channel9: (gpiob::PB1<Analog>, 9u8),
 }
 
-#[cfg(all(feature = "stm32l052", any(feature = "lqfp64", feature = "tfbga64",),))]
+#[cfg(all(
+    all(
+        any(feature = "io-STM32L051", feature = "io-STM32L071"),
+        any(feature = "stm32l0x2", feature = "stm32l0x3"),
+    ),
+    any(feature = "lqfp64", feature = "tfbga64",),
+))]
 adc_pins! {
     Channel10: (gpioc::PC0<Analog>, 10u8),
     Channel11: (gpioc::PC1<Analog>, 11u8),
@@ -684,7 +690,10 @@ adc_pins! {
 }
 
 #[cfg(all(
-    feature = "stm32l072",
+    all(
+        any(feature = "io-STM32L071"),
+        any(feature = "stm32l0x2", feature = "stm32l0x3"),
+    ),
     any(
         feature = "lqfp64",
         feature = "lqfp100",
@@ -700,34 +709,43 @@ adc_pins! {
     Channel12: (gpioc::PC2<Analog>, 12u8),
 }
 
-#[cfg(all(feature = "stm32l082", feature = "wlcsp49"))]
-adc_pins! {
-    Channel10: (gpioc::PC0<Analog>, 10u8),
-    Channel11: (gpioc::PC1<Analog>, 11u8),
-    Channel12: (gpioc::PC2<Analog>, 12u8),
-}
-
-#[cfg(all(feature = "stm32l052", feature = "lqfp64"))]
+#[cfg(all(
+    all(
+        any(feature = "io-STM32L051", feature = "io-STM32L071"),
+        any(feature = "stm32l0x2", feature = "stm32l0x3"),
+    ),
+    feature = "lqfp64"
+))]
 adc_pins! {
     Channel13: (gpioc::PC3<Analog>, 13u8),
 }
 
 #[cfg(all(
-    feature = "stm32l072",
+    all(
+        any(feature = "io-STM32L071"),
+        any(feature = "stm32l0x2", feature = "stm32l0x3"),
+    ),
     any(feature = "lqfp64", feature = "lqfp100", feature = "ufbga100",),
 ))]
 adc_pins! {
     Channel13: (gpioc::PC3<Analog>, 13u8),
 }
 
-#[cfg(all(feature = "stm32l052", any(feature = "lqfp64", feature = "tfbga64",),))]
+#[cfg(all(
+    any(feature = "io-STM32L051", feature = "io-STM32L071"),
+    any(feature = "stm32l0x2", feature = "stm32l0x3"),
+    any(feature = "lqfp64", feature = "tfbga64",)
+))]
 adc_pins! {
     Channel14: (gpioc::PC4<Analog>, 14u8),
     Channel15: (gpioc::PC5<Analog>, 15u8),
 }
 
 #[cfg(all(
-    feature = "stm32l072",
+    all(
+        any(feature = "io-STM32L071"),
+        any(feature = "stm32l0x2", feature = "stm32l0x3"),
+    ),
     any(
         feature = "lqfp64",
         feature = "lqfp100",

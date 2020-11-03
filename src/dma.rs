@@ -42,7 +42,10 @@ use crate::{
     serial,
 };
 
-#[cfg(feature = "stm32l082")]
+#[cfg(all(
+    any(feature = "stm32l0x2", feature = "stm32l0x3",),
+    feature = "io-STM32L071",
+))]
 use crate::aes;
 
 /// Entry point to the DMA API
@@ -554,7 +557,10 @@ impl_target!(
 );
 
 // See STM32L0x2 Reference Manual, table 51 (page 267).
-#[cfg(feature = "stm32l082")]
+#[cfg(all(
+    any(feature = "stm32l0x2", feature = "stm32l0x3",),
+    feature = "io-STM32L071",
+))]
 impl_target!(
     aes::Tx, Channel1, 11;
     aes::Tx, Channel5, 11;
