@@ -41,7 +41,7 @@ impl FLASH {
         // following should determine whether this is a Category 5 device.
         // Please make sure to adapt this when porting this module to other
         // targets.
-        let is_category_5 = cfg!(any(feature = "stm32l072", feature = "stm32l082"));
+        let is_category_5 = cfg!(any(feature = "stm32l072", feature = "stm32l082", feature = "stm32l073", feature = "stm32l083"));
 
         // Determine the start of the EEPROM, according to the tables in the
         // STM32L0x2 reference manual, section 3.3.1.
