@@ -11,7 +11,6 @@
 // DMA.
 #![cfg_attr(not(feature = "stm32l082"), allow(dead_code, unused_imports))]
 
-
 use core::{
     fmt, mem,
     ops::Deref,
