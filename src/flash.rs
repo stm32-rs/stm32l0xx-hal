@@ -36,9 +36,10 @@ impl FLASH {
         let flash_size_in_kb = flash_size_in_kb();
         let flash_end = FLASH_START + flash_size_in_kb * 1024;
 
-        // As of this writing, this module is only enabled for STM32L0x2.
-        // According to the STM32L0x2 reference manual, section 1.4, the
-        // following should determine whether this is a Category 5 device.
+        // As of this writing, this module is only enabled for STM32L0x[23].
+        // According to the STM32L0x[23] reference manual (RM0376, RM0367),
+        // section 1.4, the following should determine whether this is a
+        // Category 5 device.
         // Please make sure to adapt this when porting this module to other
         // targets.
         let is_category_5 = cfg!(any(
