@@ -4,50 +4,21 @@ rust:
   - stable
   - nightly
 env:
-  - MCU=stm32l0x1 IO=io-STM32L021
-  - MCU=stm32l0x1 IO=io-STM32L031
-  - MCU=stm32l0x2 IO=io-STM32L051 FEATURES=stm32-usbd
-  - MCU=stm32l0x3 IO=io-STM32L071 FEATURES=stm32-usbd
+  # STM32L0x1, TSSOP14 package, 512 bytes flash, product category 1
+  - FEATURES="rt mcu-STM32L011D3Px"
+  # STM32L0x1, UFQFPN32 package, 1 KiB flash, product category 2
+  - FEATURES="rt mcu-STM32L031K6Ux"
+  # STM32L0x2, LQFP32 package, 2 KiB flash, product category 3, enable usbd
+  - FEATURES="rt mcu-STM32L052K8Tx stm32-usbd"
+  # STM32L0x3, TFBGA64 package, 6 KiB flash, product category 5, enable usbd
+  - FEATURES="rt mcu-STM32L073RBHx stm32-usbd"
 matrix:
   allow_failures:
     - rust: nightly
   fast_finish: true
-  # Most of these configurations are commented out, as running them takes far
-  # too long. I've still left them in, to document which combinations are
-  # supported.
-  #
-  # It probably makes sense to uncomment them selectively, from time to time, to
-  # test any changes to the affected code.
-  include:
-    # STM32L052
-    # - env: MCU=stm32l052 PACKAGE=lqfp32
-    # - env: MCU=stm32l052 PACKAGE=lqfp48
-    # - env: MCU=stm32l052 PACKAGE=lqfp64
-    # - env: MCU=stm32l052 PACKAGE=tfbga64
-    # - env: MCU=stm32l052 PACKAGE=ufqfpn32
-    # - env: MCU=stm32l052 PACKAGE=ufqfpn48
-    # - env: MCU=stm32l052 PACKAGE=wlcsp36
-    # STM32L062
-    # - env: MCU=stm32l062 PACKAGE=lqfp32
-    # - env: MCU=stm32l062 PACKAGE=ufqfpn32
-    # - env: MCU=stm32l062 PACKAGE=wlcsp36
-    # STM32L072
-    - env: MCU=stm32l072 IO=io-STM32L071 PACKAGE=lqfp32
-    # - env: MCU=stm32l072 PACKAGE=lqfp48
-    # - env: MCU=stm32l072 PACKAGE=lqfp64
-    # - env: MCU=stm32l072 PACKAGE=lqfp100
-    # - env: MCU=stm32l072 PACKAGE=tfbga64
-    # - env: MCU=stm32l072 PACKAGE=ufbga64
-    # - env: MCU=stm32l072 PACKAGE=ufbg100
-    # - env: MCU=stm32l072 PACKAGE=ufqfpn32
-    # - env: MCU=stm32l072 PACKAGE=wlcsp49
-    # STM32L082
-    - env: MCU=stm32l082 IO=io-STM32L071 PACKAGE=lqfp32
-    # - env: MCU=stm32l082 PACKAGE=ufqfpn32
-    # - env: MCU=stm32l082 PACKAGE=wlcsp49
 before_script:
   - rustup target add thumbv6m-none-eabi
   - rustup component add rustfmt
 script:
-  - RUSTFLAGS="-D warnings" cargo build --release --examples --features="rt $MCU $IO $PACKAGE $FEATURES"
+  - RUSTFLAGS="-D warnings" cargo build --release --examples --features="$FEATURES"
   - cargo fmt --all -- --check
