@@ -1,6 +1,12 @@
 //! Interface to the FLASH peripheral
 //!
-//! See STM32L0x2 reference manual, chapter 3.
+//! This manages access to both the program flash memory, as well as EEPROM.
+//!
+//! References:
+//!
+//! - STM32L0x1 reference manual (RM0377), chapter 3
+//! - STM32L0x2 reference manual (RM0376), chapter 3
+//! - STM32L0x3 reference manual (RM0367), chapter 3
 
 use cortex_m::interrupt;
 
@@ -15,6 +21,26 @@ pub const FLASH_START: u32 = 0x0800_0000;
 /// The size of a Flash memory page, in bytes
 pub const PAGE_SIZE: u32 = 128;
 
+// EEPROM sizes in bytes, generated with cube-parse
+#[cfg(feature = "eeprom-256")]
+pub const EEPROM_SIZE: u32 = 256;
+#[cfg(feature = "eeprom-1024")]
+pub const EEPROM_SIZE: u32 = 1024;
+#[cfg(feature = "eeprom-3072")]
+pub const EEPROM_SIZE: u32 = 3072;
+#[cfg(feature = "eeprom-2048")]
+pub const EEPROM_SIZE: u32 = 2048;
+#[cfg(feature = "eeprom-6144")]
+pub const EEPROM_SIZE: u32 = 6144;
+#[cfg(feature = "eeprom-512")]
+pub const EEPROM_SIZE: u32 = 512;
+#[cfg(feature = "eeprom-128")]
+pub const EEPROM_SIZE: u32 = 128;
+
+// EEPROM start addresses
+const EEPROM_START_BANK1: u32 = 0x0808_0000;
+const EEPROM_START_BANK2: u32 = 0x0808_0C00;
+
 /// Entry point to the non-volatile memory (NVM) API
 pub struct FLASH {
     flash: pac::FLASH,
@@ -24,48 +50,30 @@ pub struct FLASH {
 }
 
 impl FLASH {
-    // Initializes the FLASH peripheral
+    /// Initializes the FLASH peripheral
     pub fn new(flash: pac::FLASH, rcc: &mut Rcc) -> Self {
-        // Determine size of the flash memory. According to the STM32L0x2
-        // reference manual, section 33.1, there's a register that we can get
-        // that information from. It doesn't seem to be exposed through the PAC,
-        // so we have to read it manually.
-        //
-        // This is safe, as we're reading from a valid address (as per the
-        // reference manual) which is aligned to 16 bits.
+        // Determine size of the flash memory
         let flash_size_in_kb = flash_size_in_kb();
         let flash_end = FLASH_START + flash_size_in_kb * 1024;
 
-        // As of this writing, this module is only enabled for STM32L0x[23].
-        // According to the STM32L0x[23] reference manual (RM0376, RM0367),
-        // section 1.4, the following should determine whether this is a
-        // Category 5 device.
-        // Please make sure to adapt this when porting this module to other
-        // targets.
-        let is_category_5 = cfg!(any(
-            feature = "stm32l072",
-            feature = "stm32l082",
-            feature = "stm32l073",
-            feature = "stm32l083"
-        ));
-
-        // Determine the start of the EEPROM, according to the tables in the
-        // STM32L0x2 reference manual, section 3.3.1.
-        let eeprom_start = if is_category_5 && flash_size_in_kb == 64 {
-            // See table 10.
-            0x0808_0C00
+        // Determine the start of the EEPROM. Most MCUs have two EEPROM banks,
+        // but some have only one bank (BANK2), see for example STM32L0x2
+        // reference manual, table 10. At the time of this writing, this can be
+        // detected by checking both the flash and EEPROM size.
+        //
+        // Note: In contrast to flash size, EEPROM size cannot be determined at
+        // runtime, so we rely on the proper `EEPROM_SIZE` const being
+        // set.
+        let eeprom_start = if flash_size_in_kb == 64 && EEPROM_SIZE == 3072 {
+            EEPROM_START_BANK2
         } else {
-            0x0808_0000
+            EEPROM_START_BANK1
         };
 
         // Determine the end of the EEPROM. Please note that the tables in
         // section 3.3.1 specify the last byte of the EEPROM, while this is the
         // first byte after it.
-        let eeprom_end = if is_category_5 {
-            0x0808_1800
-        } else {
-            0x0808_0800
-        };
+        let eeprom_end = eeprom_start + EEPROM_SIZE;
 
         // Reset the peripheral interface
         rcc.rb.ahbrstr.modify(|_, w| w.mifrst().set_bit());
@@ -315,12 +323,16 @@ impl FLASH {
     }
 }
 
+// Determine size of the flash memory in KiB.
+//
+// This information can be read from the "Flash size register".
+//
+// Reference:
+//
+// - STM32L0x1 reference manual, section 28.1.1
+// - STM32L0x2 reference manual, section 33.1.1
+// - STM32L0x3 reference manual, section 34.1.1
 pub fn flash_size_in_kb() -> u32 {
-    // Determine size of the flash memory. According to the STM32L0x2 reference
-    // manual, section 33.1, there's a register that we can get that information
-    // from. It doesn't seem to be exposed through the PAC, so we have to read
-    // it manually.
-    //
     // This is safe, as we're reading from a valid address (as per the
     // reference manual) which is aligned to 16 bits.
     unsafe { (0x1FF8_007C as *const u16).read() as u32 }

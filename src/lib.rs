@@ -21,7 +21,15 @@ pub mod calibration;
 pub mod delay;
 pub mod dma;
 pub mod exti;
-#[cfg(any(feature = "stm32l0x2", feature = "stm32l0x3"))]
+#[cfg(any(
+    feature = "eeprom-128",
+    feature = "eeprom-256",
+    feature = "eeprom-512",
+    feature = "eeprom-1024",
+    feature = "eeprom-2048",
+    feature = "eeprom-3072",
+    feature = "eeprom-6144",
+))]
 pub mod flash;
 pub mod gpio;
 #[cfg(any(
