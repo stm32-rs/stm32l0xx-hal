@@ -5,9 +5,7 @@
 // function is necessary.
 __attribute__((section(".data")))
 void write_half_page(uint32_t *address, uint32_t *words) {
-    uint32_t i = 0;
-    while (i < 16) {
+    for (uint32_t i = 0; i < 16; i++) {
         *(address + i) = *(words + i);
-        i++;
     }
 }
