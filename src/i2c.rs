@@ -10,10 +10,7 @@ use as_slice::{AsMutSlice, AsSlice};
 
 #[cfg(feature = "stm32l0x2")]
 use crate::dma::{self, Buffer};
-use crate::pac::i2c1::{
-    cr2::{AUTOEND_A, RD_WRN_A},
-    RegisterBlock,
-};
+use crate::pac::i2c1::{cr2::RD_WRN_A, RegisterBlock};
 use crate::rcc::Rcc;
 use crate::time::Hertz;
 use cast::u8;
@@ -138,20 +135,29 @@ where
 
         // Configure for "fast mode" (400 KHz)
         i2c.timingr.write(|w| {
-            w.presc().bits(presc);
-            w.scll().bits(scll);
-            w.sclh().bits(sclh);
-            w.sdadel().bits(sdadel);
-            w.scldel().bits(scldel)
+            w.presc()
+                .bits(presc)
+                .scll()
+                .bits(scll)
+                .sclh()
+                .bits(sclh)
+                .sdadel()
+                .bits(sdadel)
+                .scldel()
+                .bits(scldel)
         });
 
         i2c.cr1.write(|w| {
-            // Enable DMA reception
-            w.rxdmaen().set_bit();
-            // Enable DMA transmission
-            w.txdmaen().set_bit();
-            // Enable peripheral
-            w.pe().set_bit()
+            w
+                // Enable DMA reception
+                .rxdmaen()
+                .set_bit()
+                // Enable DMA transmission
+                .txdmaen()
+                .set_bit()
+                // Enable peripheral
+                .pe()
+                .set_bit()
         });
 
         I2c { i2c, sda, scl }
@@ -161,60 +167,53 @@ where
         (self.i2c, self.sda, self.scl)
     }
 
-    fn check_errors(&self) -> Result<(), Error> {
-        let isr = self.i2c.isr.read();
-        if isr.berr().bit_is_set() {
-            self.i2c.icr.write(|w| w.berrcf().set_bit());
-            Err(Error::BusError)
-        } else if isr.arlo().bit_is_set() {
-            self.i2c.icr.write(|w| w.arlocf().set_bit());
-            Err(Error::ArbitrationLost)
-        } else if isr.nackf().bit_is_set() {
-            self.i2c.icr.write(|w| w.nackcf().set_bit());
-            Err(Error::Nack)
-        } else {
-            Ok(())
-        }
-    }
-
-    fn start_transfer(&mut self, addr: u8, len: usize, direction: RD_WRN_A, autoend: AUTOEND_A) {
-        // Ensure that TX/RX buffers are empty
-        self.i2c.isr.write(|w| w.txe().set_bit());
-        while self.i2c.isr.read().rxne().bit_is_set() {
-            self.i2c.rxdr.read();
-        }
-
+    fn start_transfer(&mut self, addr: u8, len: usize, direction: RD_WRN_A) {
         self.i2c.cr2.write(|w| {
-            // Start transfer
-            w.start().set_bit();
-            // Set number of bytes to transfer
-            w.nbytes().bits(len as u8);
-            // Set address to transfer to/from
-            w.sadd().bits((addr << 1) as u16);
-            // Set transfer direction
-            w.rd_wrn().variant(direction);
-            // should we end the transfer automatically?
-            w.autoend().variant(autoend)
+            w
+                // Start transfer
+                .start()
+                .set_bit()
+                // Set number of bytes to transfer
+                .nbytes()
+                .bits(len as u8)
+                // Set address to transfer to/from
+                .sadd()
+                .bits((addr << 1) as u16)
+                // Set transfer direction
+                .rd_wrn()
+                .variant(direction)
+                // End transfer once all bytes have been written
+                .autoend()
+                .set_bit()
         });
     }
 
     fn send_byte(&self, byte: u8) -> Result<(), Error> {
         // Wait until we're ready for sending
-        while self.i2c.isr.read().txe().bit_is_clear() {
-            self.check_errors()?;
-        }
+        while self.i2c.isr.read().txe().bit_is_clear() {}
 
         // Push out a byte of data
         self.i2c.txdr.write(|w| w.txdata().bits(byte));
 
-        // check for any errors
-        self.check_errors()
+        // Wait until byte is transferred
+        loop {
+            let isr = self.i2c.isr.read();
+            if isr.berr().bit_is_set() {
+                self.i2c.icr.write(|w| w.berrcf().set_bit());
+                return Err(Error::BusError);
+            } else if isr.arlo().bit_is_set() {
+                self.i2c.icr.write(|w| w.arlocf().set_bit());
+                return Err(Error::ArbitrationLost);
+            } else if isr.nackf().bit_is_set() {
+                self.i2c.icr.write(|w| w.nackcf().set_bit());
+                return Err(Error::Nack);
+            }
+            return Ok(());
+        }
     }
 
     fn recv_byte(&self) -> Result<u8, Error> {
-        while self.i2c.isr.read().rxne().bit_is_clear() {
-            self.check_errors()?;
-        }
+        while self.i2c.isr.read().rxne().bit_is_clear() {}
 
         let value = self.i2c.rxdr.read().rxdata().bits();
         Ok(value)
@@ -254,12 +253,7 @@ where
         Buffer::Target: AsSlice<Element = u8>,
     {
         assert!(buffer.len() >= num_words);
-        self.start_transfer(
-            address,
-            buffer.as_slice().len(),
-            RD_WRN_A::WRITE,
-            AUTOEND_A::AUTOMATIC,
-        );
+        self.start_transfer(address, buffer.as_slice().len(), RD_WRN_A::WRITE);
 
         // This token represents the transmission capability of I2C and this is
         // what the `dma::Target` trait is implemented for. It can't be
@@ -333,12 +327,7 @@ where
         Buffer::Target: AsMutSlice<Element = u8>,
     {
         assert!(buffer.len() >= num_words);
-        self.start_transfer(
-            address,
-            buffer.as_slice().len(),
-            RD_WRN_A::READ,
-            AUTOEND_A::AUTOMATIC,
-        );
+        self.start_transfer(address, buffer.as_slice().len(), RD_WRN_A::READ);
 
         // See explanation of tokens in `write_all`.
         let token = Rx(PhantomData);
@@ -370,6 +359,45 @@ where
     }
 }
 
+// Sequence to flush the TXDR register. This resets the TXIS and TXE flags
+macro_rules! flush_txdr {
+    ($i2c:expr) => {
+        // If a pending TXIS flag is set, write dummy data to TXDR
+        if $i2c.isr.read().txis().bit_is_set() {
+            $i2c.txdr.write(|w| unsafe { w.txdata().bits(0) });
+        }
+
+        // If TXDR is not flagged as empty, write 1 to flush it
+        if $i2c.isr.read().txe().bit_is_set() {
+            $i2c.isr.write(|w| w.txe().set_bit());
+        }
+    };
+}
+
+macro_rules! busy_wait {
+    ($i2c:expr, $flag:ident, $variant:ident) => {
+        loop {
+            let isr = $i2c.isr.read();
+
+            if isr.$flag().$variant() {
+                break;
+            } else if isr.berr().bit_is_set() {
+                $i2c.icr.write(|w| w.berrcf().set_bit());
+                return Err(Error::BusError);
+            } else if isr.arlo().bit_is_set() {
+                $i2c.icr.write(|w| w.arlocf().set_bit());
+                return Err(Error::ArbitrationLost);
+            } else if isr.nackf().bit_is_set() {
+                $i2c.icr.write(|w| w.stopcf().set_bit().nackcf().set_bit());
+                flush_txdr!($i2c);
+                return Err(Error::Nack);
+            } else {
+                // try again
+            }
+        }
+    };
+}
+
 impl<I, SDA, SCL> WriteRead for I2c<I, SDA, SCL>
 where
     I: Instance,
@@ -377,54 +405,82 @@ where
     type Error = Error;
 
     fn write_read(&mut self, addr: u8, bytes: &[u8], buffer: &mut [u8]) -> Result<(), Self::Error> {
-        let writing = bytes.len() > 0;
-        let reading = buffer.len() > 0;
+        // TODO support transfers of more than 255 bytes
+        assert!(bytes.len() < 256 && bytes.len() > 0);
+        assert!(buffer.len() < 256 && buffer.len() > 0);
 
-        // wait for i2c device to be available
-        while self.i2c.isr.read().busy().is_busy() {
-            self.check_errors()?;
+        // Wait for any previous address sequence to end automatically.
+        // This could be up to 50% of a bus cycle (ie. up to 0.5/freq)
+        while self.i2c.cr2.read().start().bit_is_set() {}
+
+        // Set START and prepare to send `bytes`.
+        // The START bit can be set even if the bus is BUSY or
+        // I2C is in slave mode.
+        self.i2c.cr2.write(|w| unsafe {
+            w
+                // Start transfer
+                .start()
+                .set_bit()
+                // Set number of bytes to transfer
+                .nbytes()
+                .bits(bytes.len() as u8)
+                // Set address to transfer to/from
+                .sadd()
+                .bits((addr << 1) as u16)
+                // 7-bit addressing mode
+                .add10()
+                .clear_bit()
+                // Set transfer direction to write
+                .rd_wrn()
+                .clear_bit()
+                // Software end mode
+                .autoend()
+                .clear_bit()
+        });
+
+        for byte in bytes {
+            // Wait until we are allowed to send data
+            // (START has been ACKed or last byte went through)
+            busy_wait!(self.i2c, txis, bit_is_set);
+
+            // Put byte on the wire
+            self.i2c.txdr.write(|w| unsafe { w.txdata().bits(*byte) });
         }
 
-        // if we are writing bytes
-        if writing {
-            // if the previous write has failed, we need to flush the TX
-            // buffer to prevent sending old data
-            self.i2c.isr.write(|w| w.txe().set_bit());
+        // Wait until the write finishes before beginning to read.
+        busy_wait!(self.i2c, tc, bit_is_set);
 
-            if reading {
-                self.start_transfer(addr, bytes.len(), RD_WRN_A::WRITE, AUTOEND_A::SOFTWARE);
-            } else {
-                self.start_transfer(addr, bytes.len(), RD_WRN_A::WRITE, AUTOEND_A::AUTOMATIC);
-            }
+        // reSTART and prepare to receive bytes into `buffer`
+        self.i2c.cr2.write(|w| unsafe {
+            w
+                // Start transfer
+                .start()
+                .set_bit()
+                // Set number of bytes to transfer
+                .nbytes()
+                .bits(buffer.len() as u8)
+                // Set address to transfer to/from
+                .sadd()
+                .bits((addr << 1) as u16)
+                // 7-bit addressing mode
+                .add10()
+                .clear_bit()
+                // Set transfer direction to read
+                .rd_wrn()
+                .set_bit()
+                // Automatic end mode
+                .autoend()
+                .set_bit()
+        });
 
-            // Send bytes
-            for c in bytes {
-                self.send_byte(*c)?;
-            }
+        for byte in buffer {
+            // Wait until we have received something
+            busy_wait!(self.i2c, rxne, bit_is_set);
 
-            // if we are going to read afterwards, we need to wait for
-            // the tx to complete
-            if reading {
-                while self.i2c.isr.read().tc().is_not_complete() {
-                    self.check_errors()?;
-                }
-            }
+            *byte = self.i2c.rxdr.read().rxdata().bits();
         }
 
-        if reading {
-            // force a read of the rx data register, so that we dont
-            // get stale data from the last transaction (if there is
-            // anything left over)
-            self.i2c.rxdr.read();
-
-            //send a new start condition and transfer
-            self.start_transfer(addr, buffer.len(), RD_WRN_A::READ, AUTOEND_A::AUTOMATIC);
-
-            // Receive bytes into buffer
-            for c in buffer {
-                *c = self.recv_byte()?;
-            }
-        }
+        // automatic STOP
 
         Ok(())
     }
@@ -437,7 +493,16 @@ where
     type Error = Error;
 
     fn write(&mut self, addr: u8, bytes: &[u8]) -> Result<(), Self::Error> {
-        self.write_read(addr, bytes, &mut [])
+        while self.i2c.isr.read().busy().is_busy() {}
+
+        self.start_transfer(addr, bytes.len(), RD_WRN_A::WRITE);
+
+        // Send bytes
+        for c in bytes {
+            self.send_byte(*c)?;
+        }
+
+        Ok(())
     }
 }
 
@@ -448,7 +513,15 @@ where
     type Error = Error;
 
     fn read(&mut self, addr: u8, buffer: &mut [u8]) -> Result<(), Self::Error> {
-        self.write_read(addr, &[], buffer)
+        while self.i2c.isr.read().busy().is_busy() {}
+
+        self.start_transfer(addr, buffer.len(), RD_WRN_A::READ);
+
+        // Receive bytes into buffer
+        for c in buffer {
+            *c = self.recv_byte()?;
+        }
+        Ok(())
     }
 }
 
