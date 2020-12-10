@@ -16,37 +16,37 @@ use crate::{
 };
 
 /// The first address of flash memory
-pub const FLASH_START: u32 = 0x0800_0000;
+pub const FLASH_START: usize = 0x0800_0000;
 
 /// The size of a Flash memory page, in bytes
-pub const PAGE_SIZE: u32 = 128;
+pub const PAGE_SIZE: usize = 128;
 
 // EEPROM sizes in bytes, generated with cube-parse
 #[cfg(feature = "eeprom-256")]
-pub const EEPROM_SIZE: u32 = 256;
+pub const EEPROM_SIZE: usize = 256;
 #[cfg(feature = "eeprom-1024")]
-pub const EEPROM_SIZE: u32 = 1024;
+pub const EEPROM_SIZE: usize = 1024;
 #[cfg(feature = "eeprom-3072")]
-pub const EEPROM_SIZE: u32 = 3072;
+pub const EEPROM_SIZE: usize = 3072;
 #[cfg(feature = "eeprom-2048")]
-pub const EEPROM_SIZE: u32 = 2048;
+pub const EEPROM_SIZE: usize = 2048;
 #[cfg(feature = "eeprom-6144")]
-pub const EEPROM_SIZE: u32 = 6144;
+pub const EEPROM_SIZE: usize = 6144;
 #[cfg(feature = "eeprom-512")]
-pub const EEPROM_SIZE: u32 = 512;
+pub const EEPROM_SIZE: usize = 512;
 #[cfg(feature = "eeprom-128")]
-pub const EEPROM_SIZE: u32 = 128;
+pub const EEPROM_SIZE: usize = 128;
 
 // EEPROM start addresses
-const EEPROM_START_BANK1: u32 = 0x0808_0000;
-const EEPROM_START_BANK2: u32 = 0x0808_0C00;
+const EEPROM_START_BANK1: usize = 0x0808_0000;
+const EEPROM_START_BANK2: usize = 0x0808_0C00;
 
 /// Entry point to the non-volatile memory (NVM) API
 pub struct FLASH {
     flash: pac::FLASH,
-    flash_end: u32,
-    eeprom_start: u32,
-    eeprom_end: u32,
+    flash_end: usize,
+    eeprom_start: usize,
+    eeprom_end: usize,
 }
 
 impl FLASH {
@@ -199,7 +199,7 @@ impl FLASH {
             if !memory.is_flash() {
                 panic!("Address does not point to Flash memory");
             }
-            if address as u32 & 0x3f != 0 {
+            if address as usize & 0x3f != 0 {
                 panic!("Address is not aligned to half-page boundary");
             }
             if words.len() != 16 {
@@ -258,7 +258,7 @@ impl FLASH {
     }
 
     fn verify_address(&self, address: *mut u32) -> Memory {
-        let address = address as u32;
+        let address = address as usize;
 
         let memory = match address {
             _ if FLASH_START <= address && address < self.flash_end => Memory::Flash,
@@ -332,10 +332,10 @@ impl FLASH {
 // - STM32L0x1 reference manual, section 28.1.1
 // - STM32L0x2 reference manual, section 33.1.1
 // - STM32L0x3 reference manual, section 34.1.1
-pub fn flash_size_in_kb() -> u32 {
+pub fn flash_size_in_kb() -> usize {
     // This is safe, as we're reading from a valid address (as per the
     // reference manual) which is aligned to 16 bits.
-    unsafe { (0x1FF8_007C as *const u16).read() as u32 }
+    unsafe { (0x1FF8_007C as *const u16).read() as usize }
 }
 
 extern "C" {
