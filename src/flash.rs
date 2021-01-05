@@ -38,8 +38,8 @@ pub const EEPROM_SIZE: usize = 512;
 pub const EEPROM_SIZE: usize = 128;
 
 // EEPROM start addresses
-const EEPROM_START_BANK1: usize = 0x0808_0000;
-const EEPROM_START_BANK2: usize = 0x0808_0C00;
+pub const EEPROM_START_BANK1: usize = 0x0808_0000;
+pub const EEPROM_START_BANK2: usize = 0x0808_0C00;
 
 /// Entry point to the non-volatile memory (NVM) API
 pub struct FLASH {
@@ -181,6 +181,48 @@ impl FLASH {
         })
     }
 
+    /// Writes a single byte to EEPROM
+    ///
+    /// Please note that any access to Flash or EEPROM on the same memory bank
+    /// will be stalled until this operation completes.
+    ///
+    /// # Constant Time Writes
+    ///
+    /// Note that the write operation does not complete in constant time. If
+    /// all bits of the current value in EEPROM are set to 0, the new value is
+    /// written directly in `Tprog` (3.2 ms on the STM32L0x1). Otherwise, an
+    /// erase operation is executed first, resulting in a total duration of
+    /// 2x`Tprog` (6.4 ms on the STM32L0x1).
+    ///
+    /// If constant time writes are important, you could set the FIX bit to
+    /// force the memory interface to always execute an erase before writing
+    /// new data. However, this is not currently supported in the HAL.
+    ///
+    /// # Panics
+    ///
+    /// Panics, if `address` does not point to EEPROM.
+    pub fn write_byte(&mut self, address: *mut u8, byte: u8) -> Result {
+        self.unlock(|self_| {
+            // Verify that the address points to EEPROM
+            let memory = self_.verify_address(address);
+            if !memory.is_eeprom() {
+                panic!("Address does not point to EEPROM memory");
+            }
+
+            // Wait, while the memory interface is busy.
+            while self_.flash.sr.read().bsy().is_active() {}
+
+            // Write memory
+            // Safe, as we know that this points to flash or EEPROM.
+            unsafe { address.write_volatile(byte) }
+
+            // Wait for operation to complete
+            while self_.flash.sr.read().bsy().is_active() {}
+
+            self_.check_errors()
+        })
+    }
+
     /// Writes a half-page (16 words) of Flash  memory
     ///
     /// The memory written to must have been erased before, otherwise this
@@ -236,16 +278,29 @@ impl FLASH {
 
             self_.check_errors()
 
-            // No need to reset PECR flags, that's done by `unlock`.
+            // No need to manually reset PECR flags, that's done by `unlock`.
         })
     }
 
+    /// Unlock everything that needs unlocking:
+    ///
+    /// - FLASH_PECR lock (PELOCK)
+    /// - Program memory lock (PRGLOCK)
+    /// - Option bytes lock (OPTLOCK)
+    ///
+    /// Then, once unlocked, run the provided function.
+    ///
+    /// References:
+    ///
+    /// - STM32L0x1 reference manual (RM0377), section 3.3.4 (Writing/erasing the NVM)
     fn unlock(&mut self, f: impl FnOnce(&mut Self) -> Result) -> Result {
-        // Unlock everything that needs unlocking
+        // FLASH_PECR lock
         self.flash.pekeyr.write(|w| w.pekeyr().bits(0x89ABCDEF));
         self.flash.pekeyr.write(|w| w.pekeyr().bits(0x02030405));
+        // Program memory lock
         self.flash.prgkeyr.write(|w| w.prgkeyr().bits(0x8C9DAEBF));
         self.flash.prgkeyr.write(|w| w.prgkeyr().bits(0x13141516));
+        // Option bytes lock
         self.flash.optkeyr.write(|w| w.optkeyr().bits(0xFBEAD9C8));
         self.flash.optkeyr.write(|w| w.optkeyr().bits(0x24252627));
 
@@ -257,7 +312,7 @@ impl FLASH {
         result
     }
 
-    fn verify_address(&self, address: *mut u32) -> Memory {
+    fn verify_address<T>(&self, address: *mut T) -> Memory {
         let address = address as usize;
 
         let memory = match address {
@@ -273,6 +328,7 @@ impl FLASH {
         memory
     }
 
+    /// Check for errors.
     pub fn check_errors(&self) -> Result {
         let sr = self.flash.sr.read();
 
@@ -371,11 +427,9 @@ impl Memory {
         *self == Memory::Flash
     }
 
-    // The following method is not currently used, but I left it here, in case
-    // new methods need this functionality later.
-    // fn is_eeprom(&self) -> bool {
-    //     *self == Memory::Eeprom
-    // }
+    fn is_eeprom(&self) -> bool {
+        *self == Memory::Eeprom
+    }
 
     fn is_other(&self) -> bool {
         *self == Memory::Other
