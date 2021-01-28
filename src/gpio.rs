@@ -356,7 +356,7 @@ macro_rules! gpio {
                     pub fn into_pull_down_input(
                         mut self,
                     ) -> $PXi<Input<PullDown>> {
-                        self.mode::<Input<Floating>>();
+                        self.mode::<Input<PullDown>>();
                         $PXi {
                             _mode: PhantomData
                         }
