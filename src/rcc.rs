@@ -1,3 +1,5 @@
+use crate::mco;
+use crate::pac::rcc::cfgr::{MCOPRE_A, MCOSEL_A};
 use crate::pac::RCC;
 use crate::time::{Hertz, U32Ext};
 
@@ -226,6 +228,28 @@ impl Rcc {
     }
 }
 
+impl Rcc {
+    /// Configure MCO (Microcontroller Clock Output).
+    pub fn configure_mco<P>(
+        &mut self,
+        source: MCOSEL_A,
+        prescaler: MCOPRE_A,
+        output_pin: P,
+    ) -> MCOEnabled
+    where
+        P: mco::Pin,
+    {
+        output_pin.into_mco();
+
+        self.rb.cfgr.modify(|_, w| {
+            w.mcosel().variant(source);
+            w.mcopre().variant(prescaler)
+        });
+
+        MCOEnabled(())
+    }
+}
+
 /// Extension trait that freezes the `RCC` peripheral with provided clocks configuration
 pub trait RccExt {
     fn freeze(self, config: Config) -> Rcc;
@@ -425,3 +449,9 @@ impl Clocks {
 /// You can get an instance of this struct by calling [`Rcc::enable_hsi48`].
 #[derive(Clone, Copy)]
 pub struct HSI48(());
+
+/// Token that exists only if MCO (Microcontroller Clock Out) has been enabled.
+///
+/// You can get an instance of this struct by calling [`Rcc::configure_mco`].
+#[derive(Clone, Copy)]
+pub struct MCOEnabled(());
