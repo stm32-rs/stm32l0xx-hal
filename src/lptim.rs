@@ -1,5 +1,6 @@
 //! Low-Power Timer (LPTIM) support.
 
+use crate::gpio::{self, gpiob};
 use crate::hal;
 use crate::pac::LPTIM;
 use crate::pwr::PWR;
@@ -20,14 +21,19 @@ pub enum OneShot {}
 /// Low-Power Timer counting in periodic mode.
 pub enum Periodic {}
 
+/// Low-Power Timer in encoder mode.
+pub enum Encoder {}
+
 impl sealed::Sealed for OneShot {}
 impl sealed::Sealed for Periodic {}
+impl sealed::Sealed for Encoder {}
 
 /// Marker trait for counter directions.
 pub trait CountMode: sealed::Sealed {}
 
 impl CountMode for OneShot {}
 impl CountMode for Periodic {}
+impl CountMode for Encoder {}
 
 /// Clock source selection for the Low-Power Timer `LPTIM`.
 #[derive(Debug, Copy, Clone, PartialEq, Eq)]
@@ -102,6 +108,90 @@ impl LpTimer<OneShot> {
     /// The timer needs to be started by calling `.start(freq)`.
     pub fn init_oneshot(lptim: LPTIM, pwr: &mut PWR, rcc: &mut Rcc, clk: ClockSrc) -> Self {
         Self::init(lptim, pwr, rcc, clk)
+    }
+}
+
+impl LpTimer<Encoder> {
+    /// Initializes the Low-Power Timer in encoder mode.
+    ///
+    /// The `start` method must be called to enable the encoder input.
+    pub fn init_encoder(
+        lptim: LPTIM,
+        pwr: &mut PWR,
+        rcc: &mut Rcc,
+        clk: ClockSrc,
+        (pb5, pb7): (gpiob::PB5<gpio::Analog>, gpiob::PB7<gpio::Analog>),
+    ) -> Self {
+        pb5.set_alt_mode(gpio::AltMode::AF2);
+        pb7.set_alt_mode(gpio::AltMode::AF2);
+
+        Self::init(lptim, pwr, rcc, clk)
+    }
+
+    // TODO: Dedupe this fn with configure() function in `impl<M: CountMode> LpTimer<M>`
+    fn configure_encoder(&mut self, arr: u16) {
+        // Disable the timer. The prescaler can only be changed while it's disabled.
+        self.lptim.cr.write(|w| w.enable().clear_bit());
+
+        // Configure in encoder mode
+        self.lptim.cfgr.write(|w| {
+            w
+                // Make sure prescaler is disabled. Encoder mode forbids prescaling.
+                .presc()
+                .div1()
+                // Put timer into encoder mode
+                .enc()
+                .set_bit()
+                // Choose internal clock source - external sources not supported in encoder mode.
+                .cksel()
+                .clear_bit()
+                // Start counting from software trigger
+                .trigen()
+                .sw()
+                // Clock polarity
+                .ckpol()
+                .both_edges()
+        });
+
+        // Enable timer
+        self.lptim.cr.write(|w| w.enable().set_bit());
+
+        // "After setting the ENABLE bit, a delay of two counter clock is needed before the LPTIM is
+        // actually enabled."
+        // The slowest LPTIM clock source is LSE at 32768 Hz, the fastest CPU clock is ~80 MHz. At
+        // these conditions, one cycle of the LPTIM clock takes 2500 CPU cycles, so sleep for 5000.
+        cortex_m::asm::delay(5000);
+
+        // ARR can only be changed while the timer is *en*abled
+        self.lptim.arr.write(|w| w.arr().bits(arr));
+    }
+
+    /// Enable the timer and begin counting encoder pulses.
+    ///
+    /// The provided value is stored in the ARR (Auto Reload Register). The timer's internal counter
+    /// will wrap when this value is reached.
+    pub fn enable(&mut self, arr: u16) {
+        self.configure_encoder(arr);
+
+        // Enable timer, enable continuous mode
+        self.lptim
+            .cr
+            .write(|w| w.enable().set_bit().cntstrt().set_bit());
+    }
+
+    /// Disable the timer.
+    pub fn disable(&mut self) {
+        self.lptim.cr.write(|w| w.enable().clear_bit());
+    }
+
+    /// Get the current count of the encoder.
+    pub fn count(&self) -> u16 {
+        (self.lptim.cnt.read().bits() & 0xffff) as u16
+    }
+
+    /// Clear all LPTIM interrupt flags
+    pub fn clear_flags(&self) {
+        self.lptim.icr.write(|w| unsafe { w.bits(0x7f) });
     }
 }
 
