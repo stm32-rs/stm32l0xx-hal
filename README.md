@@ -148,6 +148,12 @@ In order to use this HAL, you need the following Setup:
 
     Simply run `rustup target add thumbv6m-none-eabi`
 
+4. Install [probe-run](https://crates.io/crates/probe-run) to run examples.
+
+    ```bash
+    cargo install probe-run
+    ```
+
 For more instructions on how to get started with ARM / Cortex-M programming
 using Rust, check out the [Embedded Rust
 Book](https://rust-embedded.github.io/book/).
@@ -162,6 +168,15 @@ You can build examples through Cargo:
 Note that not all examples are compatible with all MCUs. You might need to peek
 into the example source code.
 
+# Run Examples
+
+This crate uses [probe-run](https://crates.io/crates/probe-run) to run examples on target hardware. 
+
+To run the `blinky` example on an STM32L053 Nucleo:
+
+```bash
+cargo run --example blinky --features mcu-STM32L053R8Tx -- --chip STM32L053R8Tx
+```
 
 # Flashing Using Helper Scripts
 
@@ -181,39 +196,6 @@ code. This can be extended to any other example code.
     ``` 
     $ ./openocd_flash.sh target/thumbv6m-none-eabi/release/examples/serial
     ```
-
-
-# Debugging Using Helper Scripts
-
-## Debugging with GDB
-
-1. Terminal 1 - OpenOCD Session:
-    ``` 
-    $ ./openocd_session.sh
-    ```
-    
-2. Terminal 2 - GDB Session:
-    ``` 
-    $ ./gdb_session.sh target/thumbv6m-none-eabi/release/examples/serial
-    ```
-
-## Debugging with GDB Py and GDB Dashboard
-
-1. Terminal 1 - OpenOCD Session:
-    ``` 
-    $ ./openocd_session.sh
-    ```
-
-2. Terminal 2 - GDB Py Session:
-    ``` 
-    $ ./gdb_session.sh target/thumbv6m-none-eabi/release/examples/serial -d
-    ```
-
-    Note: Users can redirect the dashboard output to separate terminal (i.e. - ttys001) using:
-    ```
-    >>> dashboard -output /dev/ttys001
-    ```
-
 
 # Contributor Notes
 
