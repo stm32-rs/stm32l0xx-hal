@@ -40,6 +40,7 @@ pub mod gpio;
 ))]
 pub mod i2c;
 pub mod lptim;
+pub mod mco;
 pub mod prelude;
 pub mod pwm;
 pub mod pwr;
