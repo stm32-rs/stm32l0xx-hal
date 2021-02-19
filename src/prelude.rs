@@ -9,6 +9,7 @@ pub use embedded_hal::{
 pub use crate::{
     adc::AdcExt as _,
     delay::DelayExt as _,
+    encoder::{EncoderExt, PinCh1, PinCh2, Pins},
     gpio::GpioExt as _,
     pwr::PowerMode as _,
     rcc::RccExt as _,
