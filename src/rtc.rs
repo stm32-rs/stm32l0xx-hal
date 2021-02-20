@@ -30,7 +30,7 @@ impl RTC {
     /// Panics, if the ABP1 clock frequency is lower than the RTC clock
     /// frequency. The RTC is currently hardcoded to use the LSE as clock source
     /// which runs at 32768 Hz.
-    pub fn new(rtc: pac::RTC, rcc: &mut Rcc, _: &PWR, init: Instant) -> Self {
+    pub fn new(rtc: pac::RTC, rcc: &mut Rcc, pwr: &PWR, init: Instant) -> Self {
         // Backup write protection must be disabled by setting th DBP bit in
         // PWR_CR, otherwise it's not possible to access the RTC registers. We
         // assume that this was done during PWR initialization. To make sure it
@@ -45,18 +45,16 @@ impl RTC {
         // The prescaler settings in `set` assume that the LSE is selected, and
         // that the frequency is 32768 Hz. If you change the clock selection
         // here, you have to adapt the prescaler settings too.
+
+        // Enable LSE clock
+        rcc.enable_lse(pwr);
         rcc.rb.csr.modify(|_, w| {
             // Select LSE as RTC clock source.
             // This is safe, as we're writing a valid bit pattern.
             w.rtcsel().bits(0b01);
             // Enable RTC clock
-            w.rtcen().set_bit();
-            // Enable LSE clock
-            w.lseon().set_bit()
+            w.rtcen().set_bit()
         });
-
-        // Wait for LSE to be ready
-        while rcc.rb.csr.read().lserdy().bit_is_clear() {}
 
         let apb1_clk = rcc.clocks.apb1_clk();
         let rtc_clk = 32_768u32.hz(); // LSE crystal frequency

@@ -1,6 +1,7 @@
 use crate::mco;
 use crate::pac::rcc::cfgr::{MCOPRE_A, MCOSEL_A};
 use crate::pac::RCC;
+use crate::pwr::PWR;
 use crate::time::{Hertz, U32Ext};
 
 #[cfg(any(feature = "stm32l0x2", feature = "stm32l0x3"))]
@@ -192,6 +193,16 @@ impl Config {
 pub struct Rcc {
     pub clocks: Clocks,
     pub(crate) rb: RCC,
+}
+
+impl Rcc {
+    pub fn enable_lse(&mut self, _: &PWR) {
+        self.rb.csr.modify(|_, w| {
+            // Enable LSE clock
+            w.lseon().set_bit()
+        });
+        while self.rb.csr.read().lserdy().bit_is_clear() {}
+    }
 }
 
 #[cfg(any(feature = "stm32l0x2", feature = "stm32l0x3"))]
