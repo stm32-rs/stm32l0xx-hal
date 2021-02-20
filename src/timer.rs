@@ -144,7 +144,8 @@ macro_rules! timers {
                 }
 
                 /// Select master mode
-                pub fn select_master_mode(&mut self,
+                pub fn select_master_mode(
+                    &mut self,
                     variant: <$TIM as GeneralPurposeTimer>::MasterMode,
                 ) {
                     self.tim.select_master_mode(variant);
@@ -224,4 +225,135 @@ pub trait GeneralPurposeTimer {
     type MasterMode;
 
     fn select_master_mode(&mut self, variant: Self::MasterMode);
+}
+
+/// Two linked 16 bit timers that form a 32 bit timer.
+pub trait LinkedTimer {
+    /// Return the current 16 bit counter value of the MSB timer.
+    fn get_counter_msb(&self) -> u16;
+
+    /// Return the current 16 bit counter value of the LSB timer.
+    fn get_counter_lsb(&self) -> u16;
+
+    /// Return the current 32 bit counter value.
+    fn get_counter(&self) -> u32;
+
+    /// Reset the counter to 0.
+    fn reset(&mut self);
+}
+
+/// A pair of timers that can be linked.
+///
+/// The two timers are configured so that an overflow of the primary timer
+/// triggers an update on the secondary timer. This way, two 16 bit timers can
+/// be combined to a single 32 bit timer.
+pub struct LinkedTimerPair<PRIMARY, SECONDARY> {
+    /// Timer in primary mode
+    tim_primary: PRIMARY,
+    /// Timer in secondary mode
+    tim_secondary: SECONDARY,
+}
+
+macro_rules! linked_timers {
+    ($(
+        ($PRIMARY:ident, $SECONDARY:ident): (
+            $new:ident,
+            $apbenr:ident, $apbrstr:ident,
+            $master_en:ident, $slave_en:ident,
+            $master_rst:ident, $slave_rst:ident,
+            $mms:ty, $sms:ty, $ts:expr
+        ),
+    )+) => {
+        $(
+            impl LinkedTimerPair<$PRIMARY, $SECONDARY> {
+                /// Create and configure a new `LinkedTimerPair` with the
+                /// specified timers.
+                pub fn $new(tim_primary: $PRIMARY, tim_secondary: $SECONDARY, rcc: &mut Rcc) -> Self {
+                    // Enable timers
+                    rcc.rb.$apbenr.modify(|_, w| w.$master_en().set_bit());
+                    rcc.rb.$apbenr.modify(|_, w| w.$slave_en().set_bit());
+
+                    // Reset timers
+                    rcc.rb.$apbrstr.modify(|_, w| w.$master_rst().set_bit());
+                    rcc.rb.$apbrstr.modify(|_, w| w.$master_rst().clear_bit());
+                    rcc.rb.$apbrstr.modify(|_, w| w.$slave_rst().set_bit());
+                    rcc.rb.$apbrstr.modify(|_, w| w.$slave_rst().clear_bit());
+
+                    // Enable counter
+                    tim_primary.cr1.modify(|_, w| w.cen().set_bit());
+                    tim_secondary.cr1.modify(|_, w| w.cen().set_bit());
+
+                    // In the MMS (Master Mode Selection) register, set the master mode so
+                    // that a rising edge is output on the trigger output TRGO every time
+                    // an update event is generated.
+                    tim_primary.cr2.modify(|_, w| w.mms().variant(<$mms>::UPDATE));
+
+                    // In the SMCR (Slave Mode Control Register), select the
+                    // appropriate internal trigger source (TS).
+                    tim_secondary.smcr.modify(|_, w| w.ts().variant($ts));
+                    // Set the SMS (Slave Mode Selection) register to "external clock mode 1",
+                    // where the rising edges of the selected trigger (TRGI) clock the counter.
+                    tim_secondary.smcr.modify(|_, w| w.sms().variant(<$sms>::EXT_CLOCK_MODE));
+
+                    Self { tim_primary, tim_secondary }
+                }
+            }
+
+            impl LinkedTimer for LinkedTimerPair<$PRIMARY, $SECONDARY> {
+                /// Return the current 16 bit counter value of the primary timer (LSB).
+                fn get_counter_lsb(&self) -> u16 {
+                    self.tim_primary.cnt.read().cnt().bits()
+                }
+
+                /// Return the current 16 bit counter value of the secondary timer (MSB).
+                fn get_counter_msb(&self) -> u16 {
+                    self.tim_secondary.cnt.read().cnt().bits()
+                }
+
+                /// Return the current 32 bit counter value.
+                ///
+                /// Note: Due to the potential for a race condition between
+                /// reading MSB and LSB, it's possible that the registers must
+                /// be re-read once. Therefore reading the counter value is not
+                /// constant time.
+                fn get_counter(&self) -> u32 {
+                    loop {
+                        let msb = self.tim_secondary.cnt.read().cnt().bits() as u32;
+                        let lsb = self.tim_primary.cnt.read().cnt().bits() as u32;
+
+                        // Because the timer is still running at high frequency
+                        // between reading MSB and LSB, it's possible that LSB
+                        // has already overflowed. Therefore we read MSB again
+                        // to check that it hasn't changed.
+                        let msb_again = self.tim_secondary.cnt.read().cnt().bits() as u32;
+                        if msb == msb_again {
+                            return (msb << 16) | lsb;
+                        }
+                    }
+                }
+
+                fn reset(&mut self) {
+                    // Pause
+                    self.tim_primary.cr1.modify(|_, w| w.cen().clear_bit());
+                    self.tim_secondary.cr1.modify(|_, w| w.cen().clear_bit());
+                    // Reset counter
+                    self.tim_primary.cnt.reset();
+                    self.tim_secondary.cnt.reset();
+                    // Continue
+                    self.tim_secondary.cr1.modify(|_, w| w.cen().set_bit());
+                    self.tim_primary.cr1.modify(|_, w| w.cen().set_bit());
+                }
+            }
+        )+
+    }
+}
+
+linked_timers! {
+    // Internal trigger connection: RM0377 table 76
+    (TIM2, TIM3): (tim2_tim3, apb1enr, apb1rstr, tim2en, tim3en, tim2rst, tim3rst, tim2::cr2::MMS_A, tim2::smcr::SMS_A, tim2::smcr::TS_A::ITR0),
+    // Internal trigger connection: RM0377 table 80
+    (TIM21, TIM22): (tim21_tim22, apb2enr, apb2rstr, tim21en, tim22en, tim21rst, tim22rst, tim21::cr2::MMS_A, tim22::smcr::SMS_A, tim22::smcr::TS_A::ITR0),
+
+    // Note: Other combinations would be possible as well, e.g. (TIM21, TIM2) or (TIM2, TIM22).
+    // They can be implemented if needed.
 }
