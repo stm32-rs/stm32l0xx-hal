@@ -20,6 +20,7 @@ pub mod aes;
 pub mod calibration;
 pub mod delay;
 pub mod dma;
+pub mod encoder;
 pub mod exti;
 #[cfg(any(
     feature = "eeprom-128",
