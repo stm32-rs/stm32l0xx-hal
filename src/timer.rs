@@ -356,12 +356,12 @@ macro_rules! linked_timers {
 
 #[cfg(not(feature = "stm32l0x0"))]
 linked_timers! {
-	// Internal trigger connection: RM0377 table 76
+		// Internal trigger connection: RM0377 table 76
     (TIM2, TIM3): (tim2_tim3, apb1enr, apb1rstr, tim2en, tim3en, tim2rst, tim3rst, tim2::cr2::MMS_A, tim2::smcr::SMS_A, tim2::smcr::TS_A::ITR0),
 }
 
 linked_timers! {
-	   // Internal trigger connection: RM0377 table 80
+	  // Internal trigger connection: RM0377 table 80
     (TIM21, TIM22): (tim21_tim22, apb2enr, apb2rstr, tim21en, tim22en, tim21rst, tim22rst, tim21::cr2::MMS_A, tim22::smcr::SMS_A, tim22::smcr::TS_A::ITR0),
 
     // Note: Other combinations would be possible as well, e.g. (TIM21, TIM2) or (TIM2, TIM22).
