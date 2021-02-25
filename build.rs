@@ -9,6 +9,10 @@ fn main() {
 
     let mut feature_count = 0;
 
+    if cfg!(feature = "stm32l0x0") {
+        feature_count += 1;
+    }
+
     if cfg!(feature = "stm32l0x1") {
         feature_count += 1;
     }
@@ -22,11 +26,13 @@ fn main() {
     }
 
     if feature_count != 1 {
-        panic!("\n\nMust select exactly one package for linker script generation!\nChoices: 'stm32l0x1' or 'stm32l0x2' or 'stm32l0x3'\nAlternatively, pick the mcu-feature that matches your MCU, for example 'mcu-STM32L071KBTx'\n\n");
+        panic!("\n\nMust select exactly one package for linker script generation!\nChoices: 'stm32l0x0' or 'stm32l0x1' or 'stm32l0x2' or 'stm32l0x3'\nAlternatively, pick the mcu-feature that matches your MCU, for example 'mcu-STM32L071KBTx'\n\n");
     }
 
     if !cfg!(feature = "disable-linker-script") {
-        let linker = if cfg!(feature = "stm32l0x1") {
+        let linker = if cfg!(feature = "stm32l0x0") {
+        		include_bytes!("memory_l0x0.x").as_ref()
+        } else if cfg!(feature = "stm32l0x1") {
             include_bytes!("memory_l0x1.x").as_ref()
         } else if cfg!(feature = "stm32l0x2") {
             include_bytes!("memory_l0x2.x").as_ref()
@@ -42,6 +48,7 @@ fn main() {
             .unwrap();
         println!("cargo:rustc-link-search={}", out.display());
 
+        println!("cargo:rerun-if-changed=memory_l0x0.x");
         println!("cargo:rerun-if-changed=memory_l0x1.x");
         println!("cargo:rerun-if-changed=memory_l0x2.x");
         println!("cargo:rerun-if-changed=memory_l0x3.x");
