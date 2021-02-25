@@ -324,7 +324,7 @@ impl ExtiLine for ConfigurableLine {
         use ConfigurableLine::*;
 
         Some(match line {
-        		#[cfg(not(feature = "stm32l0x0"))]
+            #[cfg(not(feature = "stm32l0x0"))]
             16 => Pvd,
             17 => RtcAlarm,
             // 18 = USB (or reserved)
@@ -411,7 +411,7 @@ impl ExtiLine for DirectLine {
             Usart2 => Interrupt::USART2,
             #[cfg(feature = "stm32l0x0")]
             Lpuart1 => Interrupt::LPUART1,
-						#[cfg(not(feature = "stm32l0x0"))]
+            #[cfg(not(feature = "stm32l0x0"))]
             Lpuart1 => Interrupt::AES_RNG_LPUART1,
             Lptim1 => Interrupt::LPTIM1,
         }
