@@ -324,14 +324,14 @@ macro_rules! impl_channel {
                     handle:  &mut Handle,
                     address: u32,
                 ) {
-                    handle.dma.$chfield.par.write(|w| w.pa().bits(address));
+                    unsafe { handle.dma.$chfield.par.write(|w| w.pa().bits(address)); }
                 }
 
                 fn set_memory_address(&self,
                     handle:  &mut Handle,
                     address: u32,
                 ) {
-                    handle.dma.$chfield.mar.write(|w| w.ma().bits(address));
+                    unsafe { handle.dma.$chfield.mar.write(|w| w.ma().bits(address)); }
                 }
 
                 fn set_transfer_len(&self, handle: &mut Handle, len: u16) {
