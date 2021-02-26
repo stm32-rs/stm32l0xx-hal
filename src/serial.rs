@@ -559,7 +559,7 @@ macro_rules! usart {
             }
 
             /// DMA operations.
-            #[cfg(any(feature = "stm32l0x2", feature = "stm32l0x3"))]
+            #[cfg(any(feature = "stm32l0x0", feature = "stm32l0x2", feature = "stm32l0x3"))]
             impl Rx<$USARTX> {
                 pub fn read_all<Buffer, Channel>(self,
                     dma:     &mut dma::Handle,
@@ -671,7 +671,7 @@ macro_rules! usart {
                 }
             }
 
-            #[cfg(any(feature = "stm32l0x2", feature = "stm32l0x3"))]
+            #[cfg(any(feature = "stm32l0x0", feature = "stm32l0x2", feature = "stm32l0x3"))]
             impl Tx<$USARTX> {
                 pub fn write_all<Buffer, Channel>(self,
                     dma:     &mut dma::Handle,
