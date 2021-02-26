@@ -26,7 +26,7 @@ use crate::{
     rcc::Rcc,
 };
 
-#[cfg(any(feature = "io-STM32L051", feature = "io-STM32L071"))]
+#[cfg(all(not(feature = "stm32l0x0"), any(feature = "io-STM32L051", feature = "io-STM32L071")))]
 use crate::pac::USART1;
 
 #[cfg(any(
@@ -37,8 +37,15 @@ use crate::pac::USART1;
 ))]
 use crate::{
     i2c,
-    pac::{I2C1, I2C2, I2C3, USART2},
+    pac::{I2C1, USART2},
     serial,
+};
+#[cfg(not(feature = "stm32l0x0"))]
+use crate::{
+    pac::{
+        I2C2,
+        I2C3
+    },
 };
 
 #[cfg(feature = "stm32l082")]
@@ -504,7 +511,7 @@ impl_target!(
     adc::DmaToken, Channel2, 0;
 );
 
-#[cfg(any(feature = "io-STM32L051", feature = "io-STM32L071"))]
+#[cfg(all(not(feature = "stm32l0x0"), any(feature = "io-STM32L051", feature = "io-STM32L071")))]
 impl_target!(
     // USART1
     serial::Tx<USART1>, Channel2, 3;

@@ -26,8 +26,11 @@ use crate::gpio::{AltMode, OpenDrain, Output};
 #[cfg(feature = "io-STM32L051")]
 use crate::{
     gpio::gpiob::{PB10, PB11, PB13, PB14, PB6, PB7, PB8, PB9},
-    pac::{I2C1, I2C2},
+    pac::I2C1,
 };
+#[cfg(all(feature = "io-STM32L051", not(feature = "stm32l0x0")))]
+use create::pac::I2C2;
+
 #[cfg(feature = "io-STM32L021")]
 use crate::{
     gpio::{
@@ -582,7 +585,7 @@ i2c!(
     ],
 );
 
-#[cfg(feature = "io-STM32L051")]
+#[cfg(all(feature = "io-STM32L051", not(feature = "stm32l0x0")))]
 i2c!(
     I2C2, i2c2en, i2c2rst,
     sda: [
