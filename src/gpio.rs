@@ -469,7 +469,7 @@ macro_rules! gpio {
                     }
 
                     #[allow(dead_code)]
-                    pub(crate) fn set_alt_mode(&self, mode: AltMode) {
+                    pub fn set_alt_mode(&self, mode: AltMode) {
                         let mode = mode as u32;
                         let offset = 2 * $i;
                         let offset2 = 4 * $i;
