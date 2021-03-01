@@ -2,13 +2,16 @@
 
 use core::ops::Deref;
 
+#[cfg(feature = "stm32l0x0")]
+use core::{marker::PhantomData};
+
 #[cfg(feature = "stm32l0x2")]
 use core::{marker::PhantomData, ops::DerefMut, pin::Pin};
 
 #[cfg(feature = "stm32l0x2")]
 use as_slice::{AsMutSlice, AsSlice};
 
-#[cfg(feature = "stm32l0x2")]
+#[cfg(any(feature = "stm32l0x0", feature = "stm32l0x2"))]
 use crate::dma::{self, Buffer};
 use crate::pac::i2c1::{
     cr2::{AUTOEND_A, RD_WRN_A},
@@ -658,24 +661,24 @@ i2c!(
 ///
 /// This is an implementation detail. The user doesn't have to deal with this
 /// directly.
-#[cfg(feature = "stm32l0x2")]
+#[cfg(any(feature = "stm32l0x0", feature = "stm32l0x2"))]
 pub struct Tx<I>(PhantomData<I>);
 
 /// Token used for DMA transfers
 ///
 /// This is an implementation detail. The user doesn't have to deal with this
 /// directly.
-#[cfg(feature = "stm32l0x2")]
+#[cfg(any(feature = "stm32l0x0", feature = "stm32l0x2"))]
 pub struct Rx<I>(PhantomData<I>);
 
 /// I2C-specific wrapper around [`dma::Transfer`]
-#[cfg(feature = "stm32l0x2")]
+#[cfg(any(feature = "stm32l0x0", feature = "stm32l0x2"))]
 pub struct Transfer<Target, Token, Channel, Buffer, State> {
     target: Target,
     inner: dma::Transfer<Token, Channel, Buffer, State>,
 }
 
-#[cfg(feature = "stm32l0x2")]
+#[cfg(any(feature = "stm32l0x0", feature = "stm32l0x2"))]
 impl<Target, Token, Channel, Buffer> Transfer<Target, Token, Channel, Buffer, dma::Ready>
 where
     Token: dma::Target<Channel>,
@@ -701,7 +704,7 @@ where
     }
 }
 
-#[cfg(feature = "stm32l0x2")]
+#[cfg(any(feature = "stm32l0x0", feature = "stm32l0x2"))]
 impl<Target, Token, Channel, Buffer> Transfer<Target, Token, Channel, Buffer, dma::Started>
 where
     Channel: dma::Channel,
