@@ -29,7 +29,7 @@ fn main() -> ! {
     let rx_pin = gpioa.pa3;
 
     // Configure the serial peripheral.
-    let serial = dp
+    let mut serial = dp
         .LPUART1
         .usart(tx_pin, rx_pin, serial::Config::default(), &mut rcc)
         .unwrap();

@@ -735,7 +735,16 @@ usart! {
 }
 
 impl Serial<LPUART1> {
-    pub fn use_lse(&self, rcc: &mut Rcc, _: &LSE) {
+    /// Switches LPUART1 clock course to LSE
+    ///
+    /// Consumes LSE token, to get guarantee that
+    /// LSE clocks are configured.
+    ///
+    /// At the moment configured baudrate is ignored
+    /// and LPUART1 is forced to 9600 when clocked by LSE,
+    /// assuming that LSE is 32768
+    /// (and it must be so according to RM).
+    pub fn use_lse(&mut self, rcc: &mut Rcc, _: &LSE) {
         //Disable transmitter
         self.usart.cr1.modify(|_, w| w.te().disabled());
         while self.usart.isr.read().tc().bit_is_clear() {}
