@@ -41,6 +41,11 @@ use crate::{
     serial,
 };
 
+use crate::{pac::SPI1, spi};
+
+#[cfg(any(feature = "stm32l0x2", feature = "stm32l0x3"))]
+use crate::pac::SPI2;
+
 #[cfg(feature = "stm32l082")]
 use crate::aes;
 
@@ -559,6 +564,21 @@ impl_target!(
     aes::Tx, Channel5, 11;
     aes::Rx, Channel2, 11;
     aes::Rx, Channel3, 11;
+);
+
+impl_target!(
+    // SPI1
+    spi::Tx<SPI1>, Channel3, 1;
+    spi::Rx<SPI1>, Channel2, 1;
+);
+
+#[cfg(any(feature = "stm32l0x2", feature = "stm32l0x3"))]
+impl_target!(
+    // SPI2
+    spi::Tx<SPI2>, Channel5, 2;
+    spi::Rx<SPI2>, Channel4, 2;
+    spi::Tx<SPI2>, Channel7, 2;
+    spi::Rx<SPI2>, Channel6, 2;
 );
 
 /// Indicates that a DMA transfer is ready
