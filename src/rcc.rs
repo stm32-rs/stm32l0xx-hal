@@ -102,10 +102,10 @@ pub const HSI_FREQ: u32 = 16_000_000;
 
 /// Clocks configutation
 pub struct Config {
-    mux: ClockSrc,
-    ahb_pre: AHBPrescaler,
-    apb1_pre: APBPrescaler,
-    apb2_pre: APBPrescaler,
+    pub mux: ClockSrc,
+    pub ahb_pre: AHBPrescaler,
+    pub apb1_pre: APBPrescaler,
+    pub apb2_pre: APBPrescaler,
 }
 
 impl Default for Config {
@@ -192,7 +192,7 @@ impl Config {
 /// RCC peripheral
 pub struct Rcc {
     pub clocks: Clocks,
-    pub(crate) rb: RCC,
+    pub rb: RCC,
 }
 
 impl Rcc {
