@@ -1,3 +1,14 @@
+use core::{
+    marker::PhantomData,
+    ops::{Deref, DerefMut},
+    pin::Pin,
+    ptr,
+};
+
+use as_slice::{AsMutSlice, AsSlice};
+
+use crate::dma::{self, Buffer};
+
 use crate::gpio::gpioa::*;
 #[cfg(any(feature = "stm32l0x2", feature = "stm32l0x3"))]
 use crate::gpio::gpiob::*;
@@ -9,7 +20,6 @@ use crate::pac::SPI1;
 use crate::pac::SPI2;
 use crate::rcc::Rcc;
 use crate::time::Hertz;
-use core::ptr;
 use nb;
 
 pub use hal::spi::{Mode, Phase, Polarity, MODE_0, MODE_1, MODE_2, MODE_3};
@@ -191,8 +201,14 @@ macro_rules! spi {
                     // Enable clock for SPI
                     rcc.rb.$apbXenr.modify(|_, w| w.$spiXen().set_bit());
 
-                    // disable SS output
-                    spi.cr2.write(|w| w.ssoe().clear_bit());
+                    spi.cr2.write(|w| {
+                        // disable SS output
+                        w.ssoe().clear_bit();
+                        // enable DMA reception
+                        w.rxdmaen().set_bit();
+                        // enable DMA transmission
+                        w.txdmaen().set_bit()
+                    });
 
                     let spi_freq = freq.into().0;
                     let apb_freq = rcc.clocks.$pclkX().0;
@@ -246,6 +262,110 @@ macro_rules! spi {
 
                 pub fn free(self) -> ($SPIX, PINS) {
                     (self.spi, self.pins)
+                }
+
+                pub fn read_all<Channel, Buffer>(
+                    self,
+                    dma:     &mut dma::Handle,
+                    channel: Channel,
+                    buffer:  Pin<Buffer>,
+                ) -> Transfer<Self, Rx<$SPIX>, Channel, Buffer, dma::Ready>
+                    where
+                        Rx<$SPIX>:      dma::Target<Channel>,
+                        Channel:        dma::Channel,
+                        Buffer:         DerefMut + 'static,
+                        Buffer::Target: AsMutSlice<Element=u8>,
+                {
+                    let num_words = buffer.len();
+                    self.read_some(dma, channel, buffer, num_words)
+                }
+
+                pub fn read_some<Channel, Buffer>(
+                    self,
+                    dma:     &mut dma::Handle,
+                    channel: Channel,
+                    buffer:  Pin<Buffer>,
+                    num_words: usize,
+                ) -> Transfer<Self, Rx<$SPIX>, Channel, Buffer, dma::Ready>
+                    where
+                        Rx<$SPIX>:      dma::Target<Channel>,
+                        Channel:        dma::Channel,
+                        Buffer:         DerefMut + 'static,
+                        Buffer::Target: AsMutSlice<Element=u8>,
+                {
+                    let token = Rx(PhantomData);
+                    let address = &unsafe { &*$SPIX::ptr() }.dr as *const _ as u32;
+                    // Safe, because the trait bounds of this method guarantee that the
+                    // buffer can be written to.
+                    let inner = unsafe {
+                        dma::Transfer::new(
+                            dma,
+                            token,
+                            channel,
+                            buffer,
+                            num_words,
+                            address,
+                            dma::Priority::high(),
+                            dma::Direction::peripheral_to_memory(),
+                            false,
+                        )
+                    };
+                    Transfer {
+                        target: self,
+                        inner,
+                    }
+                }
+
+                pub fn write_all<Channel, Buffer>(
+                    self,
+                    dma:     &mut dma::Handle,
+                    channel: Channel,
+                    buffer:  Pin<Buffer>,
+                ) -> Transfer<Self, Tx<$SPIX>, Channel, Buffer, dma::Ready>
+                    where
+                        Tx<$SPIX>:      dma::Target<Channel>,
+                        Channel:        dma::Channel,
+                        Buffer:         Deref + 'static,
+                        Buffer::Target: AsSlice<Element=u8>,
+                {
+                    let num_words = buffer.len();
+                    self.write_some(dma, channel, buffer, num_words)
+                }
+
+                pub fn write_some<Channel, Buffer>(
+                    self,
+                    dma:     &mut dma::Handle,
+                    channel: Channel,
+                    buffer:  Pin<Buffer>,
+                    num_words: usize,
+                ) -> Transfer<Self, Tx<$SPIX>, Channel, Buffer, dma::Ready>
+                    where
+                        Tx<$SPIX>:      dma::Target<Channel>,
+                        Channel:        dma::Channel,
+                        Buffer:         Deref + 'static,
+                        Buffer::Target: AsSlice<Element=u8>,
+                {
+                    let token = Tx(PhantomData);
+                    let address = &unsafe { &*$SPIX::ptr() }.dr as *const _ as u32;
+                    // Safe, because the trait bounds of this method guarantee that the
+                    // buffer can be written to.
+                    let inner = unsafe {
+                        dma::Transfer::new(
+                            dma,
+                            token,
+                            channel,
+                            buffer,
+                            num_words,
+                            address,
+                            dma::Priority::high(),
+                            dma::Direction::memory_to_peripheral(),
+                            false,
+                        )
+                    };
+                    Transfer {
+                        target: self,
+                        inner,
+                    }
                 }
             }
 
@@ -316,4 +436,87 @@ spi! {
 #[cfg(any(feature = "stm32l0x2", feature = "stm32l0x3"))]
 spi! {
     SPI2: (spi2, apb1enr, spi2en, apb1_clk),
+}
+
+/// Token used for DMA transfers
+///
+/// This is an implementation detail. The user doesn't have to deal with this
+/// directly.
+pub struct Tx<I>(PhantomData<I>);
+
+/// Token used for DMA transfers
+///
+/// This is an implementation detail. The user doesn't have to deal with this
+/// directly.
+pub struct Rx<I>(PhantomData<I>);
+
+/// Wrapper around a [`dma::Transfer`].
+pub struct Transfer<Target, Token, Channel, Buffer, State> {
+    target: Target,
+    inner: dma::Transfer<Token, Channel, Buffer, State>,
+}
+
+impl<Target, Token, Channel, Buffer> Transfer<Target, Token, Channel, Buffer, dma::Ready>
+where
+    Token: dma::Target<Channel>,
+    Channel: dma::Channel,
+{
+    /// Enables the provided interrupts
+    ///
+    /// This setting only affects this transfer. It doesn't affect transfer on
+    /// other channels, or subsequent transfers on the same channel.
+    pub fn enable_interrupts(&mut self, interrupts: dma::Interrupts) {
+        self.inner.enable_interrupts(interrupts);
+    }
+
+    /// Start the DMA transfer
+    ///
+    /// Consumes this instance of `Transfer` and returns a new one, with its
+    /// state changed to indicate that the transfer has been started.
+    pub fn start(self) -> Transfer<Target, Token, Channel, Buffer, dma::Started> {
+        Transfer {
+            target: self.target,
+            inner: self.inner.start(),
+        }
+    }
+}
+
+impl<Target, Token, Channel, Buffer> Transfer<Target, Token, Channel, Buffer, dma::Started>
+where
+    Channel: dma::Channel,
+{
+    /// Indicates whether the transfer is still ongoing
+    pub fn is_active(&self) -> bool {
+        self.inner.is_active()
+    }
+
+    /// Waits for the transfer to finish and returns the owned resources
+    ///
+    /// This function will busily wait until the transfer is finished. If you
+    /// don't want this, please call this function only once you know that the
+    /// transfer has finished.
+    ///
+    /// This function will return immediately, if [`Transfer::is_active`]
+    /// returns `false`.
+    pub fn wait(
+        self,
+    ) -> Result<
+        dma::TransferResources<Target, Channel, Buffer>,
+        (dma::TransferResources<Target, Channel, Buffer>, dma::Error),
+    > {
+        // Need to move `target` out of `self`, otherwise the closure captures
+        // `self` completely.
+        let target = self.target;
+
+        let map_resources = |res: dma::TransferResources<_, _, _>| dma::TransferResources {
+            target: target,
+            channel: res.channel,
+            buffer: res.buffer,
+        };
+
+        match self.inner.wait() {
+            Ok(res) => Ok(map_resources(res)),
+            Err((res, err)) => Err((map_resources(res), err)),
+        }
+    }
 }
