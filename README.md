@@ -26,7 +26,7 @@ For example, when using the STM32L071KBTx MCU:
 
 ```toml
 [dependencies]
-stm32l0xx-hal = { version = "0.6.2", features = ["mcu-STM32L071KBTx", "rt"] }
+stm32l0xx-hal = { version = "0.6.3", features = ["mcu-STM32L071KBTx", "rt"] }
 ```
 
 
