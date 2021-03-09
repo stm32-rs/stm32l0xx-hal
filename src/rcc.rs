@@ -1,6 +1,6 @@
 use crate::mco;
 use crate::pac::rcc::cfgr::{MCOPRE_A, MCOSEL_A};
-use crate::pac::RCC;
+use crate::pac::{rcc, RCC};
 use crate::pwr::PWR;
 use crate::time::{Hertz, U32Ext};
 
@@ -193,6 +193,36 @@ impl Config {
 pub struct Rcc {
     pub clocks: Clocks,
     pub rb: RCC,
+    // GPIO clock enable register
+    pub iopenr: IOPENR,
+    // GPIO reset register
+    pub ioprstr: IOPRSTR,
+}
+
+
+// GPIO clock enable register
+pub struct IOPENR {
+    _0: (),
+}
+
+impl IOPENR {
+    pub(crate) fn enr(&mut self) -> &rcc::IOPENR {
+        // NOTE(unsafe) this proxy grants exclusive access to this register
+        unsafe { &(*RCC::ptr()).iopenr }
+    }
+}
+
+
+// GPIO reset register
+pub struct IOPRSTR {
+    _0: (),
+}
+
+impl IOPRSTR {
+    pub(crate) fn rstr(&mut self) -> &rcc::IOPRSTR {
+        // NOTE(unsafe) this proxy grants exclusive access to this register
+        unsafe { &(*RCC::ptr()).ioprstr }
+    }
 }
 
 impl Rcc {
@@ -401,7 +431,12 @@ impl RccExt for RCC {
             apb2_tim_clk: apb2_tim_freq.hz(),
         };
 
-        Rcc { rb: self, clocks }
+        Rcc {
+            rb: self,
+            clocks: clocks,
+            iopenr: IOPENR { _0: () },
+            ioprstr: IOPRSTR { _0: () },
+        }
     }
 }
 
