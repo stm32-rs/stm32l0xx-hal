@@ -497,12 +497,7 @@ where
     ///
     /// This function will return immediately, if [`Transfer::is_active`]
     /// returns `false`.
-    pub fn wait(
-        self,
-    ) -> Result<
-        dma::TransferResources<Target, Channel, Buffer>,
-        (dma::TransferResources<Target, Channel, Buffer>, dma::Error),
-    > {
+    pub fn wait(self) -> dma::TransferResourcesResult<Target, Channel, Buffer> {
         // Need to move `target` out of `self`, otherwise the closure captures
         // `self` completely.
         let target = self.target;
