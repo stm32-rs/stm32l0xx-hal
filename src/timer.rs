@@ -81,6 +81,23 @@ impl TimerExt<SYST> for SYST {
 
 impl Periodic for Timer<SYST> {}
 
+pub trait GeneralPurposeTimer {
+    type MasterMode;
+
+    fn enable(&mut self, rcc: &mut Rcc);
+    fn select_master_mode(&mut self, variant: Self::MasterMode);
+}
+
+impl<T: GeneralPurposeTimer> Timer<T> {
+    pub fn new(mut tim: T, rcc: &mut Rcc) -> Self {
+        tim.enable(rcc);
+        Timer {
+            tim,
+            clocks: rcc.clocks,
+        }
+    }
+}
+
 macro_rules! timers {
     ($($TIM:ident: ($tim:ident, $timXen:ident, $timXrst:ident, $apbenr:ident, $apbrstr:ident, $timclk:ident, $mms:ty),)+) => {
         $(
@@ -99,14 +116,7 @@ macro_rules! timers {
                 where
                     T: Into<Hertz>,
                 {
-                    rcc.rb.$apbenr.modify(|_, w| w.$timXen().set_bit());
-                    rcc.rb.$apbrstr.modify(|_, w| w.$timXrst().set_bit());
-                    rcc.rb.$apbrstr.modify(|_, w| w.$timXrst().clear_bit());
-
-                    let mut timer = Timer {
-                        tim,
-                        clocks: rcc.clocks,
-                    };
+                    let mut timer = Timer::new(tim, rcc);
                     timer.start(timeout);
                     timer
                 }
@@ -143,8 +153,7 @@ macro_rules! timers {
                 }
 
                 /// Select master mode
-                pub fn select_master_mode(
-                    &mut self,
+                pub fn select_master_mode(&mut self,
                     variant: <$TIM as GeneralPurposeTimer>::MasterMode,
                 ) {
                     self.tim.select_master_mode(variant);
@@ -199,31 +208,18 @@ macro_rules! timers {
             impl GeneralPurposeTimer for $TIM {
                 type MasterMode = $mms;
 
+                fn enable(&mut self, rcc: &mut Rcc) {
+                    rcc.rb.$apbenr.modify(|_, w| w.$timXen().set_bit());
+                    rcc.rb.$apbrstr.modify(|_, w| w.$timXrst().set_bit());
+                    rcc.rb.$apbrstr.modify(|_, w| w.$timXrst().clear_bit());
+                }
+
                 fn select_master_mode(&mut self, variant: Self::MasterMode) {
                     self.cr2.modify(|_, w| w.mms().variant(variant));
                 }
             }
         )+
     }
-}
-
-timers! {
-    TIM2: (tim2, tim2en, tim2rst, apb1enr, apb1rstr, apb1_tim_clk,
-        tim2::cr2::MMS_A),
-    TIM3: (tim3, tim3en, tim3rst, apb1enr, apb1rstr, apb1_tim_clk,
-        tim2::cr2::MMS_A),
-    TIM6: (tim6, tim6en, tim6rst, apb1enr, apb1rstr, apb1_tim_clk,
-        tim6::cr2::MMS_A),
-    TIM21: (tim21, tim21en, tim21rst, apb2enr, apb2rstr, apb2_tim_clk,
-        tim21::cr2::MMS_A),
-    TIM22: (tim22, tim22en, tim22rst, apb2enr, apb2rstr, apb2_tim_clk,
-        tim22::cr2::MMS_A),
-}
-
-pub trait GeneralPurposeTimer {
-    type MasterMode;
-
-    fn select_master_mode(&mut self, variant: Self::MasterMode);
 }
 
 /// Two linked 16 bit timers that form a 32 bit timer.
@@ -345,6 +341,19 @@ macro_rules! linked_timers {
             }
         )+
     }
+}
+
+timers! {
+    TIM2: (tim2, tim2en, tim2rst, apb1enr, apb1rstr, apb1_tim_clk,
+        tim2::cr2::MMS_A),
+    TIM3: (tim3, tim3en, tim3rst, apb1enr, apb1rstr, apb1_tim_clk,
+        tim2::cr2::MMS_A),
+    TIM6: (tim6, tim6en, tim6rst, apb1enr, apb1rstr, apb1_tim_clk,
+        tim6::cr2::MMS_A),
+    TIM21: (tim21, tim21en, tim21rst, apb2enr, apb2rstr, apb2_tim_clk,
+        tim21::cr2::MMS_A),
+    TIM22: (tim22, tim22en, tim22rst, apb2enr, apb2rstr, apb2_tim_clk,
+        tim22::cr2::MMS_A),
 }
 
 linked_timers! {
