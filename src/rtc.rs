@@ -296,6 +296,20 @@ pub struct Instant {
     second: u8,
 }
 
+impl Default for Instant {
+    fn default() -> Self {
+        Instant {
+            year: 1,
+            month: 1,
+            day: 1,
+
+            hour: 0,
+            minute: 0,
+            second: 0,
+        }
+    }
+}
+
 impl Instant {
     /// Creates a new `Instant`
     ///
@@ -309,15 +323,7 @@ impl Instant {
     /// Please also note, that the overall date is _not_ validated, so it's
     /// possible to create an `Instant` set to  February 31, for example.
     pub fn new() -> Self {
-        Instant {
-            year: 1,
-            month: 1,
-            day: 1,
-
-            hour: 0,
-            minute: 0,
-            second: 0,
-        }
+        Default::default()
     }
 
     /// Change the year

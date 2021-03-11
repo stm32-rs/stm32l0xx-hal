@@ -336,9 +336,15 @@ pub struct Channels {
     flags: u32,
 }
 
+impl Default for Channels {
+    fn default() -> Self {
+        Channels { flags: 0 }
+    }
+}
+
 impl Channels {
     pub fn new() -> Channels {
-        Channels { flags: 0 }
+        Default::default()
     }
 
     /// Adds a channel to the collection
@@ -621,9 +627,15 @@ macro_rules! int_adc {
         $(
             pub struct $Chan;
 
+            impl Default for $Chan {
+                fn default() -> Self {
+                    Self {}
+                }
+            }
+
             impl $Chan {
                 pub fn new() -> Self {
-                    Self {}
+                    Default::default()
                 }
 
                 pub fn enable(&mut self, adc: &mut Adc<Ready>) {

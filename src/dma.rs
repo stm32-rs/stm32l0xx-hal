@@ -311,11 +311,17 @@ macro_rules! impl_channel {
             $(pub $field: $channel,)*
         }
 
-        impl Channels {
-            pub fn new() -> Self {
+        impl Default for Channels {
+            fn default() -> Self {
                 Self {
                     $($field: $channel(()),)*
                 }
+            }
+        }
+
+        impl Channels {
+            pub fn new() -> Self {
+                Default::default()
             }
         }
 
