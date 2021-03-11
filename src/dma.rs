@@ -95,6 +95,7 @@ where
     T: Target<C>,
     C: Channel,
 {
+    #![allow(clippy::too_many_arguments)]
     /// Internal constructor
     ///
     /// # Safety
