@@ -1,0 +1,85 @@
+name: CI
+
+on:
+  push:
+    branches:
+      - master
+  pull_request: {}
+
+jobs:
+  fmt:
+    name: Rustfmt
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+      - uses: actions-rs/toolchain@v1
+        with:
+          profile: minimal
+          toolchain: stable
+          components: rustfmt
+      - uses: actions-rs/cargo@v1
+        with:
+          command: fmt
+          args: --all -- --check
+  clippy:
+    name: Clippy
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+      - uses: actions-rs/toolchain@v1
+        with:
+          profile: minimal
+          toolchain: stable
+          components: clippy
+          target: thumbv6m-none-eabi
+      - uses: actions-rs/cargo@v1
+        with:
+          use-cross: true
+          command: clippy
+          # dummy feature to satisfy build.rs
+          args: --features stm32l0x1 -- -D warnings
+  package:
+    name: Cargo package
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+      - uses: actions-rs/toolchain@v1
+        with:
+          profile: minimal
+          toolchain: stable
+          target: thumbv6m-none-eabi
+      - uses: actions-rs/cargo@v1
+        with:
+          use-cross: true
+          command: package
+          args: --no-verify
+  build_and_test:
+    strategy:
+      matrix:
+        channel: [stable, nightly]
+        features:
+          # STM32L0x1, TSSOP14 package, 512 bytes flash, product category 1
+          - rt mcu-STM32L011D3Px
+          # STM32L0x1, UFQFPN32 package, 1 KiB flash, product category 2
+          - rt mcu-STM32L031K6Ux
+          # STM32L0x2, LQFP32 package, 2 KiB flash, product category 3, enable usbd
+          - rt mcu-STM32L052K8Tx stm32-usbd
+          # STM32L0x3, TFBGA64 package, 6 KiB flash, product category 5, enable usbd
+          - rt mcu-STM32L073RBHx stm32-usbd
+    name: Build
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+      - uses: actions-rs/toolchain@v1
+        with:
+          profile: minimal
+          toolchain: stable
+          target: thumbv6m-none-eabi
+      - name: Examples
+        uses: actions-rs/cargo@v1
+        env:
+          RUSTFLAGS: "-D warnings"
+        with:
+          use-cross: true
+          command: build
+          args: --release --examples --features "${{ matrix.features }}"
