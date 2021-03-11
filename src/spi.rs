@@ -20,7 +20,6 @@ use crate::pac::SPI1;
 use crate::pac::SPI2;
 use crate::rcc::Rcc;
 use crate::time::Hertz;
-use nb;
 
 pub use hal::spi::{Mode, Phase, Polarity, MODE_0, MODE_1, MODE_2, MODE_3};
 
@@ -509,7 +508,7 @@ where
         let target = self.target;
 
         let map_resources = |res: dma::TransferResources<_, _, _>| dma::TransferResources {
-            target: target,
+            target,
             channel: res.channel,
             buffer: res.buffer,
         };

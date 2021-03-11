@@ -402,13 +402,7 @@ macro_rules! impl_channel {
                     // This is safe, for the following reasons:
                     // - We only do one atomic read of ISR.
                     let dma = unsafe { &*pac::DMA1::ptr() };
-
-                    if dma.isr.read().$tcif().is_complete() {
-                        false
-                    }
-                    else {
-                        true
-                    }
+                    !dma.isr.read().$tcif().is_complete()
                 }
 
                 fn clear_complete_flag(&self) {

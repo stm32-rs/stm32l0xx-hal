@@ -337,7 +337,7 @@ impl Instant {
     ///
     /// Panics, if `month` is not a value from `1` to `12`.
     pub fn set_month(mut self, month: u8) -> Self {
-        assert!(1 <= month && month <= 12);
+        assert!((1..=12).contains(&month));
         self.month = month;
         self
     }
@@ -348,7 +348,7 @@ impl Instant {
     ///
     /// Panics, if `day` is not a value from `1` to `31`.
     pub fn set_day(mut self, day: u8) -> Self {
-        assert!(1 <= day && day <= 31);
+        assert!((1..=31).contains(&day));
         self.day = day;
         self
     }
@@ -465,7 +465,7 @@ impl timer::CountDown for WakeupTimer<'_> {
         T: Into<Self::Time>,
     {
         let delay = delay.into();
-        assert!(1 <= delay && delay <= 2 ^ 17);
+        assert!((1..=2 ^ 17).contains(&delay));
 
         let delay = delay - 1;
 

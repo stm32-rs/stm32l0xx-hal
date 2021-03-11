@@ -76,7 +76,7 @@ where
         self.stop();
         let (psc, arr) = get_clock_config(frequency.0, self.instance.clock_frequency(rcc));
         self.instance.psc.write(|w| w.psc().bits(psc));
-        self.instance.arr.write(|w| w.arr().bits(arr.into()));
+        self.instance.arr.write(|w| w.arr().bits(arr));
         self.start();
     }
 
@@ -90,7 +90,7 @@ fn get_clock_config(freq: u32, clk: u32) -> (u16, u16) {
     let ticks = clk / freq;
     let psc = u16((ticks - 1) / (1 << 16)).unwrap();
     let arr = u16(ticks / u32(psc + 1)).unwrap();
-    return (psc, arr);
+    (psc, arr)
 }
 
 pub trait Instance: Deref<Target = tim2::RegisterBlock> {

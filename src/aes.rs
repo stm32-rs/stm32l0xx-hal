@@ -584,7 +584,7 @@ where
         );
 
         Self {
-            buffer: buffer,
+            buffer,
             inner: transfer,
         }
     }
