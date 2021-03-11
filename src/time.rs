@@ -74,17 +74,15 @@ impl U32Ext for u32 {
     }
 }
 
-impl Into<MicroSeconds> for Hertz {
-    fn into(self) -> MicroSeconds {
-        let freq = self.0;
+impl From<Hertz> for MicroSeconds {
+    fn from(Hertz(freq): Hertz) -> MicroSeconds {
         assert!(freq != 0 && freq <= 1_000_000);
         MicroSeconds(1_000_000 / freq)
     }
 }
 
-impl Into<Hertz> for MicroSeconds {
-    fn into(self) -> Hertz {
-        let period = self.0;
+impl From<MicroSeconds> for Hertz {
+    fn from(MicroSeconds(period): MicroSeconds) -> Hertz {
         assert!(period != 0 && period <= 1_000_000);
         Hertz(1_000_000 / period)
     }
