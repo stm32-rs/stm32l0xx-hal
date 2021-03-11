@@ -56,8 +56,7 @@ fn main() {
     let blob_file = format!("lib{}.a", blob_name);
     let blob_path = format!("flash-code/{}", blob_file);
 
-    fs::copy(&blob_path, out.join(format!("{}", blob_file)))
-        .expect("Failed to copy binary blob for Flash API");
+    fs::copy(&blob_path, out.join(blob_file)).expect("Failed to copy binary blob for Flash API");
 
     println!("cargo:rustc-link-lib=static={}", blob_name);
     println!("cargo:rustc-link-search={}", out.display());
