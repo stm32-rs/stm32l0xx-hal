@@ -25,6 +25,7 @@ pub use hal::spi::{Mode, Phase, Polarity, MODE_0, MODE_1, MODE_2, MODE_3};
 
 /// SPI error
 #[derive(Debug)]
+#[non_exhaustive]
 pub enum Error {
     Busy,
     FrameError,
@@ -34,8 +35,6 @@ pub enum Error {
     ModeFault,
     /// CRC error
     Crc,
-    #[doc(hidden)]
-    _Extensible,
 }
 
 pub trait Pins<SPI> {
