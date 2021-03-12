@@ -28,7 +28,9 @@ features = ["stm32l0x2", "rt", "stm32-usbd", "eeprom-2048"]
 targets = ["thumbv6m-none-eabi"]
 
 [dependencies]
-stm32l0 = "0.10.0"
+#stm32l0 = "0.10.0"
+# FIXME
+stm32l0 = { path = "/home/jglauche/src/stm32-rs/stm32l0" }
 as-slice = "0.1.0"
 embedded-hal = { version = "0.2.3", features = ["unproven"] }
 cortex-m = {version = "0.6.1", features = ["const-fn"] }
@@ -338,7 +340,7 @@ required-features = ["stm32l0x2", "io-STM32L071"]
 
 [[example]]
 name = "serial"
-required-features = ["stm32l0x2", "io-STM32L071"]
+# required-features = ["stm32l0x2", "io-STM32L071"]
 
 [[example]]
 name = "serial_dma"

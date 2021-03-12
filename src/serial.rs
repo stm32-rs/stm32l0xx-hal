@@ -299,9 +299,9 @@ impl_pins!(
 
 /// Serial abstraction
 pub struct Serial<USART> {
-    usart: USART,
-    rx: Rx<USART>,
-    tx: Tx<USART>,
+    pub usart: USART,
+    pub rx: Rx<USART>,
+    pub tx: Tx<USART>,
 }
 
 /// Serial receiver

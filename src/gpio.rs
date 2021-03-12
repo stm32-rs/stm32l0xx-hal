@@ -27,6 +27,9 @@ pub struct PullDown;
 /// Pulled up input (type state)
 pub struct PullUp;
 
+/// Alternative mode Open drain output (type state)
+pub struct AltOpenDrain;
+
 /// Open drain input or output (type state)
 pub struct OpenDrain;
 
@@ -91,6 +94,13 @@ impl PinMode for Output<OpenDrain> {
 		const OTYPER: Option<u8> = Some(0b1);
 }
 
+impl sealed::Sealed for Output<AltOpenDrain> {}
+impl PinMode for Output<AltOpenDrain> {
+    const PUPDR: u8 = 0b10;
+    const MODER: u8 = 0b10010;
+    const OTYPER: Option<u8> = Some(0b1);
+}
+
 impl sealed::Sealed for Output<PushPull> {}
 impl PinMode for Output<PushPull> {
 		const PUPDR: u8 = 0b00;
@@ -143,7 +153,7 @@ macro_rules! gpio {
 						use super::{
 								Floating, GpioExt, Input, OpenDrain, Output, Speed,
 								PullDown, PullUp, PushPull, AltMode, Analog, Port,
-								PinMode,
+								PinMode, AltOpenDrain,
 						};
 
 						/// GPIO parts
@@ -506,6 +516,18 @@ macro_rules! gpio {
 												self.with_mode(f)
 										}
 
+                    /// Configures the pin to operate as an open drain output pin.
+                    pub fn into_alt_open_drain_output(
+                        mut self,
+                        mode: AltMode,
+                    ) -> $PXi<Output<AltOpenDrain>> {
+                        self.set_alt_mode(mode);
+                        self.mode::<Output<AltOpenDrain>>();
+                        $PXi {
+                            _mode: PhantomData
+                        }
+                    }
+
 										/// Configures the pin to operate as an push-pull output pin.
 										pub fn into_push_pull_output(
 												mut self,
@@ -516,7 +538,7 @@ macro_rules! gpio {
 												}
 										}
 
-										/// Temporarily configures this pin as a push-pull output.
+ 									  /// Temporarily configures this pin as a push-pull output.
 										///
 										/// The closure `f` is called with the reconfigured pin. After it returns,
 										/// the pin will be configured back.

@@ -18,7 +18,7 @@ use stm32l0xx_hal::{
     timer::Timer,
 };
 
-static LED: Mutex<RefCell<Option<gpioa::PA1<Output<PushPull>>>>> = Mutex::new(RefCell::new(None));
+static LED: Mutex<RefCell<Option<gpioc::PC1<Output<PushPull>>>>> = Mutex::new(RefCell::new(None));
 static TIMER: Mutex<RefCell<Option<Timer<pac::TIM2>>>> = Mutex::new(RefCell::new(None));
 
 #[entry]
@@ -30,10 +30,10 @@ fn main() -> ! {
 
     // Acquire the GPIOA peripheral. This also enables the clock for GPIOA in
     // the RCC register.
-    let gpioa = dp.GPIOA.split(&mut rcc);
+    let gpioc = dp.GPIOC.split(&mut rcc);
 
     // Configure PA1 as output.
-    let led = gpioa.pa1.into_push_pull_output();
+    let led = gpioc.pc1.into_push_pull_output();
 
     // Configure the timer.
     let mut timer = dp.TIM2.timer(1.hz(), &mut rcc);

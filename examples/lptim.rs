@@ -10,7 +10,7 @@ use cortex_m_rt::entry;
 use nb::block;
 use stm32l0xx_hal::{
     exti::{DirectLine, Exti},
-    gpio::{gpiob::PB, Output, PushPull},
+    gpio::{gpioc::PC, Output, PushPull},
     lptim::{self, ClockSrc, LpTimer},
     pac,
     prelude::*,
@@ -27,11 +27,11 @@ fn main() -> ! {
     let mut rcc = dp.RCC.freeze(rcc::Config::msi(rcc::MSIRange::Range0));
     let mut exti = Exti::new(dp.EXTI);
     let mut pwr = PWR::new(dp.PWR, &mut rcc);
-    let gpiob = dp.GPIOB.split(&mut rcc);
+    let gpioc = dp.GPIOC.split(&mut rcc);
 
-    let mut led = gpiob.pb2.into_push_pull_output().downgrade();
+    let mut led = gpioc.pc1.into_push_pull_output().downgrade();
 
-    let mut lptim = LpTimer::init_periodic(dp.LPTIM, &mut pwr, &mut rcc, ClockSrc::Lse);
+    let mut lptim = LpTimer::init_periodic(dp.LPTIM, &mut pwr, &mut rcc, ClockSrc::Lsi);
 
     let exti_line = DirectLine::Lptim1;
 
@@ -105,7 +105,7 @@ fn main() -> ! {
     }
 }
 
-fn blink(led: &mut PB<Output<PushPull>>) {
+fn blink(led: &mut PC<Output<PushPull>>) {
     led.set_high().unwrap();
     delay();
     led.set_low().unwrap();

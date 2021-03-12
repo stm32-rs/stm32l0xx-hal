@@ -25,7 +25,7 @@ use cast::u8;
 use crate::hal::blocking::i2c::{Read, Write, WriteRead};
 
 // I/O Imports
-use crate::gpio::{AltMode, OpenDrain, Output};
+use crate::gpio::{AltMode, AltOpenDrain, OpenDrain, Output};
 #[cfg(feature = "stm32l0x0")]
 use crate::{
     gpio::gpioa::{PA9, PA10},
@@ -555,12 +555,12 @@ macro_rules! i2c {
 i2c!(
     I2C1, i2c1en, i2c1rst,
     sda: [
-        (PA10<Output<OpenDrain>>, AltMode::AF6),
+        (PA10<Output<AltOpenDrain>>, AltMode::AF6),
         (PB7<Output<OpenDrain>>, AltMode::AF1),
         (PB9<Output<OpenDrain>>, AltMode::AF4),
         ],
     scl: [
-        (PA9<Output<OpenDrain>>, AltMode::AF6),
+        (PA9<Output<AltOpenDrain>>, AltMode::AF6),
         (PB10<Output<OpenDrain>>, AltMode::AF6),
         (PB13<Output<OpenDrain>>, AltMode::AF5),
         ],
