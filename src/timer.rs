@@ -81,10 +81,13 @@ impl TimerExt<SYST> for SYST {
 
 impl Periodic for Timer<SYST> {}
 
+/// Trait for general purpose timer peripherals
 pub trait GeneralPurposeTimer {
     type MasterMode;
 
+    /// Enables the timer peripheral with the peripheral bus
     fn enable(&mut self, rcc: &mut Rcc);
+    /// Selects the master mode for this timer
     fn select_master_mode(&mut self, variant: Self::MasterMode);
 }
 
