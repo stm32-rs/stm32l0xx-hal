@@ -16,10 +16,10 @@ fn main() -> ! {
 
     // Acquire the GPIOA peripheral. This also enables the clock for GPIOA in
     // the RCC register.
-    let gpioa = dp.GPIOA.split(&mut rcc);
+    let gpioa = dp.GPIOC.split(&mut rcc);
 
     // Configure PA1 as output.
-    let mut led = gpioa.pa1.into_push_pull_output();
+    let mut led = gpioa.pc1.into_push_pull_output();
 
     // Get the delay provider.
     let mut delay = cp.SYST.delay(rcc.clocks);
@@ -29,6 +29,6 @@ fn main() -> ! {
         delay.delay_ms(500_u16);
 
         led.set_low().unwrap();
-        delay.delay_ms(500_u16);
+        delay.delay_ms(2000_u16);
     }
 }

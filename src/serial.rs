@@ -7,22 +7,26 @@ use nb::block;
 use crate::gpio::{AltMode, PinMode};
 use crate::hal;
 use crate::hal::prelude::*;
-pub use crate::pac::{LPUART1, USART1, USART2, USART4, USART5};
+
+pub use crate::pac::{LPUART1, USART2};
+#[cfg(not(feature = "stm32l0x0"))]
+use crate::pac::{USART1, USART4, USART5};
+
 use crate::rcc::{Rcc, LSE};
 
-#[cfg(any(feature = "stm32l0x2", feature = "stm32l0x3"))]
+#[cfg(any(feature = "stm32l0x0", feature = "stm32l0x2", feature = "stm32l0x3"))]
 use core::{
     ops::{Deref, DerefMut},
     pin::Pin,
 };
 
-#[cfg(any(feature = "stm32l0x2", feature = "stm32l0x3"))]
+#[cfg(any(feature = "stm32l0x0", feature = "stm32l0x2", feature = "stm32l0x3"))]
 use as_slice::{AsMutSlice, AsSlice};
 
-#[cfg(any(feature = "stm32l0x2", feature = "stm32l0x3"))]
+#[cfg(any(feature = "stm32l0x0", feature = "stm32l0x2", feature = "stm32l0x3"))]
 pub use crate::dma;
 
-#[cfg(any(feature = "stm32l0x2", feature = "stm32l0x3"))]
+#[cfg(any(feature = "stm32l0x0", feature = "stm32l0x2", feature = "stm32l0x3"))]
 use crate::dma::Buffer;
 
 #[cfg(any(
@@ -218,7 +222,7 @@ impl_pins!(
     PC0, AF6, LPUART1, RxPin;
 );
 
-#[cfg(feature = "io-STM32L051")]
+#[cfg(all(not(feature = "stm32l0x0"), feature = "io-STM32L051"))]
 impl_pins!(
     PA2, AF4, USART2, TxPin;
     PA3, AF4, USART2, RxPin;
@@ -278,11 +282,26 @@ impl_pins!(
     PE11, AF6, USART5, RxPin;
 );
 
+#[cfg(feature = "stm32l0x0")]
+impl_pins!(
+    PA2, AF4, USART2, TxPin;
+    PA3, AF4, USART2, RxPin;
+    PA14, AF4, USART2, TxPin;
+    PA15, AF4, USART2, RxPin;
+    PB10, AF4, LPUART1, TxPin;
+    PB11, AF4, LPUART1, RxPin;
+    PC4, AF2, LPUART1, TxPin;
+    PC5, AF2, LPUART1, RxPin;
+    PC10, AF0, LPUART1, TxPin;
+    PC11, AF0, LPUART1, RxPin;
+);
+
+
 /// Serial abstraction
 pub struct Serial<USART> {
-    usart: USART,
-    rx: Rx<USART>,
-    tx: Tx<USART>,
+    pub usart: USART,
+    pub rx: Rx<USART>,
+    pub tx: Tx<USART>,
 }
 
 /// Serial receiver
@@ -540,7 +559,7 @@ macro_rules! usart {
             }
 
             /// DMA operations.
-            #[cfg(any(feature = "stm32l0x2", feature = "stm32l0x3"))]
+            #[cfg(any(feature = "stm32l0x0", feature = "stm32l0x2", feature = "stm32l0x3"))]
             impl Rx<$USARTX> {
                 pub fn read_all<Buffer, Channel>(self,
                     dma:     &mut dma::Handle,
@@ -652,7 +671,7 @@ macro_rules! usart {
                 }
             }
 
-            #[cfg(any(feature = "stm32l0x2", feature = "stm32l0x3"))]
+            #[cfg(any(feature = "stm32l0x0", feature = "stm32l0x2", feature = "stm32l0x3"))]
             impl Tx<$USARTX> {
                 pub fn write_all<Buffer, Channel>(self,
                     dma:     &mut dma::Handle,
@@ -722,7 +741,7 @@ usart! {
 }
 
 // USART1 is available on category 3/5 MCUs
-#[cfg(any(feature = "io-STM32L051", feature = "io-STM32L071"))]
+#[cfg(all(not(feature = "stm32l0x0"), any(feature = "io-STM32L051", feature = "io-STM32L071")))]
 usart! {
     USART1: (usart1, apb2enr, usart1en, apb1_clk, Serial1Ext),
 }

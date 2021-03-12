@@ -16,10 +16,10 @@ fn main() -> ! {
 
     // Acquire the GPIOA peripheral. This also enables the clock for GPIOA in
     // the RCC register.
-    let gpioa = dp.GPIOA.split(&mut rcc);
+    let gpioc = dp.GPIOC.split(&mut rcc);
 
     // Configure PA1 as output.
-    let mut led = gpioa.pa1.into_push_pull_output();
+    let mut led = gpioc.pc1.into_push_pull_output();
 
     loop {
         // Set the LED high one million times in a row.

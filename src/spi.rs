@@ -149,7 +149,7 @@ pins! {
         ]
 }
 
-#[cfg(feature = "stm32l0x1")]
+#[cfg(any(feature = "stm32l0x0", feature = "stm32l0x1"))]
 pins! {
     SPI1:
         SCK: [

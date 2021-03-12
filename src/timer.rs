@@ -1,6 +1,9 @@
 //! Timers
 use crate::hal::timer::{CountDown, Periodic};
-use crate::pac::{tim2, tim21, tim22, tim6, TIM2, TIM21, TIM22, TIM3, TIM6};
+
+use crate::pac::{tim2, tim21, tim22, TIM2, TIM21, TIM22};
+#[cfg(not(feature = "stm32l0x0"))]
+use crate::pac::{tim6, TIM3, TIM6};
 use crate::rcc::{Clocks, Rcc};
 use crate::time::Hertz;
 use cast::{u16, u32};
@@ -210,14 +213,17 @@ macro_rules! timers {
 timers! {
     TIM2: (tim2, tim2en, tim2rst, apb1enr, apb1rstr, apb1_tim_clk,
         tim2::cr2::MMS_A),
-    TIM3: (tim3, tim3en, tim3rst, apb1enr, apb1rstr, apb1_tim_clk,
-        tim2::cr2::MMS_A),
-    TIM6: (tim6, tim6en, tim6rst, apb1enr, apb1rstr, apb1_tim_clk,
-        tim6::cr2::MMS_A),
     TIM21: (tim21, tim21en, tim21rst, apb2enr, apb2rstr, apb2_tim_clk,
         tim21::cr2::MMS_A),
     TIM22: (tim22, tim22en, tim22rst, apb2enr, apb2rstr, apb2_tim_clk,
         tim22::cr2::MMS_A),
+}
+#[cfg(not(feature = "stm32l0x0"))]
+timers! {
+    TIM3: (tim3, tim3en, tim3rst, apb1enr, apb1rstr, apb1_tim_clk,
+        tim2::cr2::MMS_A),
+    TIM6: (tim6, tim6en, tim6rst, apb1enr, apb1rstr, apb1_tim_clk,
+        tim6::cr2::MMS_A),
 }
 
 pub trait GeneralPurposeTimer {
@@ -347,9 +353,13 @@ macro_rules! linked_timers {
     }
 }
 
+#[cfg(not(feature = "stm32l0x0"))]
 linked_timers! {
     // Internal trigger connection: RM0377 table 76
     (TIM2, TIM3): (tim2_tim3, apb1enr, apb1rstr, tim2en, tim3en, tim2rst, tim3rst, tim2::cr2::MMS_A, tim2::smcr::SMS_A, tim2::smcr::TS_A::ITR0),
+}
+
+linked_timers! {
     // Internal trigger connection: RM0377 table 80
     (TIM21, TIM22): (tim21_tim22, apb2enr, apb2rstr, tim21en, tim22en, tim21rst, tim22rst, tim21::cr2::MMS_A, tim22::smcr::SMS_A, tim22::smcr::TS_A::ITR0),
 

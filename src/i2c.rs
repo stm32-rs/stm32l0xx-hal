@@ -2,13 +2,16 @@
 
 use core::ops::Deref;
 
+#[cfg(feature = "stm32l0x0")]
+use core::{marker::PhantomData};
+
 #[cfg(feature = "stm32l0x2")]
 use core::{marker::PhantomData, ops::DerefMut, pin::Pin};
 
 #[cfg(feature = "stm32l0x2")]
 use as_slice::{AsMutSlice, AsSlice};
 
-#[cfg(feature = "stm32l0x2")]
+#[cfg(any(feature = "stm32l0x0", feature = "stm32l0x2"))]
 use crate::dma::{self, Buffer};
 use crate::pac::i2c1::{
     cr2::{AUTOEND_A, RD_WRN_A},
@@ -22,12 +25,22 @@ use cast::u8;
 use crate::hal::blocking::i2c::{Read, Write, WriteRead};
 
 // I/O Imports
-use crate::gpio::{AltMode, OpenDrain, Output};
-#[cfg(feature = "io-STM32L051")]
+use crate::gpio::{AltMode, AltOpenDrain, OpenDrain, Output};
+#[cfg(feature = "stm32l0x0")]
+use crate::{
+    gpio::gpioa::{PA9, PA10},
+    gpio::gpiob::{PB10, PB13, PB7, PB9},
+    pac::I2C1,
+};
+
+#[cfg(all(feature = "io-STM32L051", not(feature = "stm32l0x0")))]
 use crate::{
     gpio::gpiob::{PB10, PB11, PB13, PB14, PB6, PB7, PB8, PB9},
-    pac::{I2C1, I2C2},
+    pac::I2C1,
 };
+#[cfg(all(feature = "io-STM32L051", not(feature = "stm32l0x0")))]
+use create::pac::I2C2;
+
 #[cfg(feature = "io-STM32L021")]
 use crate::{
     gpio::{
@@ -538,6 +551,22 @@ macro_rules! i2c {
     };
 }
 
+#[cfg(feature= "stm32l0x0")]
+i2c!(
+    I2C1, i2c1en, i2c1rst,
+    sda: [
+        (PA10<Output<AltOpenDrain>>, AltMode::AF6),
+        (PB7<Output<OpenDrain>>, AltMode::AF1),
+        (PB9<Output<OpenDrain>>, AltMode::AF4),
+        ],
+    scl: [
+        (PA9<Output<AltOpenDrain>>, AltMode::AF6),
+        (PB10<Output<OpenDrain>>, AltMode::AF6),
+        (PB13<Output<OpenDrain>>, AltMode::AF5),
+        ],
+);
+
+
 #[cfg(feature = "io-STM32L021")]
 i2c!(
     I2C1, i2c1en, i2c1rst,
@@ -569,27 +598,18 @@ i2c!(
     ],
 );
 
-#[cfg(feature = "io-STM32L051")]
-i2c!(
-    I2C1, i2c1en, i2c1rst,
-    sda: [
-        (PB7<Output<OpenDrain>>, AltMode::AF1),
-        (PB9<Output<OpenDrain>>, AltMode::AF4),
-    ],
-    scl: [
-        (PB6<Output<OpenDrain>>, AltMode::AF1),
-        (PB8<Output<OpenDrain>>, AltMode::AF4),
-    ],
-);
-
-#[cfg(feature = "io-STM32L051")]
+#[cfg(all(feature = "io-STM32L051", not(feature = "stm32l0x0")))]
 i2c!(
     I2C2, i2c2en, i2c2rst,
     sda: [
+        (PB7<Output<OpenDrain>>, AltMode::AF1),
+        (PB9<Output<OpenDrain>>, AltMode::AF4),
         (PB11<Output<OpenDrain>>, AltMode::AF6),
         (PB14<Output<OpenDrain>>, AltMode::AF5),
     ],
     scl: [
+        (PB6<Output<OpenDrain>>, AltMode::AF1),
+        (PB8<Output<OpenDrain>>, AltMode::AF4),
         (PB10<Output<OpenDrain>>, AltMode::AF6),
         (PB13<Output<OpenDrain>>, AltMode::AF5),
     ],
@@ -641,24 +661,24 @@ i2c!(
 ///
 /// This is an implementation detail. The user doesn't have to deal with this
 /// directly.
-#[cfg(feature = "stm32l0x2")]
+#[cfg(any(feature = "stm32l0x0", feature = "stm32l0x2"))]
 pub struct Tx<I>(PhantomData<I>);
 
 /// Token used for DMA transfers
 ///
 /// This is an implementation detail. The user doesn't have to deal with this
 /// directly.
-#[cfg(feature = "stm32l0x2")]
+#[cfg(any(feature = "stm32l0x0", feature = "stm32l0x2"))]
 pub struct Rx<I>(PhantomData<I>);
 
 /// I2C-specific wrapper around [`dma::Transfer`]
-#[cfg(feature = "stm32l0x2")]
+#[cfg(any(feature = "stm32l0x0", feature = "stm32l0x2"))]
 pub struct Transfer<Target, Token, Channel, Buffer, State> {
     target: Target,
     inner: dma::Transfer<Token, Channel, Buffer, State>,
 }
 
-#[cfg(feature = "stm32l0x2")]
+#[cfg(any(feature = "stm32l0x0", feature = "stm32l0x2"))]
 impl<Target, Token, Channel, Buffer> Transfer<Target, Token, Channel, Buffer, dma::Ready>
 where
     Token: dma::Target<Channel>,
@@ -684,7 +704,7 @@ where
     }
 }
 
-#[cfg(feature = "stm32l0x2")]
+#[cfg(any(feature = "stm32l0x0", feature = "stm32l0x2"))]
 impl<Target, Token, Channel, Buffer> Transfer<Target, Token, Channel, Buffer, dma::Started>
 where
     Channel: dma::Channel,

@@ -11,7 +11,7 @@ use stm32l0xx_hal::{gpio::*, pac, prelude::*, rcc::Config, timer::Timer};
 #[app(device = stm32l0xx_hal::pac, peripherals = true)]
 const APP: () = {
     struct Resources {
-        led: gpioa::PA<Output<PushPull>>,
+        led: gpioc::PC<Output<PushPull>>,
         timer: Timer<pac::TIM2>,
     }
 
@@ -24,13 +24,13 @@ const APP: () = {
 
         // Acquire the GPIOA peripheral. This also enables the clock for GPIOA
         // in the RCC register.
-        let gpioa = device.GPIOA.split(&mut rcc);
+        let gpioc = device.GPIOC.split(&mut rcc);
 
         // Configure PA1 as output.
-        let led = gpioa.pa1.into_push_pull_output().downgrade();
+        let led = gpioc.pc1.into_push_pull_output().downgrade();
 
         // Configure the timer.
-        let mut timer = device.TIM2.timer(1.hz(), &mut rcc);
+        let mut timer = device.TIM2.timer(8.hz(), &mut rcc);
         timer.listen();
 
         // Return the initialised resources.

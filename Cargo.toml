@@ -55,6 +55,7 @@ disable-linker-script = []
 
 # STM32L0 subfamilies
 # (Warning: Some peripherals, e.g. GPIO, don't follow this subfamily grouping.)
+stm32l0x0 = ["stm32l0/stm32l0x0"]
 stm32l0x1 = ["stm32l0/stm32l0x1"]
 stm32l0x2 = ["stm32l0/stm32l0x2"]
 stm32l0x3 = ["stm32l0/stm32l0x3"]
@@ -337,7 +338,7 @@ required-features = ["stm32l0x2", "io-STM32L071"]
 
 [[example]]
 name = "serial"
-required-features = ["stm32l0x2", "io-STM32L071"]
+# required-features = ["stm32l0x2", "io-STM32L071"]
 
 [[example]]
 name = "serial_dma"

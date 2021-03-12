@@ -1,13 +1,15 @@
 #![cfg_attr(not(test), no_std)]
 #![allow(non_camel_case_types)]
 
-#[cfg(not(any(feature = "stm32l0x1", feature = "stm32l0x2", feature = "stm32l0x3")))]
+#[cfg(not(any(feature = "stm32l0x0", feature = "stm32l0x1", feature = "stm32l0x2", feature = "stm32l0x3")))]
 compile_error!(
-    "This crate requires one of the following features enabled: stm32l0x1, stm32l0x2, stm32l0x3"
+    "This crate requires one of the following features enabled: stm32l0x0, stm32l0x1, stm32l0x2, stm32l0x3"
 );
 
 use embedded_hal as hal;
 
+#[cfg(feature = "stm32l0x0")]
+pub use stm32l0::stm32l0x0 as pac;
 #[cfg(feature = "stm32l0x1")]
 pub use stm32l0::stm32l0x1 as pac;
 #[cfg(feature = "stm32l0x2")]
@@ -16,6 +18,7 @@ pub use stm32l0::stm32l0x2 as pac;
 pub use stm32l0::stm32l0x3 as pac;
 
 pub mod adc;
+#[cfg(not(feature = "stm32l0x0"))]
 pub mod aes;
 pub mod calibration;
 pub mod delay;

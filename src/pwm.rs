@@ -6,7 +6,10 @@ use cortex_m::interrupt;
 use crate::gpio::gpioa::{PA0, PA1, PA2, PA3};
 use crate::gpio::{AltMode, PinMode};
 use crate::hal;
-use crate::pac::{tim2, TIM2, TIM3};
+
+use crate::pac::{tim2, TIM2};
+#[cfg(not(feature = "stm32l0x0"))]
+use crate::pac::TIM3;
 use crate::rcc::Rcc;
 use crate::time::Hertz;
 use cast::{u16, u32};
@@ -132,6 +135,10 @@ macro_rules! impl_instance {
 
 impl_instance!(
     TIM2, apb1enr, apb1rstr, tim2en, tim2rst, apb1_clk;
+);
+
+#[cfg(not(feature = "stm32l0x0"))]
+impl_instance!(
     TIM3, apb1enr, apb1rstr, tim3en, tim3rst, apb1_clk;
 );
 

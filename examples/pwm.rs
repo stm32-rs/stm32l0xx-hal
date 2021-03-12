@@ -26,7 +26,7 @@ fn main() -> ! {
     // Initialize TIM2 for PWM
     let pwm = pwm::Timer::new(dp.TIM2, 10.khz(), &mut rcc);
 
-    #[cfg(feature = "stm32l0x1")]
+    #[cfg(any(feature = "stm32l0x0", feature = "stm32l0x1"))]
     let mut pwm = pwm.channel2.assign(gpioa.pa1);
 
     // This is LD2 on ST's B-L072Z-LRWAN1 development board.

@@ -26,7 +26,7 @@ use crate::{
     rcc::Rcc,
 };
 
-#[cfg(any(feature = "io-STM32L051", feature = "io-STM32L071"))]
+#[cfg(all(not(feature = "stm32l0x0"), any(feature = "io-STM32L051", feature = "io-STM32L071")))]
 use crate::pac::USART1;
 
 #[cfg(any(
@@ -37,8 +37,15 @@ use crate::pac::USART1;
 ))]
 use crate::{
     i2c,
-    pac::{I2C1, I2C2, I2C3, USART2},
+    pac::{I2C1, USART2},
     serial,
+};
+#[cfg(not(feature = "stm32l0x0"))]
+use crate::{
+    pac::{
+        I2C2,
+        I2C3
+    },
 };
 
 use crate::{pac::SPI1, spi};
@@ -341,14 +348,14 @@ macro_rules! impl_channel {
                     handle:  &mut Handle,
                     address: u32,
                 ) {
-                    handle.dma.$chfield.par.write(|w| w.pa().bits(address));
+                    unsafe { handle.dma.$chfield.par.write(|w| w.pa().bits(address)); }
                 }
 
                 fn set_memory_address(&self,
                     handle:  &mut Handle,
                     address: u32,
                 ) {
-                    handle.dma.$chfield.mar.write(|w| w.ma().bits(address));
+                    unsafe { handle.dma.$chfield.mar.write(|w| w.ma().bits(address)); }
                 }
 
                 fn set_transfer_len(&self, handle: &mut Handle, len: u16) {
@@ -515,7 +522,7 @@ impl_target!(
     adc::DmaToken, Channel2, 0;
 );
 
-#[cfg(any(feature = "io-STM32L051", feature = "io-STM32L071"))]
+#[cfg(all(not(feature = "stm32l0x0"), any(feature = "io-STM32L051", feature = "io-STM32L071")))]
 impl_target!(
     // USART1
     serial::Tx<USART1>, Channel2, 3;

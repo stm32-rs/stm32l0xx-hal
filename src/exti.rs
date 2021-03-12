@@ -308,11 +308,14 @@ impl ExtiLine for GpioLine {
 /// both.
 #[derive(Copy, Clone, PartialEq, Eq)]
 pub enum ConfigurableLine {
+    #[cfg(not(feature = "stm32l0x0"))]
     Pvd = 16,
     RtcAlarm = 17,
     RtcTamper_CssLse = 19,
     RtcWakeup = 20,
+    #[cfg(not(feature = "stm32l0x0"))]
     Comp1 = 21,
+    #[cfg(not(feature = "stm32l0x0"))]
     Comp2 = 22,
 }
 
@@ -321,12 +324,15 @@ impl ExtiLine for ConfigurableLine {
         use ConfigurableLine::*;
 
         Some(match line {
+            #[cfg(not(feature = "stm32l0x0"))]
             16 => Pvd,
             17 => RtcAlarm,
             // 18 = USB (or reserved)
             19 => RtcTamper_CssLse,
             20 => RtcWakeup,
+            #[cfg(not(feature = "stm32l0x0"))]
             21 => Comp1,
+            #[cfg(not(feature = "stm32l0x0"))]
             22 => Comp2,
             _ => return None,
         })
@@ -341,8 +347,10 @@ impl ExtiLine for ConfigurableLine {
         use ConfigurableLine::*;
 
         match self {
+            #[cfg(not(feature = "stm32l0x0"))]
             Pvd => Interrupt::PVD,
             RtcAlarm | RtcTamper_CssLse | RtcWakeup => Interrupt::RTC,
+            #[cfg(not(feature = "stm32l0x0"))]
             Comp1 | Comp2 => Interrupt::ADC_COMP,
         }
     }
@@ -354,7 +362,9 @@ pub enum DirectLine {
     #[cfg(any(feature = "stm32l0x2", feature = "stm32l0x3"))]
     Usb = 18,
     I2C1 = 23,
+    #[cfg(not(feature = "stm32l0x0"))]
     I2C3 = 24,
+    #[cfg(not(feature = "stm32l0x0"))]
     Usart1 = 25,
     Usart2 = 26,
     // 27 = reserved
@@ -370,7 +380,9 @@ impl ExtiLine for DirectLine {
             #[cfg(any(feature = "stm32l0x2", feature = "stm32l0x3"))]
             18 => Usb,
             23 => I2C1,
+            #[cfg(not(feature = "stm32l0x0"))]
             24 => I2C3,
+            #[cfg(not(feature = "stm32l0x0"))]
             25 => Usart1,
             26 => Usart2,
             // 27 = reserved
@@ -392,9 +404,14 @@ impl ExtiLine for DirectLine {
             #[cfg(any(feature = "stm32l0x2", feature = "stm32l0x3"))]
             Usb => Interrupt::USB,
             I2C1 => Interrupt::I2C1,
+            #[cfg(not(feature = "stm32l0x0"))]
             I2C3 => Interrupt::I2C3,
+            #[cfg(not(feature = "stm32l0x0"))]
             Usart1 => Interrupt::USART1,
             Usart2 => Interrupt::USART2,
+            #[cfg(feature = "stm32l0x0")]
+            Lpuart1 => Interrupt::LPUART1,
+            #[cfg(not(feature = "stm32l0x0"))]
             Lpuart1 => Interrupt::AES_RNG_LPUART1,
             Lptim1 => Interrupt::LPTIM1,
         }
