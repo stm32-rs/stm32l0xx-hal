@@ -20,12 +20,12 @@ use crate::pac::SPI1;
 use crate::pac::SPI2;
 use crate::rcc::Rcc;
 use crate::time::Hertz;
-use nb;
 
 pub use hal::spi::{Mode, Phase, Polarity, MODE_0, MODE_1, MODE_2, MODE_3};
 
 /// SPI error
 #[derive(Debug)]
+#[non_exhaustive]
 pub enum Error {
     Busy,
     FrameError,
@@ -35,8 +35,6 @@ pub enum Error {
     ModeFault,
     /// CRC error
     Crc,
-    #[doc(hidden)]
-    _Extensible,
 }
 
 pub trait Pins<SPI> {
@@ -498,18 +496,13 @@ where
     ///
     /// This function will return immediately, if [`Transfer::is_active`]
     /// returns `false`.
-    pub fn wait(
-        self,
-    ) -> Result<
-        dma::TransferResources<Target, Channel, Buffer>,
-        (dma::TransferResources<Target, Channel, Buffer>, dma::Error),
-    > {
+    pub fn wait(self) -> dma::TransferResourcesResult<Target, Channel, Buffer> {
         // Need to move `target` out of `self`, otherwise the closure captures
         // `self` completely.
         let target = self.target;
 
         let map_resources = |res: dma::TransferResources<_, _, _>| dma::TransferResources {
-            target: target,
+            target,
             channel: res.channel,
             buffer: res.buffer,
         };

@@ -85,11 +85,17 @@ pub struct Transfer<T, C, B, State> {
     _state: State,
 }
 
+pub type TransferResourcesResult<Target, Channel, Buffer> = Result<
+    TransferResources<Target, Channel, Buffer>,
+    (TransferResources<Target, Channel, Buffer>, Error),
+>;
+
 impl<T, C, B> Transfer<T, C, B, Ready>
 where
     T: Target<C>,
     C: Channel,
 {
+    #![allow(clippy::too_many_arguments)]
     /// Internal constructor
     ///
     /// # Safety
@@ -182,7 +188,7 @@ where
     ///
     /// This function will return immediately, if [`Transfer::is_active`]
     /// returns `false`.
-    pub fn wait(self) -> Result<TransferResources<T, C, B>, (TransferResources<T, C, B>, Error)> {
+    pub fn wait(self) -> TransferResourcesResult<T, C, B> {
         while self.res.channel.is_active() {
             if self.res.channel.error_occured() {
                 return Err((self.res, Error));
@@ -306,11 +312,17 @@ macro_rules! impl_channel {
             $(pub $field: $channel,)*
         }
 
-        impl Channels {
-            pub fn new() -> Self {
+        impl Default for Channels {
+            fn default() -> Self {
                 Self {
                     $($field: $channel(()),)*
                 }
+            }
+        }
+
+        impl Channels {
+            pub fn new() -> Self {
+                Default::default()
             }
         }
 
@@ -402,13 +414,7 @@ macro_rules! impl_channel {
                     // This is safe, for the following reasons:
                     // - We only do one atomic read of ISR.
                     let dma = unsafe { &*pac::DMA1::ptr() };
-
-                    if dma.isr.read().$tcif().is_complete() {
-                        false
-                    }
-                    else {
-                        true
-                    }
+                    !dma.isr.read().$tcif().is_complete()
                 }
 
                 fn clear_complete_flag(&self) {

@@ -296,6 +296,20 @@ pub struct Instant {
     second: u8,
 }
 
+impl Default for Instant {
+    fn default() -> Self {
+        Instant {
+            year: 1,
+            month: 1,
+            day: 1,
+
+            hour: 0,
+            minute: 0,
+            second: 0,
+        }
+    }
+}
+
 impl Instant {
     /// Creates a new `Instant`
     ///
@@ -309,15 +323,7 @@ impl Instant {
     /// Please also note, that the overall date is _not_ validated, so it's
     /// possible to create an `Instant` set to  February 31, for example.
     pub fn new() -> Self {
-        Instant {
-            year: 1,
-            month: 1,
-            day: 1,
-
-            hour: 0,
-            minute: 0,
-            second: 0,
-        }
+        Default::default()
     }
 
     /// Change the year
@@ -337,7 +343,7 @@ impl Instant {
     ///
     /// Panics, if `month` is not a value from `1` to `12`.
     pub fn set_month(mut self, month: u8) -> Self {
-        assert!(1 <= month && month <= 12);
+        assert!((1..=12).contains(&month));
         self.month = month;
         self
     }
@@ -348,7 +354,7 @@ impl Instant {
     ///
     /// Panics, if `day` is not a value from `1` to `31`.
     pub fn set_day(mut self, day: u8) -> Self {
-        assert!(1 <= day && day <= 31);
+        assert!((1..=31).contains(&day));
         self.day = day;
         self
     }
@@ -465,7 +471,7 @@ impl timer::CountDown for WakeupTimer<'_> {
         T: Into<Self::Time>,
     {
         let delay = delay.into();
-        assert!(1 <= delay && delay <= 2 ^ 17);
+        assert!((1..=2 ^ 17).contains(&delay));
 
         let delay = delay - 1;
 
