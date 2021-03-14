@@ -15,7 +15,11 @@ forget to update the links at the bottom of the changelog as well.-->
 
 ### Additions
 
+- Add `Timer::new` to create timer without starting #152
+
 ### Breaking Changes
+
+- Add `enable` to `GeneralPurposeTimer`
 
 ### Non-Breaking Changes
 
