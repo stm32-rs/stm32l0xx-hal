@@ -21,11 +21,11 @@ fn main() {
         feature_count += 1;
     }
 
-    if feature_count != 1 {
-        panic!("\n\nMust select exactly one package for linker script generation!\nChoices: 'stm32l0x1' or 'stm32l0x2' or 'stm32l0x3'\nAlternatively, pick the mcu-feature that matches your MCU, for example 'mcu-STM32L071KBTx'\n\n");
-    }
-
     if !cfg!(feature = "disable-linker-script") {
+        if feature_count != 1 {
+            panic!("\n\nMust select exactly one package for linker script generation!\nChoices: 'stm32l0x1' or 'stm32l0x2' or 'stm32l0x3'\nAlternatively, pick the mcu-feature that matches your MCU, for example 'mcu-STM32L071KBTx'\n\n");
+        }
+
         let linker = if cfg!(feature = "stm32l0x1") {
             include_bytes!("memory_l0x1.x").as_ref()
         } else if cfg!(feature = "stm32l0x2") {
