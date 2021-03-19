@@ -471,7 +471,7 @@ impl timer::CountDown for WakeupTimer<'_> {
         T: Into<Self::Time>,
     {
         let delay = delay.into();
-        assert!((1..=2 ^ 17).contains(&delay));
+        assert!((1..=0x1_FF_FF).contains(&delay));
 
         let delay = delay - 1;
 
