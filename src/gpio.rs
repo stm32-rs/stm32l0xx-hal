@@ -209,7 +209,7 @@ macro_rules! gpio {
 
             impl<MODE> StatefulOutputPin for $PXx<Output<MODE>> {
                 fn is_set_high(&self) -> Result<bool, Self::Error> {
-                    let is_high = self.is_set_low()?;
+                    let is_high = !self.is_set_low()?;
                     Ok(is_high)
                 }
 
