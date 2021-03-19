@@ -464,7 +464,7 @@ impl timer::CountDown for WakeupTimer<'_> {
     ///
     /// # Panics
     ///
-    /// The `delay` argument must be in the range `1 <= delay <= 2^17`.
+    /// The `delay` argument must be in the range `1 <= delay < 2^17`.
     /// Panics, if `delay` is outside of that range.
     fn start<T>(&mut self, delay: T)
     where
