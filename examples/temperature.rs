@@ -1,8 +1,8 @@
 //!  Measure the internal mcu temperature sensor and an analog external analog TMP36 temperature sensor.
 
-//  This example compiles but has not been tested on actual hardware, and may not work. 
-//  If you have hardware and test it then please report results to issue 
-//      https://github.com/stm32-rs/stm32l0xx-hal/issues/161. 
+//  This example compiles but has not been tested on actual hardware, and may not work.
+//  If you have hardware and test it then please report results to issue
+//      https://github.com/stm32-rs/stm32l0xx-hal/issues/161.
 // (The issue may be closed but you should still be able to comment.)
 
 //  This example is extracted from https://github.com/pdgilbert/eg_stm_hal/examples/temperature.rs,
@@ -39,7 +39,6 @@ pub struct Sensor<U> {
     ch: U,
 }
 
-
 // setup() does all  hal/MCU specific setup and returns generic objects for use in the main code.
 
 use stm32l0xx_hal::{
@@ -66,8 +65,8 @@ fn setup() -> (impl ReadTempC, impl ReadTempC + ReadMV, Adc<Ready>) {
     let mcutemp: Sensor<Option<PB1<Analog>>> = Sensor { ch: None }; // no channel
 
     let tmp36: Sensor<Option<PB1<Analog>>> = Sensor {
-        ch: Some(gpiob.pb1.into_analog()),           //channel pb1
-    }; 
+        ch: Some(gpiob.pb1.into_analog()), //channel pb1
+    };
 
     impl ReadTempC for Sensor<Option<PB1<Analog>>> {
         fn read_tempc(&mut self, a: &mut Adc<Ready>) -> i32 {
@@ -108,7 +107,6 @@ fn main() -> ! {
     //     <50C, 1.0v>,  so 0.0v is  -50C.
     //  see https://www.analog.com/media/en/technical-documentation/data-sheets/TMP35_36_37.pdf
     //  so temp = (100 * 3.3 * ADCvalue / 4096 )  - 50 = 0.0805664 * ADCvalue - 50
-
 
     loop {
         let mcu_value = mcutemp.read_tempc(&mut adc);
