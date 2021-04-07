@@ -17,6 +17,9 @@ forget to update the links at the bottom of the changelog as well.-->
 
 - Add `Timer::new` to create timer without starting #152
 
+- Add (untested) example `temperature` (#161) which uses `adc` to read the 
+  internal temperature and also an externally connected TMP36 analog sensor.
+
 ### Breaking Changes
 
 - Add `enable` to `GeneralPurposeTimer`
