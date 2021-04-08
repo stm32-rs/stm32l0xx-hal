@@ -370,3 +370,8 @@ required-features = ["stm32l0x1"]
 [[example]]
 name = "usb_serial"
 required-features = ["rt", "stm32l0x2", "stm32-usbd"]
+
+[[example]]
+name = "temperature"
+required-features = ["rt", "stm32l0x2",]
+
