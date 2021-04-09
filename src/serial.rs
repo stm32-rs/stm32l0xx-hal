@@ -37,6 +37,7 @@ use crate::gpio::{gpiod::*, gpioe::*};
 
 /// Serial error
 #[derive(Debug)]
+#[non_exhaustive]
 pub enum Error {
     /// Framing error
     Framing,
@@ -46,8 +47,6 @@ pub enum Error {
     Overrun,
     /// Parity check error
     Parity,
-    #[doc(hidden)]
-    _Extensible,
 }
 
 /// Interrupt event
@@ -339,7 +338,7 @@ macro_rules! usart {
                     let mut brr = mantissa << 4 | fraction;
 
                     if stringify!($usartX) == "lpuart1" {
-                        brr = brr*256
+                        brr *= 256
                     }
 
                     usart
@@ -774,11 +773,7 @@ where
     Serial<USART>: hal::serial::Write<u8>,
 {
     fn write_str(&mut self, s: &str) -> fmt::Result {
-        let _ = s
-            .as_bytes()
-            .into_iter()
-            .map(|c| block!(self.write(*c)))
-            .last();
+        let _ = s.as_bytes().iter().map(|c| block!(self.write(*c))).last();
 
         //self.flush().map_err(|_| fmt::Error)?;
 
@@ -791,11 +786,7 @@ where
     Tx<USART>: hal::serial::Write<u8>,
 {
     fn write_str(&mut self, s: &str) -> fmt::Result {
-        let _ = s
-            .as_bytes()
-            .into_iter()
-            .map(|c| block!(self.write(*c)))
-            .last();
+        let _ = s.as_bytes().iter().map(|c| block!(self.write(*c))).last();
 
         //self.flush().map_err(|_| fmt::Error)?;
 

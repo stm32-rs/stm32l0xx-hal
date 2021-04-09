@@ -377,8 +377,8 @@ where
     type Error = Error;
 
     fn write_read(&mut self, addr: u8, bytes: &[u8], buffer: &mut [u8]) -> Result<(), Self::Error> {
-        let writing = bytes.len() > 0;
-        let reading = buffer.len() > 0;
+        let writing = !bytes.is_empty();
+        let reading = !buffer.is_empty();
 
         // wait for i2c device to be available
         while self.i2c.isr.read().busy().is_busy() {

@@ -1,5 +1,6 @@
 #![cfg_attr(not(test), no_std)]
 #![allow(non_camel_case_types)]
+#![allow(clippy::upper_case_acronyms)]
 
 #[cfg(not(any(feature = "stm32l0x1", feature = "stm32l0x2", feature = "stm32l0x3")))]
 compile_error!(
