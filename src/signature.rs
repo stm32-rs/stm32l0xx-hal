@@ -3,7 +3,6 @@
 //! The STM32L0 contains a few read-only registers with factory programming
 //! data that are written during production.
 
-#![no_std]
 
 use cortex_m::interrupt;
 
