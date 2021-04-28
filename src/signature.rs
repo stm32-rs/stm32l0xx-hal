@@ -30,8 +30,8 @@ pub fn device_id_hex() -> &'static str {
                 for (i, b) in device_id().iter().enumerate() {
                     let lo = b & 0xf;
                     let hi = (b >> 4) & 0xfu8;
-                    DEVICE_ID_STR[i*2] = hex[hi as usize];
-                    DEVICE_ID_STR[i*2+1] = hex[lo as usize];
+                    DEVICE_ID_STR[i * 2] = hex[hi as usize];
+                    DEVICE_ID_STR[i * 2 + 1] = hex[lo as usize];
                 }
             });
         }
@@ -39,7 +39,6 @@ pub fn device_id_hex() -> &'static str {
         core::str::from_utf8_unchecked(&DEVICE_ID_STR)
     }
 }
-
 
 /// Returns the Flash memory size of the device in Kbytes
 pub fn flash_size_kb() -> u16 {
