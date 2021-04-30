@@ -28,10 +28,10 @@ features = ["stm32l0x2", "rt", "stm32-usbd", "eeprom-2048"]
 targets = ["thumbv6m-none-eabi"]
 
 [dependencies]
-stm32l0 = "0.10.0"
+stm32l0 = "0.13.0"
 as-slice = "0.1.0"
 embedded-hal = { version = "0.2.3", features = ["unproven"] }
-cortex-m = {version = "0.6.1", features = ["const-fn"] }
+cortex-m =  "0.7.0"
 cortex-m-rt = "0.6.8"
 cortex-m-semihosting = "0.3.2"
 void = { version = "1.0.2", default-features = false }
@@ -41,10 +41,10 @@ stm32-usbd = { version = "0.5.0", features = ["ram_access_2x16"], optional = tru
 
 [dev-dependencies]
 aligned = "0.3.1"
-heapless = "0.5.0"
+heapless = "0.6.1"
 panic-halt = "0.2.0"
 panic-semihosting = "0.5.1"
-cortex-m-rtic = "0.5.3"
+cortex-m-rtic = "0.5.6"
 usb-device = "0.2.3"
 usbd-serial = "0.1.0"
 
