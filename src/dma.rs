@@ -341,14 +341,16 @@ macro_rules! impl_channel {
                     handle:  &mut Handle,
                     address: u32,
                 ) {
-                    handle.dma.$chfield.par.write(|w| w.pa().bits(address));
+                    // unsafe needed because of PAC. fine since pa takes all u32 values.
+                    handle.dma.$chfield.par.write(|w| unsafe{w.pa().bits(address)});
                 }
 
                 fn set_memory_address(&self,
                     handle:  &mut Handle,
                     address: u32,
                 ) {
-                    handle.dma.$chfield.mar.write(|w| w.ma().bits(address));
+                    // unsafe needed because of PAC. fine since ma takes all u32 values.
+                    handle.dma.$chfield.mar.write(|w| unsafe{w.ma().bits(address)});
                 }
 
                 fn set_transfer_len(&self, handle: &mut Handle, len: u16) {
