@@ -57,6 +57,7 @@ pub mod rtc;
     feature = "io-STM32L071",
 ))]
 pub mod serial;
+pub mod signature;
 pub mod spi;
 pub mod syscfg;
 pub mod time;
