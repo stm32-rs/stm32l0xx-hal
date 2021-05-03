@@ -316,6 +316,10 @@ name = "button_irq_rtic"
 required-features = ["rt"]
 
 [[example]]
+name = "crc"
+required-features = ["stm32l0x2"]
+
+[[example]]
 name = "flash"
 required-features = ["rt","stm32l082"]
 
