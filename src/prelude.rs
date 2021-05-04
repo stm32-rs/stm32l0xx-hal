@@ -8,6 +8,7 @@ pub use embedded_hal::{
 
 pub use crate::{
     adc::AdcExt as _,
+    crc::CrcExt as _stm32l0_hal_CrcExt,
     delay::DelayExt as _,
     encoder::{EncoderExt, PinCh1, PinCh2, Pins},
     gpio::GpioExt as _,
