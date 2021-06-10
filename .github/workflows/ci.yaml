@@ -37,7 +37,7 @@ jobs:
           use-cross: true
           command: clippy
           # dummy feature to satisfy build.rs
-          args: --features stm32l0x1 -- -D warnings
+          args: --features mcu-STM32L083VZTx -- -D warnings
   package:
     name: Cargo package
     runs-on: ubuntu-latest

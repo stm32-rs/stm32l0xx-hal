@@ -29,7 +29,7 @@ impl Delay {
         let freq = clocks.sys_clk().0;
         assert!(freq > 1_000_000_u32);
         let ticks_per_us = freq / 1_000_000_u32;
-        Delay { syst, ticks_per_us }
+        Delay { ticks_per_us, syst }
     }
     pub fn delay<T>(&mut self, delay: T)
     where

@@ -33,10 +33,11 @@ fn main() {
             (64, cfg!(feature = "flash-64")),
             (128, cfg!(feature = "flash-128")),
             (192, cfg!(feature = "flash-192")),
-        ].iter()
-            .filter(|(_, f)| *f)
-            .map(|(f, _)| *f)
-            .collect();
+        ]
+        .iter()
+        .filter(|(_, f)| *f)
+        .map(|(f, _)| *f)
+        .collect();
 
         if flash_features.len() != 1 {
             panic!("\n\nMust select exactly one flash size for linker script generation!\n\
@@ -50,10 +51,11 @@ fn main() {
             (2, cfg!(feature = "ram-2")),
             (8, cfg!(feature = "ram-8")),
             (20, cfg!(feature = "ram-20")),
-        ].iter()
-            .filter(|(_, f)| *f)
-            .map(|(f, _)| *f)
-            .collect();
+        ]
+        .iter()
+        .filter(|(_, f)| *f)
+        .map(|(f, _)| *f)
+        .collect();
 
         if ram_features.len() != 1 {
             panic!("\n\nMust select exactly one ram size for linker script generation!\n\
@@ -63,11 +65,14 @@ fn main() {
 
         let ram_size = ram_features[0];
 
-        let linker = format!(r#"MEMORY
+        let linker = format!(
+            r#"MEMORY
 {{
     FLASH : ORIGIN = 0x08000000, LENGTH = {}K
     RAM : ORIGIN = 0x20000000, LENGTH = {}K
-}}"#, flash_size, ram_size);
+}}"#,
+            flash_size, ram_size
+        );
 
         File::create(out.join("memory.x"))
             .unwrap()
