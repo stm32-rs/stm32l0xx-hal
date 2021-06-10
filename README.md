@@ -79,19 +79,10 @@ for example the `STM32L062K8Tx` uses the GPIO peripheral version named
 
 ## Flash memory
 
-Currently a default Flash and RAM size are configured depending on the chip's subfamily.
+Flash and RAM sizes are configured for each mcu in the feature list.
 
-| Chip        | Flash size | RAM size |
-| ----------- | ---------- | -------- |
-| `stm32l0x1` | 16kB       | 2kB      |
-| `stm32l0x2` | 192kB      | 20kB     |
-| `stm32l0x3` | 64kB       | 8kB      |
-
-However not all chips in the subfamily have the same flash and RAM size. Due to a known limitation
-to the scripts used to generate the features, the sizes might not correspond to the true sizes of 
-the MCU. You should double check with the datasheet, to make sure the flash and RAM sizes are correct.
-
-If they are not correct, you can override the `memory.x` of `stm32l0xx-hal` by providing your own.
+If you have an mcu that is not in the list or they are not correct, you can override 
+the `memory.x` of `stm32l0xx-hal` by providing your own.
 In your crate root, add a file called `memory.x` with the correct configuration. For example:
 
 ```
@@ -131,9 +122,6 @@ And finally add the `disable-linker-script` feature to your `stm32l0xx-hal` depe
 [dependencies]
 stm32l0xx-hal = { version = "0.7.0", features = ["mcu-STM32L071K8Ux", "disable-linker-script"] }
 ```
-
-For more information, see: https://github.com/stm32-rs/stm32l0xx-hal/issues/170
-
 
 # Toolchain Setup
 
