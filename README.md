@@ -88,8 +88,8 @@ Currently a default Flash and RAM size are configured depending on the chip's su
 | `stm32l0x3` | 64kB       | 8kB      |
 
 However not all chips in the subfamily have the same flash and RAM size. Due to a known limitation
-to the scripts used to generate the features the sizes might not correspond to the true sizes of 
-the MCU. You should double check with the datasheet to make sure the flash and RAM sizes are correct.
+to the scripts used to generate the features, the sizes might not correspond to the true sizes of 
+the MCU. You should double check with the datasheet, to make sure the flash and RAM sizes are correct.
 
 If they are not correct, you can override the `memory.x` of `stm32l0xx-hal` by providing your own.
 In your crate root, add a file called `memory.x` with the correct configuration. For example:
