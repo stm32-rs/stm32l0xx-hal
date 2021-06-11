@@ -4,3 +4,4 @@ Cargo.lock
 *.hex
 *.bin
 .gdb_history
+.vscode
