@@ -74,7 +74,7 @@ where
     /// frequency
     pub fn set_frequency(&mut self, frequency: Hertz, rcc: &Rcc) {
         self.stop();
-        let (psc, arr) = get_clock_config(frequency.0, self.instance.clock_frequency(rcc));
+        let (psc, arr) = get_clock_config(frequency.0, I::clock_frequency(rcc));
         self.instance.psc.write(|w| w.psc().bits(psc));
         self.instance.arr.write(|w| w.arr().bits(arr));
         self.start();
@@ -96,7 +96,7 @@ fn get_clock_config(freq: u32, clk: u32) -> (u16, u16) {
 pub trait Instance: Deref<Target = tim2::RegisterBlock> {
     fn ptr() -> *const tim2::RegisterBlock;
     fn enable(&self, _: &mut Rcc);
-    fn clock_frequency(&self, _: &Rcc) -> u32;
+    fn clock_frequency(_: &Rcc) -> u32;
 }
 
 macro_rules! impl_instance {
@@ -122,7 +122,7 @@ macro_rules! impl_instance {
                     rcc.rb.$apbXrstr.modify(|_, w| w.$timXrst().clear_bit());
                 }
 
-                fn clock_frequency(&self, rcc: &Rcc) -> u32 {
+                fn clock_frequency(rcc: &Rcc) -> u32 {
                     rcc.clocks.$apbX_clk().0
                 }
             }
@@ -261,6 +261,23 @@ where
     }
 }
 
+impl<I, C, P> Pwm<I, C, Assigned<P>>
+where
+    I: Instance,
+    C: Channel,
+{
+    /// This allows to dynamically change the frequency of the underlying PWM timer.
+    ///
+    /// **WARNING:**  
+    /// This changes the frequency for all channels associated with the PWM timer.
+    pub fn set_frequency(&mut self, frequency: Hertz, rcc: &Rcc) {
+        let (psc, arr) = get_clock_config(frequency.0, I::clock_frequency(rcc));
+        unsafe {
+            (*I::ptr()).psc.write(|w| w.psc().bits(psc));
+            (*I::ptr()).arr.write(|w| w.arr().bits(arr));
+        }
+    }
+}
 pub trait Pin<I, C> {
     fn setup(&self);
 }
