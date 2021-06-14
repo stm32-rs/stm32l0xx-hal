@@ -20,9 +20,23 @@ forget to update the links at the bottom of the changelog as well.-->
 - Add (untested) example `temperature` (#161) which uses `adc` to read the 
   internal temperature and also an externally connected TMP36 analog sensor.
 
+- Add `Pwm::set_frequency` to allow dynamically changing the underlying PWM timer's
+frequency. This was previously impossible without resorting to `unsafe` because the
+channels where moved out of the timer struct and Rust's ownership rules forbade us
+to borrow the timer to call `set_frequency`. ([#174])
+
+- Add Cargo features for flash and RAM sizes allowing to pass the correct sizes to
+the linker instead of having a default for the whole sub-family. ([#173]) 
+
 ### Breaking Changes
 
 - Add `enable` to `GeneralPurposeTimer`
+
+- `Instance::clock_frequency` is now an associated function and doesn't take `&self` anymore.
+
+- Build script requires that exactly one `flash-*` and one `ram-*` feature is enabled. They are
+enabled automatically when using an `mcu-*` feature, but if you manually selected the other features
+before this will break the build because of the missing features.
 
 ### Non-Breaking Changes
 
