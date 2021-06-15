@@ -1,0 +1,3 @@
+# Set the `stm32l0` team as code owner of this repository. A review request will
+# automatically be sent for every non-draft pull request.
+* @stm32-rs/stm32l0
