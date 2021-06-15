@@ -5,7 +5,6 @@ extern crate panic_halt;
 
 use core::pin::Pin;
 use cortex_m_rt::entry;
-use heapless::consts::*;
 use heapless::spsc::Queue;
 use stm32l0xx_hal::{
     dma::{self, DMA},
@@ -57,8 +56,8 @@ fn main() -> ! {
         .split();
 
     // we only have two elements for each queue, so U2 is fine (size is max 2)
-    let mut rx_buffers: Queue<Pin<DmaBuffer>, U2> = Queue::new();
-    let mut tx_buffers: Queue<Pin<DmaBuffer>, U2> = Queue::new();
+    let mut rx_buffers: Queue<Pin<DmaBuffer>, 2> = Queue::new();
+    let mut tx_buffers: Queue<Pin<DmaBuffer>, 2> = Queue::new();
 
     // enqueue as many buffers as available into rx_buffers
     unsafe {
