@@ -29,7 +29,7 @@ targets = ["thumbv6m-none-eabi"]
 
 [dependencies]
 stm32l0 = "0.13.0"
-as-slice = "0.1.0"
+as-slice = "0.2.1"
 embedded-hal = { version = "0.2.3", features = ["unproven"] }
 cortex-m =  "0.7.0"
 cortex-m-rt = "0.6.8"
