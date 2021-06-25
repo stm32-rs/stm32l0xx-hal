@@ -77,13 +77,17 @@ STM32CubeMX database. It does not necessarily match the name of the MCU,
 for example the `STM32L062K8Tx` uses the GPIO peripheral version named
 `io-STM32L051`.
 
-## Flash memory
+## Memory Layout: Flash (`flash-*`) and RAM (`ram-*`)
 
-Flash and RAM sizes are configured for each mcu in the feature list.
+Flash and RAM sizes are automatically configured by using the appropriate
+`mcu-*` Cargo feature, as described further up.
 
-If you have an mcu that is not in the list or they are not correct, you can override 
-the `memory.x` of `stm32l0xx-hal` by providing your own.
-In your crate root, add a file called `memory.x` with the correct configuration. For example:
+If you have an MCU that does not yet have a corresponding `mcu-*` feature, or
+if the default configuration is incorrect, you can override the `memory.x` of
+`stm32l0xx-hal` by providing your own:
+
+In your crate root, add a file called `memory.x` with the correct
+configuration. For example:
 
 ```
 MEMORY
