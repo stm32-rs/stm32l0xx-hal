@@ -26,25 +26,59 @@ fn main() {
             panic!("\n\nMust select exactly one package for linker script generation!\nChoices: 'stm32l0x1' or 'stm32l0x2' or 'stm32l0x3'\nAlternatively, pick the mcu-feature that matches your MCU, for example 'mcu-STM32L071KBTx'\n\n");
         }
 
-        let linker = if cfg!(feature = "stm32l0x1") {
-            include_bytes!("memory_l0x1.x").as_ref()
-        } else if cfg!(feature = "stm32l0x2") {
-            include_bytes!("memory_l0x2.x").as_ref()
-        } else if cfg!(feature = "stm32l0x3") {
-            include_bytes!("memory_l0x3.x").as_ref()
-        } else {
-            unreachable!();
-        };
+        let flash_features: Vec<u32> = [
+            (8, cfg!(feature = "flash-8")),
+            (16, cfg!(feature = "flash-16")),
+            (32, cfg!(feature = "flash-32")),
+            (64, cfg!(feature = "flash-64")),
+            (128, cfg!(feature = "flash-128")),
+            (192, cfg!(feature = "flash-192")),
+        ]
+        .iter()
+        .filter(|(_, f)| *f)
+        .map(|(f, _)| *f)
+        .collect();
+
+        if flash_features.len() != 1 {
+            panic!("\n\nMust select exactly one flash size for linker script generation!\n\
+            Choices: 'flash-8', 'flash-16', 'flash-32', 'flash-64', 'flash-128' or 'flash-192'\n \
+            Alternatively, pick the mcu-feature that matches your MCU, for example 'mcu-STM32L071KBTx'\n\n");
+        }
+
+        let flash_size = flash_features[0];
+
+        let ram_features: Vec<u32> = [
+            (2, cfg!(feature = "ram-2")),
+            (8, cfg!(feature = "ram-8")),
+            (20, cfg!(feature = "ram-20")),
+        ]
+        .iter()
+        .filter(|(_, f)| *f)
+        .map(|(f, _)| *f)
+        .collect();
+
+        if ram_features.len() != 1 {
+            panic!("\n\nMust select exactly one ram size for linker script generation!\n\
+            Choices: 'ram-2', 'ram-8' or 'ram-20'\n \
+            Alternatively, pick the mcu-feature that matches your MCU, for example 'mcu-STM32L071KBTx'\n\n");
+        }
+
+        let ram_size = ram_features[0];
+
+        let linker = format!(
+            r#"MEMORY
+{{
+    FLASH : ORIGIN = 0x08000000, LENGTH = {}K
+    RAM : ORIGIN = 0x20000000, LENGTH = {}K
+}}"#,
+            flash_size, ram_size
+        );
 
         File::create(out.join("memory.x"))
             .unwrap()
-            .write_all(linker)
+            .write_all(linker.as_bytes())
             .unwrap();
         println!("cargo:rustc-link-search={}", out.display());
-
-        println!("cargo:rerun-if-changed=memory_l0x1.x");
-        println!("cargo:rerun-if-changed=memory_l0x2.x");
-        println!("cargo:rerun-if-changed=memory_l0x3.x");
     }
 
     println!("cargo:rerun-if-changed=build.rs");

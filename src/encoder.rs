@@ -212,9 +212,9 @@ macro_rules! encoders {
                     };
 
                     Status {
+                        direction,
                         did_overflow,
                         count,
-                        direction,
                     }
                 }
 
