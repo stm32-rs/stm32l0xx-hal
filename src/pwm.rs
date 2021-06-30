@@ -17,7 +17,7 @@ use crate::gpio::{
     gpiob::{PB10, PB11, PB3},
 };
 
-#[cfg(any(feature = "stm32l072", feature = "stm32l082"))]
+#[cfg(any(feature = "stm32l072", feature = "stm32l082", feature = "io-STM32L071",))]
 use crate::gpio::{
     gpioa::{PA6, PA7},
     gpiob::{PB0, PB1, PB4, PB5},
@@ -326,7 +326,7 @@ impl_pin!(
     )
 );
 
-#[cfg(any(feature = "stm32l072", feature = "stm32l082"))]
+#[cfg(any(feature = "stm32l072", feature = "stm32l082", feature = "io-STM32L071",))]
 impl_pin!(
     TIM3: (
         PA6, C1, AF2;
