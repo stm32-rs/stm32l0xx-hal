@@ -215,7 +215,7 @@ code. This can be extended to any other example code.
     ```
 
 
-# Contibutor Notes
+# Contributor Notes
 
 - Revert local dependencies to external cargo and uncomment configurations
   before committing
