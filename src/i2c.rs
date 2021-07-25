@@ -15,8 +15,8 @@ use crate::pac::i2c1::{
     RegisterBlock,
 };
 use crate::rcc::Rcc;
-use crate::time::Hertz;
 use cast::u8;
+use embedded_time::rate::Hertz;
 
 // I²C traits
 use crate::hal::blocking::i2c::{Read, Write, WriteRead};

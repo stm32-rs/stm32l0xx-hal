@@ -49,7 +49,7 @@ fn main() -> ! {
         .usart(
             gpioa.pa2,
             gpioa.pa3,
-            serial::Config::default().baudrate(115_200.bps()),
+            serial::Config::default().baudrate(115_200.Bd()),
             &mut rcc,
         )
         .unwrap()

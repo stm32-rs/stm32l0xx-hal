@@ -1,10 +1,12 @@
 //! Delays
+
 use crate::hal::blocking::delay::{DelayMs, DelayUs};
 use crate::rcc::Clocks;
-use crate::time::MicroSeconds;
 use cast::u32;
+use core::convert::TryInto;
 use cortex_m::peripheral::syst::SystClkSource;
 use cortex_m::peripheral::SYST;
+use embedded_time::duration::{Extensions, Microseconds};
 
 pub trait DelayExt {
     fn delay(self, clocks: Clocks) -> Delay;
@@ -31,11 +33,17 @@ impl Delay {
         let ticks_per_us = freq / 1_000_000_u32;
         Delay { ticks_per_us, syst }
     }
+
+    /// Wait for the given time.
+    ///
+    /// Note that durations above `u32::MAX` microseconds will be clamped at `u32::MAX`.
     pub fn delay<T>(&mut self, delay: T)
     where
-        T: Into<MicroSeconds>,
+        T: TryInto<Microseconds>,
     {
-        self.delay_us(delay.into().0)
+        let delay = delay.try_into().unwrap_or_else(|_| u32::MAX.microseconds());
+
+        self.delay_us(delay.0)
     }
 
     /// Releases the system timer (SysTick) resource

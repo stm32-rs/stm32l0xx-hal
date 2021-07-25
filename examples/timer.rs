@@ -36,7 +36,7 @@ fn main() -> ! {
     let led = gpioa.pa1.into_push_pull_output();
 
     // Configure the timer.
-    let mut timer = dp.TIM2.timer(1.hz(), &mut rcc);
+    let mut timer = dp.TIM2.timer(1.Hz(), &mut rcc);
     timer.listen();
 
     // Store the LED and timer in mutex refcells to make them available from the

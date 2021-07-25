@@ -9,6 +9,7 @@ use crate::hal;
 use crate::hal::prelude::*;
 pub use crate::pac::{LPUART1, USART1, USART2, USART4, USART5};
 use crate::rcc::{Rcc, LSE};
+use embedded_time::rate::{Baud, Extensions};
 
 #[cfg(any(feature = "stm32l0x2", feature = "stm32l0x3"))]
 use core::{
@@ -67,9 +68,6 @@ pub enum Event {
     Idle,
 }
 
-use crate::time::Bps;
-use crate::time::U32Ext;
-
 pub enum WordLength {
     DataBits8,
     DataBits9,
@@ -93,15 +91,15 @@ pub enum StopBits {
 }
 
 pub struct Config {
-    pub baudrate: Bps,
+    pub baudrate: Baud,
     pub wordlength: WordLength,
     pub parity: Parity,
     pub stopbits: StopBits,
 }
 
 impl Config {
-    pub fn baudrate(mut self, baudrate: Bps) -> Self {
-        self.baudrate = baudrate;
+    pub fn baudrate(mut self, baudrate: impl Into<Baud>) -> Self {
+        self.baudrate = baudrate.into();
         self
     }
 
@@ -141,7 +139,7 @@ pub struct InvalidConfig;
 
 impl Default for Config {
     fn default() -> Config {
-        let baudrate = 9_600_u32.bps();
+        let baudrate = 9_600_u32.Bd();
         Config {
             baudrate,
             wordlength: WordLength::DataBits8,

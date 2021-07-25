@@ -36,7 +36,7 @@ fn main() -> ! {
     // Initialise the SPI peripheral.
     let mut spi = dp
         .SPI1
-        .spi((sck, miso, mosi), spi::MODE_0, 100_000.hz(), &mut rcc);
+        .spi((sck, miso, mosi), spi::MODE_0, 100_000.Hz(), &mut rcc);
 
     let mut scb = cp.SCB;
     let mut dma = DMA::new(dp.DMA1, &mut rcc);

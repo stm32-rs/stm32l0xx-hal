@@ -6,6 +6,7 @@ use core::{
 };
 
 use as_slice::{AsMutSlice, AsSlice};
+use embedded_time::rate::Hertz;
 
 use crate::dma::{self, Buffer};
 
@@ -19,7 +20,6 @@ use crate::pac::SPI1;
 #[cfg(any(feature = "stm32l0x2", feature = "stm32l0x3"))]
 use crate::pac::SPI2;
 use crate::rcc::Rcc;
-use crate::time::Hertz;
 
 pub use hal::spi::{Mode, Phase, Polarity, MODE_0, MODE_1, MODE_2, MODE_3};
 
