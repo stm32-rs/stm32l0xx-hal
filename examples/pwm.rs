@@ -24,7 +24,7 @@ fn main() -> ! {
     let gpioa = dp.GPIOA.split(&mut rcc);
 
     // Initialize TIM2 for PWM
-    let pwm = pwm::Timer::new(dp.TIM2, 10.khz(), &mut rcc);
+    let pwm = pwm::Timer::new(dp.TIM2, 10_000.Hz(), &mut rcc);
 
     #[cfg(feature = "stm32l0x1")]
     let mut pwm = pwm.channel2.assign(gpioa.pa1);

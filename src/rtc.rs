@@ -2,6 +2,7 @@
 //!
 //! See STM32L0x2 reference manual, chapter 26.
 
+use embedded_time::rate::Extensions;
 use void::Void;
 
 use crate::{
@@ -9,7 +10,6 @@ use crate::{
     pac,
     pwr::PWR,
     rcc::Rcc,
-    time::U32Ext,
 };
 
 /// Entry point to the RTC API
@@ -57,7 +57,7 @@ impl RTC {
         });
 
         let apb1_clk = rcc.clocks.apb1_clk();
-        let rtc_clk = 32_768u32.hz(); // LSE crystal frequency
+        let rtc_clk = 32_768u32.Hz(); // LSE crystal frequency
 
         // The APB1 clock must not be slower than the RTC clock.
         if apb1_clk < rtc_clk {

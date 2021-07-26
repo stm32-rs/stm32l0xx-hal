@@ -15,9 +15,13 @@ pub use crate::{
     pwr::PowerMode as _,
     rcc::RccExt as _,
     spi::SpiExt as _,
-    time::U32Ext as _,
     timer::TimerExt as _,
     watchdog::{IndependedWatchdogExt as _, WindowWatchdogExt as _},
+};
+
+// Make items like `.Hz()`, `.microseconds()` available from embedded-time
+pub use embedded_time::{
+    duration::Extensions as DurationExtensions, rate::Extensions as RateExtensions,
 };
 
 #[cfg(any(

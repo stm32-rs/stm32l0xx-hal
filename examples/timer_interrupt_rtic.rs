@@ -30,7 +30,7 @@ const APP: () = {
         let led = gpioa.pa1.into_push_pull_output().downgrade();
 
         // Configure the timer.
-        let mut timer = device.TIM2.timer(1.hz(), &mut rcc);
+        let mut timer = device.TIM2.timer(1.Hz(), &mut rcc);
         timer.listen();
 
         // Return the initialised resources.

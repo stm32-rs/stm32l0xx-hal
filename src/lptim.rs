@@ -5,10 +5,11 @@ use crate::hal;
 use crate::pac::LPTIM;
 use crate::pwr::PWR;
 use crate::rcc::Rcc;
-use crate::time::{Hertz, MicroSeconds};
 use cast::{u32, u64};
 use core::convert::TryFrom;
 use core::marker::PhantomData;
+use embedded_time::duration::Microseconds;
+use embedded_time::rate::Hertz;
 use void::Void;
 
 mod sealed {
@@ -85,7 +86,7 @@ pub struct Interrupts {
 /// The timer can be initialized either in one-shot mode or in periodic mode, using `init_oneshot`
 /// or `init_periodic` respectively. In periodic mode, the embedded-hal `Periodic` marker trait is
 /// implemented and the `CountDown` implementation uses `Hertz` as the time unit. In one-shot mode,
-/// the `CountDown` implementation instead uses `MicroSeconds`, allowing for a multi-second timeout
+/// the `CountDown` implementation instead uses `Microseconds`, allowing for a multi-second timeout
 /// to be configured (with the tradeoff being a larger code size due to use of 64-bit arithmetic).
 pub struct LpTimer<M: CountMode> {
     lptim: LPTIM,
@@ -365,11 +366,11 @@ impl hal::timer::CountDown for LpTimer<Periodic> {
 impl hal::timer::Periodic for LpTimer<Periodic> {}
 
 impl hal::timer::CountDown for LpTimer<OneShot> {
-    type Time = MicroSeconds;
+    type Time = Microseconds;
 
     fn start<T>(&mut self, period: T)
     where
-        T: Into<MicroSeconds>,
+        T: Into<Microseconds>,
     {
         self.configure(TimeConf::calculate_period(self.input_freq, period.into()));
 
@@ -435,7 +436,7 @@ impl TimeConf {
 
     /// Calculates prescaler and autoreload value for producing overflows after every
     /// `output_period`.
-    fn calculate_period(input_freq: Hertz, output_period: MicroSeconds) -> Self {
+    fn calculate_period(input_freq: Hertz, output_period: Microseconds) -> Self {
         // Here, the `output_period` can be very long, resulting in an output frequency of < 1 Hz.
 
         // Fi  = Frequency of input clock
@@ -484,7 +485,6 @@ impl TimeConf {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::time::U32Ext;
 
     /// Test-only methods.
     impl TimeConf {
@@ -498,8 +498,8 @@ mod tests {
             Hertz(input_freq.0 / u32(self.psc()) / u32(self.arr))
         }
 
-        fn output_period(&self, input_freq: Hertz) -> MicroSeconds {
-            MicroSeconds(
+        fn output_period(&self, input_freq: Hertz) -> Microseconds {
+            Microseconds(
                 u32(u64(self.psc()) * u64(self.arr) * 1_000_000 / u64(input_freq.0)).unwrap(),
             )
         }

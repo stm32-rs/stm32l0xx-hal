@@ -31,8 +31,8 @@ fn main() -> ! {
 
     loop {
         let wait = match button.is_high() {
-            Ok(true) => 300.ms(),
-            Ok(false) => 100.ms(),
+            Ok(true) => 300.milliseconds(),
+            Ok(false) => 100.milliseconds(),
             _ => unreachable!(),
         };
         delay.delay(wait);

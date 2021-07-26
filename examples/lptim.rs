@@ -46,7 +46,7 @@ fn main() -> ! {
     blink(&mut led);
 
     // 1 seconds of regular run mode
-    lptim.start(1.hz());
+    lptim.start(1.Hz());
     block!(lptim.wait()).unwrap();
 
     Exti::unpend(exti_line);

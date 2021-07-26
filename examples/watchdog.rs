@@ -24,7 +24,7 @@ fn main() -> ! {
     let mut watchdog = dp.IWDG.watchdog();
 
     // Start a watchdog with a 100ms period.
-    watchdog.start(100.ms());
+    watchdog.start(10.Hz());
 
     let mut counter = 50;
     loop {

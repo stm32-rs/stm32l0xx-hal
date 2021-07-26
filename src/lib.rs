@@ -61,7 +61,6 @@ pub mod serial;
 pub mod signature;
 pub mod spi;
 pub mod syscfg;
-pub mod time;
 pub mod timer;
 #[cfg(all(
     feature = "stm32-usbd",

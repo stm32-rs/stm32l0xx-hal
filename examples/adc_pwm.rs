@@ -19,7 +19,7 @@ fn main() -> ! {
     let gpioa = dp.GPIOA.split(&mut rcc);
 
     // Configure the timer as PWM on PA1.
-    let pwm = pwm::Timer::new(dp.TIM2, 1.khz(), &mut rcc);
+    let pwm = pwm::Timer::new(dp.TIM2, 1_000.Hz(), &mut rcc);
     let mut pwm = pwm.channel2.assign(gpioa.pa1);
     let max_duty = pwm.get_max_duty() / 4095;
     pwm.enable();

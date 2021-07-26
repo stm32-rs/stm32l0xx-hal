@@ -2,7 +2,7 @@ use crate::mco;
 use crate::pac::rcc::cfgr::{MCOPRE_A, MCOSEL_A};
 use crate::pac::RCC;
 use crate::pwr::PWR;
-use crate::time::{Hertz, U32Ext};
+use embedded_time::rate::{Extensions, Hertz};
 
 #[cfg(any(feature = "stm32l0x2", feature = "stm32l0x3"))]
 use crate::{pac::CRS, syscfg::SYSCFG};
@@ -340,7 +340,7 @@ impl RccExt for RCC {
                     PLLDiv::Div3 => freq / 3,
                     PLLDiv::Div4 => freq / 4,
                 };
-                assert!(freq <= 32.mhz().0);
+                assert!(freq <= 32_u32.MHz().0);
 
                 self.cfgr.write(move |w| unsafe {
                     w.pllmul()
@@ -393,12 +393,12 @@ impl RccExt for RCC {
 
         let clocks = Clocks {
             source: cfgr.mux,
-            sys_clk: sys_clk.hz(),
-            ahb_clk: ahb_freq.hz(),
-            apb1_clk: apb1_freq.hz(),
-            apb2_clk: apb2_freq.hz(),
-            apb1_tim_clk: apb1_tim_freq.hz(),
-            apb2_tim_clk: apb2_tim_freq.hz(),
+            sys_clk: sys_clk.Hz(),
+            ahb_clk: ahb_freq.Hz(),
+            apb1_clk: apb1_freq.Hz(),
+            apb2_clk: apb2_freq.Hz(),
+            apb1_tim_clk: apb1_tim_freq.Hz(),
+            apb2_tim_clk: apb2_tim_freq.Hz(),
         };
 
         Rcc { rb: self, clocks }

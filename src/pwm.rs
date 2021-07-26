@@ -1,15 +1,13 @@
-use core::marker::PhantomData;
-use core::ops::Deref;
-
-use cortex_m::interrupt;
-
 use crate::gpio::gpioa::{PA0, PA1, PA2, PA3};
 use crate::gpio::{AltMode, PinMode};
 use crate::hal;
 use crate::pac::{tim2, TIM2, TIM3};
 use crate::rcc::Rcc;
-use crate::time::Hertz;
 use cast::{u16, u32};
+use core::marker::PhantomData;
+use core::ops::Deref;
+use cortex_m::interrupt;
+use embedded_time::rate::Hertz;
 
 #[cfg(any(feature = "stm32l0x2", feature = "stm32l0x3"))]
 use crate::gpio::{
@@ -43,7 +41,9 @@ where
     I: Instance,
 {
     /// Create new timer instance that is automatically started with given frequency
-    pub fn new(timer: I, frequency: Hertz, rcc: &mut Rcc) -> Self {
+    pub fn new(timer: I, frequency: impl Into<Hertz>, rcc: &mut Rcc) -> Self {
+        let frequency = frequency.into();
+
         timer.enable(rcc);
 
         let mut tim = Self {
@@ -72,7 +72,8 @@ where
     /// In order to do this operation properly the function stop the timer and then starts it again.
     /// The duty cycle that was set before for given pin needs to adjusted according to the
     /// frequency
-    pub fn set_frequency(&mut self, frequency: Hertz, rcc: &Rcc) {
+    pub fn set_frequency(&mut self, frequency: impl Into<Hertz>, rcc: &Rcc) {
+        let frequency = frequency.into();
         self.stop();
         let (psc, arr) = get_clock_config(frequency.0, I::clock_frequency(rcc));
         self.instance.psc.write(|w| w.psc().bits(psc));
@@ -268,7 +269,7 @@ where
 {
     /// This allows to dynamically change the frequency of the underlying PWM timer.
     ///
-    /// **WARNING:**  
+    /// **WARNING:**
     /// This changes the frequency for all channels associated with the PWM timer.
     pub fn set_frequency(&mut self, frequency: Hertz, rcc: &Rcc) {
         let (psc, arr) = get_clock_config(frequency.0, I::clock_frequency(rcc));

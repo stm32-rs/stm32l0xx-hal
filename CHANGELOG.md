@@ -30,6 +30,8 @@ the linker instead of having a default for the whole sub-family. ([#173])
 
 ### Breaking Changes
 
+- Migrate from custom `Hertz` implementation to [`embedded-time`](https://crates.io/crates/embedded-time) ([#183])
+
 - Add `enable` to `GeneralPurposeTimer`
 
 - `Instance::clock_frequency` is now an associated function and doesn't take `&self` anymore.
@@ -119,6 +121,7 @@ _Not yet tracked in this changelog._
 
 <!-- Links to pull requests and issues. Note that you can use "issues"
 in the URL for both issues and pull requests. -->
+[#183]: https://github.com/stm32-rs/stm32l0xx-hal/issues/183
 [#148]: https://github.com/stm32-rs/stm32l0xx-hal/issues/148
 [#145]: https://github.com/stm32-rs/stm32l0xx-hal/issues/145
 [#144]: https://github.com/stm32-rs/stm32l0xx-hal/issues/144
