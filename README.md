@@ -56,7 +56,7 @@ stm32l0xx-hal = { version = "0.7.0", features = ["mcu-STM32L071KBTx", "rt"] }
 If you take a look at the [`Cargo.toml`
 file](https://github.com/stm32-rs/stm32l0xx-hal/blob/master/Cargo.toml), you
 can see that `mcu-STM32L071KBTx` is just an alias for `["io-STM32L071",
-"stm32l0x1", "lqfp32"]`.
+"eeprom-6144", "flash-128", "ram-20"]`.
 
 ## I/O Features (`io-*`)
 
