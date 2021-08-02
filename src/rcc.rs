@@ -340,7 +340,7 @@ impl RccExt for RCC {
                     PLLDiv::Div3 => freq / 3,
                     PLLDiv::Div4 => freq / 4,
                 };
-                assert!(freq <= 32_u32.MHz().0);
+                assert!(freq <= 32_000_000);
 
                 self.cfgr.write(move |w| unsafe {
                     w.pllmul()
