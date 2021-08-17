@@ -39,7 +39,7 @@ alternate function mappings for I/O pins do not follow these groups.
 
 In order for the HAL to properly support all those MCUs, we generate some
 peripheral mappings and corresponding Cargo features using
-[cube-parse](https://github.com/dbrgn/cube-parse/).
+[cube-parse](https://github.com/stm32-rs/cube-parse/).
 
 ## MCU Features (`mcu-*`)
 
