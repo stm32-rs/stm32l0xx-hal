@@ -43,6 +43,7 @@ before this will break the build because of the missing features.
 ### Non-Breaking Changes
 
 ### Fixes
+- Fixed potential race condition when flushing the tx serial buffer.
 
 ### Documentation
 
