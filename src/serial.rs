@@ -620,13 +620,12 @@ macro_rules! usart {
                     // NOTE(unsafe) atomic read with no side effects
                     let isr = unsafe { (*$USARTX::ptr()).isr.read() };
 
-                    // Frame complete, set the TC Clear Flag
-                    unsafe {
-                        (*$USARTX::ptr()).icr.write(|w| {w.tccf().set_bit()});
-                    }
-
                     // Check TC bit on ISR
                     if isr.tc().bit_is_set() {
+                        // Frame complete, set the TC Clear Flag
+                        unsafe {
+                            (*$USARTX::ptr()).icr.write(|w| {w.tccf().set_bit()});
+                        }
                         Ok(())
                     } else {
                         Err(nb::Error::WouldBlock)
