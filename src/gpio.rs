@@ -1,5 +1,6 @@
 //! General Purpose Input / Output
 
+use core::convert::Infallible;
 use core::marker::PhantomData;
 
 use crate::rcc::Rcc;
@@ -11,6 +12,13 @@ pub trait GpioExt {
 
     /// Splits the GPIO block into independent pins and registers
     fn split(self, rcc: &mut Rcc) -> Self::Parts;
+}
+
+trait GpioRegExt {
+    fn is_low(&self, pos: u8) -> bool;
+    fn is_set_low(&self, pos: u8) -> bool;
+    fn set_high(&self, pos: u8);
+    fn set_low(&self, pos: u8);
 }
 
 /// Input mode (type state)
@@ -40,6 +48,79 @@ pub struct Output<MODE> {
 
 /// Push pull output (type state)
 pub struct PushPull;
+
+use embedded_hal::digital::v2::{toggleable, InputPin, OutputPin, StatefulOutputPin};
+
+/// Fully erased pin
+pub struct Pin<MODE> {
+    i: u8,
+    port: *const dyn GpioRegExt,
+    _mode: PhantomData<MODE>,
+}
+
+// NOTE(unsafe) The only write acess is to BSRR, which is thread safe
+unsafe impl<MODE> Sync for Pin<MODE> {}
+// NOTE(unsafe) this only enables read access to the same pin from multiple
+// threads
+unsafe impl<MODE> Send for Pin<MODE> {}
+
+impl<MODE> StatefulOutputPin for Pin<Output<MODE>> {
+    #[inline(always)]
+    fn is_set_high(&self) -> Result<bool, Self::Error> {
+        self.is_set_low().map(|v| !v)
+    }
+
+    #[inline(always)]
+    fn is_set_low(&self) -> Result<bool, Self::Error> {
+        Ok(unsafe { (*self.port).is_set_low(self.i) })
+    }
+}
+
+impl<MODE> OutputPin for Pin<Output<MODE>> {
+    type Error = Infallible;
+
+    #[inline(always)]
+    fn set_high(&mut self) -> Result<(), Self::Error> {
+        unsafe { (*self.port).set_high(self.i) };
+        Ok(())
+    }
+
+    #[inline(always)]
+    fn set_low(&mut self) -> Result<(), Self::Error> {
+        unsafe { (*self.port).set_low(self.i) }
+        Ok(())
+    }
+}
+
+impl<MODE> toggleable::Default for Pin<Output<MODE>> {}
+
+impl InputPin for Pin<Output<OpenDrain>> {
+    type Error = Infallible;
+
+    #[inline(always)]
+    fn is_high(&self) -> Result<bool, Self::Error> {
+        self.is_low().map(|v| !v)
+    }
+
+    #[inline(always)]
+    fn is_low(&self) -> Result<bool, Self::Error> {
+        Ok(unsafe { (*self.port).is_low(self.i) })
+    }
+}
+
+impl<MODE> InputPin for Pin<Input<MODE>> {
+    type Error = Infallible;
+
+    #[inline(always)]
+    fn is_high(&self) -> Result<bool, Self::Error> {
+        self.is_low().map(|v| !v)
+    }
+
+    #[inline(always)]
+    fn is_low(&self) -> Result<bool, Self::Error> {
+        Ok(unsafe { (*self.port).is_low(self.i) })
+    }
+}
 
 mod sealed {
     pub trait Sealed {}
@@ -129,6 +210,33 @@ pub enum Port {
     PH,
 }
 
+macro_rules! gpio_trait {
+    ($gpiox:ident) => {
+        impl GpioRegExt for crate::pac::$gpiox::RegisterBlock {
+            fn is_low(&self, pos: u8) -> bool {
+                self.idr.read().bits() & (1 << pos) == 0
+            }
+
+            fn is_set_low(&self, pos: u8) -> bool {
+                self.odr.read().bits() & (1 << pos) == 0
+            }
+
+            fn set_high(&self, pos: u8) {
+                // NOTE(unsafe) atomic write to a stateless register
+                unsafe { self.bsrr.write(|w| w.bits(1 << pos)) }
+            }
+
+            fn set_low(&self, pos: u8) {
+                // NOTE(unsafe) atomic write to a stateless register
+                unsafe { self.bsrr.write(|w| w.bits(1 << (pos + 16))) }
+            }
+        }
+    };
+}
+
+gpio_trait!(gpioa);
+gpio_trait!(gpiob);
+
 macro_rules! gpio {
     ($GPIOX:ident, $gpiox:ident, $iopxenr:ident, $PXx:ident, [
         $($PXi:ident: ($pxi:ident, $i:expr, $MODE:ty),)+
@@ -143,7 +251,7 @@ macro_rules! gpio {
             use super::{
                 Floating, GpioExt, Input, OpenDrain, Output, Speed,
                 PullDown, PullUp, PushPull, AltMode, Analog, Port,
-                PinMode,
+                PinMode, Pin, GpioRegExt
             };
 
             /// GPIO parts
@@ -167,88 +275,6 @@ macro_rules! gpio {
                             },
                         )+
                     }
-                }
-            }
-
-            /// Partially erased pin
-            pub struct $PXx<MODE> {
-                i: u8,
-                _mode: PhantomData<MODE>,
-            }
-
-            impl<MODE> $PXx<MODE> {
-                /// The port this pin is part of.
-                pub const PORT: Port = Port::$PXx;
-
-                /// Returns the port this pin is part of.
-                pub fn port(&self) -> Port {
-                    Port::$PXx
-                }
-
-                /// Returns this pin's number inside its port.
-                pub fn pin_number(&self) -> u8 {
-                    self.i
-                }
-            }
-
-            impl<MODE> OutputPin for $PXx<Output<MODE>> {
-                type Error = void::Void;
-
-                fn set_high(&mut self) -> Result<(), Self::Error> {
-                    // NOTE(unsafe) atomic write to a stateless register
-                    unsafe { (*$GPIOX::ptr()).bsrr.write(|w| w.bits(1 << self.i)) };
-                    Ok(())
-                }
-
-                fn set_low(&mut self) -> Result<(), Self::Error> {
-                    // NOTE(unsafe) atomic write to a stateless register
-                    unsafe { (*$GPIOX::ptr()).bsrr.write(|w| w.bits(1 << (self.i + 16))) };
-                    Ok(())
-                }
-            }
-
-            impl<MODE> StatefulOutputPin for $PXx<Output<MODE>> {
-                fn is_set_high(&self) -> Result<bool, Self::Error> {
-                    let is_high = !self.is_set_low()?;
-                    Ok(is_high)
-                }
-
-                fn is_set_low(&self) -> Result<bool, Self::Error> {
-                    // NOTE(unsafe) atomic read with no side effects
-                    let is_low = unsafe { (*$GPIOX::ptr()).odr.read().bits() & (1 << self.i) == 0 };
-                    Ok(is_low)
-                }
-            }
-
-            impl<MODE> toggleable::Default for $PXx<Output<MODE>> {}
-
-            impl<MODE> InputPin for $PXx<Output<MODE>> {
-                type Error = void::Void;
-
-                fn is_high(&self) -> Result<bool, Self::Error> {
-                    let is_high = !self.is_low()?;
-                    Ok(is_high)
-                }
-
-                fn is_low(&self) -> Result<bool, Self::Error> {
-                    // NOTE(unsafe) atomic read with no side effects
-                    let is_low = unsafe { (*$GPIOX::ptr()).idr.read().bits() & (1 << self.i) == 0 };
-                    Ok(is_low)
-                }
-            }
-
-            impl<MODE> InputPin for $PXx<Input<MODE>> {
-                type Error = void::Void;
-
-                fn is_high(&self) -> Result<bool, Self::Error> {
-                    let is_high = !self.is_low()?;
-                    Ok(is_high)
-                }
-
-                fn is_low(&self) -> Result<bool, Self::Error> {
-                    // NOTE(unsafe) atomic read with no side effects
-                    let is_low = unsafe { (*$GPIOX::ptr()).idr.read().bits() & (1 << self.i) == 0 };
-                    Ok(is_low)
                 }
             }
 
@@ -496,9 +522,10 @@ macro_rules! gpio {
                     ///
                     /// This is useful when you want to collect the pins into an array where you
                     /// need all the elements to have the same type
-                    pub fn downgrade(self) -> $PXx<Output<MODE>> {
-                        $PXx {
+                    pub fn downgrade(self) -> Pin<Output<MODE>> {
+                        Pin {
                             i: $i,
+                            port: $GPIOX::ptr() as *const dyn GpioRegExt,
                             _mode: self._mode,
                         }
                     }
@@ -556,9 +583,10 @@ macro_rules! gpio {
                     ///
                     /// This is useful when you want to collect the pins into an array where you
                     /// need all the elements to have the same type
-                    pub fn downgrade(self) -> $PXx<Input<MODE>> {
-                        $PXx {
+                    pub fn downgrade(self) -> Pin<Input<MODE>> {
+                        Pin {
                             i: $i,
+                            port: $GPIOX::ptr() as *const dyn GpioRegExt,
                             _mode: self._mode,
                         }
                     }
