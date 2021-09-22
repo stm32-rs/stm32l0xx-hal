@@ -17,7 +17,7 @@ use stm32l0xx_hal::{
 #[app(device = stm32l0xx_hal::pac, peripherals = true)]
 const APP: () = {
     struct Resources {
-        led: gpiob::PB<Output<PushPull>>,
+        led: Pin<Output<PushPull>>,
         int: Exti,
     }
 

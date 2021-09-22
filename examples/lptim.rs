@@ -10,7 +10,7 @@ use cortex_m_rt::entry;
 use nb::block;
 use stm32l0xx_hal::{
     exti::{DirectLine, Exti},
-    gpio::{gpiob::PB, Output, PushPull},
+    gpio::{Output, Pin, PushPull},
     lptim::{self, ClockSrc, LpTimer},
     pac,
     prelude::*,
@@ -105,7 +105,7 @@ fn main() -> ! {
     }
 }
 
-fn blink(led: &mut PB<Output<PushPull>>) {
+fn blink(led: &mut Pin<Output<PushPull>>) {
     led.set_high().unwrap();
     delay();
     led.set_low().unwrap();
