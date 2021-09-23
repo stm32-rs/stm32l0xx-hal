@@ -310,17 +310,17 @@ macro_rules! gpio {
                     fn mode<M: PinMode>(&mut self) {
                         let offset = 2 * $i;
                         unsafe {
-                            let _ = &(*$GPIOX::ptr()).pupdr.modify(|r, w| {
+                            (*$GPIOX::ptr()).pupdr.modify(|r, w| {
                                 w.bits((r.bits() & !(0b11 << offset)) | (u32::from(M::PUPDR) << offset))
                             });
 
                             if let Some(otyper) = M::OTYPER {
-                                let _ = &(*$GPIOX::ptr()).otyper.modify(|r, w| {
+                                (*$GPIOX::ptr()).otyper.modify(|r, w| {
                                     w.bits(r.bits() & !(0b1 << $i) | (u32::from(otyper) << $i))
                                 });
                             }
 
-                            let _ = &(*$GPIOX::ptr()).moder.modify(|r, w| {
+                            (*$GPIOX::ptr()).moder.modify(|r, w| {
                                 w.bits((r.bits() & !(0b11 << offset)) | (u32::from(M::MODER) << offset))
                             });
                         }
@@ -501,16 +501,16 @@ macro_rules! gpio {
                         let offset2 = 4 * $i;
                         unsafe {
                             if offset2 < 32 {
-                                let _ = &(*$GPIOX::ptr()).afrl.modify(|r, w| {
+                                (*$GPIOX::ptr()).afrl.modify(|r, w| {
                                     w.bits((r.bits() & !(0b1111 << offset2)) | (mode << offset2))
                                 });
                             } else {
                                 let offset2 = offset2 - 32;
-                                let _ = &(*$GPIOX::ptr()).afrh.modify(|r, w| {
+                                (*$GPIOX::ptr()).afrh.modify(|r, w| {
                                     w.bits((r.bits() & !(0b1111 << offset2)) | (mode << offset2))
                                 });
                             }
-                            let _ = &(*$GPIOX::ptr()).moder.modify(|r, w| {
+                            (*$GPIOX::ptr()).moder.modify(|r, w| {
                                 w.bits((r.bits() & !(0b11 << offset)) | (0b10 << offset))
                             });
                         }
