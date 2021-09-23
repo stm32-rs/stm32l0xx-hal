@@ -7,7 +7,7 @@ use cortex_m::{asm, peripheral::NVIC};
 use cortex_m_rt::entry;
 use stm32l0xx_hal::{
     exti::{ConfigurableLine, Exti, TriggerEdge},
-    gpio::{gpiob::PB, Output, PushPull},
+    gpio::{Output, Pin, PushPull},
     pac,
     prelude::*,
     pwr::{self, PWR},
@@ -107,7 +107,7 @@ fn main() -> ! {
     }
 }
 
-fn blink(led: &mut PB<Output<PushPull>>) {
+fn blink(led: &mut Pin<Output<PushPull>>) {
     led.set_high().unwrap();
     delay();
     led.set_low().unwrap();

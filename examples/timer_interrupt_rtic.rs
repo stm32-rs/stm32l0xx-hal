@@ -11,7 +11,7 @@ use stm32l0xx_hal::{gpio::*, pac, prelude::*, rcc::Config, timer::Timer};
 #[app(device = stm32l0xx_hal::pac, peripherals = true)]
 const APP: () = {
     struct Resources {
-        led: gpioa::PA<Output<PushPull>>,
+        led: Pin<Output<PushPull>>,
         timer: Timer<pac::TIM2>,
     }
 
