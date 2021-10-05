@@ -10,7 +10,7 @@ use stm32l0xx_hal::{
     prelude::*,
     pwr::PWR,
     rcc,
-    rtc::{self, Instant, RTC},
+    rtc::{self, Instant, Rtc},
 };
 
 #[entry]
@@ -40,7 +40,7 @@ fn main() -> ! {
         .set_minute(55)
         .set_second(0);
 
-    let mut rtc = RTC::new(dp.RTC, &mut rcc, &mut pwr, instant);
+    let mut rtc = Rtc::new(dp.RTC, &mut rcc, &mut pwr, instant);
 
     let exti_line = ConfigurableLine::RtcWakeup;
 

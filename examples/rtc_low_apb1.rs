@@ -12,7 +12,7 @@ use stm32l0xx_hal::{
     prelude::*,
     pwr::PWR,
     rcc,
-    rtc::{Instant, RTC},
+    rtc::{Instant, Rtc},
 };
 
 #[entry]
@@ -36,7 +36,7 @@ fn main() -> ! {
         .set_minute(36)
         .set_second(0);
 
-    let mut rtc = RTC::new(dp.RTC, &mut rcc, &mut pwr, instant);
+    let mut rtc = Rtc::new(dp.RTC, &mut rcc, &mut pwr, instant);
 
     let mut last_second = 0;
 

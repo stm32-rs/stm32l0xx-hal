@@ -13,12 +13,12 @@ use crate::{
 };
 
 /// Entry point to the RTC API
-pub struct RTC {
+pub struct Rtc {
     rtc: pac::RTC,
     read_twice: bool,
 }
 
-impl RTC {
+impl Rtc {
     /// Initializes the RTC API
     ///
     /// The `initial_instant` argument will only be used, if the real-time clock
@@ -71,7 +71,7 @@ impl RTC {
         // frequency, special care must be taken when reading some registers.
         let read_twice = apb1_clk.0 < 7 * rtc_clk.0;
 
-        let mut rtc = RTC { rtc, read_twice };
+        let mut rtc = Self { rtc, read_twice };
 
         if rtc.rtc.isr.read().inits().bit_is_clear() {
             // RTC not yet initialized. Do that now.
@@ -284,7 +284,7 @@ impl RTC {
 /// An instant in time
 ///
 /// You can create an instance of this struct using [`Instant::new`] or
-/// [`RTC::now`].
+/// [`Rtc::now`].
 #[derive(Clone, Copy, Debug)]
 pub struct Instant {
     year: u8,
@@ -449,7 +449,7 @@ impl Default for Interrupts {
 /// You don't need to call `wait`, if you call `cancel`, as that also resets the
 /// flag. Restarting the timer by calling `start` will also reset the flag.
 pub struct WakeupTimer<'r> {
-    rtc: &'r mut RTC,
+    rtc: &'r mut Rtc,
 }
 
 impl timer::Periodic for WakeupTimer<'_> {}
