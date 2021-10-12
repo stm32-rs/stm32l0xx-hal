@@ -50,6 +50,7 @@ pub mod pwr;
 pub mod rcc;
 #[cfg(any(feature = "stm32l0x2", feature = "stm32l0x3"))]
 pub mod rng;
+#[cfg(feature = "rtc")]
 pub mod rtc;
 #[cfg(any(
     feature = "io-STM32L021",

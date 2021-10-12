@@ -127,6 +127,10 @@ And finally add the `disable-linker-script` feature to your `stm32l0xx-hal` depe
 stm32l0xx-hal = { version = "0.7.0", features = ["mcu-STM32L071K8Ux", "disable-linker-script"] }
 ```
 
+# Other Cargo Features
+
+- `rtc`: Enable the RTC API based on [rtcc](https://docs.rs/rtcc/). Enabled by default.
+
 # Toolchain Setup
 
 In order to use this HAL, you need the following Setup:
