@@ -36,6 +36,9 @@ forget to update the links at the bottom of the changelog as well.-->
 - The `rtc::RTC` struct has been renamed to `rtc::Rtc` and includes a big
   refactoring and a few API changes. It now implements the traits from the
   [rtcc crate](https://docs.rs/rtcc/) and uses date/time types from Chrono.
+- When downgrading GPIO pins, not only the pin number but also the port
+  identifier is erased. To update your code, replace
+  `PA`/`PB`/`PC`/`PD`/`PE`/`PH` with `Pin`. ([#190])
 
 ### Non-Breaking Changes
 
@@ -128,6 +131,7 @@ _Not yet tracked in this changelog._
 
 <!-- Links to pull requests and issues. Note that you can use "issues"
 in the URL for both issues and pull requests. -->
+[#190]: https://github.com/stm32-rs/stm32l0xx-hal/issues/190
 [#183]: https://github.com/stm32-rs/stm32l0xx-hal/issues/183
 [#148]: https://github.com/stm32-rs/stm32l0xx-hal/issues/148
 [#145]: https://github.com/stm32-rs/stm32l0xx-hal/issues/145
