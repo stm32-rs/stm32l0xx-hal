@@ -14,9 +14,10 @@
 //!
 //! ## Valid Date Range
 //!
-//! Note that the RTC only supports two-digit years (00-99). The value 00
-//! corresponds to the year 2000 (not 1970!). This means that dates in the
-//! range 2000-01-01 to 2099-12-31 can be represented.
+//! The RTC only supports two-digit years (00-99). The value 00 corresponds to
+//! the year 2000 (not 1970!). Additionally, the year 00 cannot be used because
+//! this value is the RTC domain reset default value. This means that dates in
+//! the range 2001-01-01 to 2099-12-31 can be represented.
 //!
 //! ## More Information
 //!
@@ -147,7 +148,7 @@ impl Rtc {
 
         // Initialize RTC, if not yet initialized
         if rtc.rtc.isr.read().inits().bit_is_clear() {
-            rtc.set(init.unwrap_or_else(|| NaiveDate::from_ymd(2000, 1, 1).and_hms(0, 0, 0)))?;
+            rtc.set(init.unwrap_or_else(|| NaiveDate::from_ymd(2001, 1, 1).and_hms(0, 0, 0)))?;
         }
 
         // Disable wakeup timer. It's periodic and persists over resets, but for
@@ -166,14 +167,14 @@ impl Rtc {
 
     /// Sets the date/time.
     ///
-    /// Note: Only dates in the range `2000-01-01 00:00:00` to
+    /// Note: Only dates in the range `2001-01-01 00:00:00` to
     /// `2099-12-31 23:59:59` are supported. If a date outside this range is
     /// passed in, [`Error::InvalidInputData`](Error::InvalidInputData) will be
     /// returned.
     pub fn set(&mut self, instant: NaiveDateTime) -> Result<(), Error> {
         // Validate and encode datetime
         let y: i32 = instant.year();
-        if !(2000..=2099).contains(&y) {
+        if !(2001..=2099).contains(&y) {
             return Err(Error::InvalidInputData);
         }
         let year = bcd2_encode((y - 2000) as u32)?;
