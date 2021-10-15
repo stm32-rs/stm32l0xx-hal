@@ -12,7 +12,7 @@ use stm32l0xx_hal::{
     prelude::*,
     pwr::{self, PWR},
     rcc,
-    rtc::{self, Instant, RTC},
+    rtc::{self, Rtc},
 };
 
 #[entry]
@@ -28,18 +28,11 @@ fn main() -> ! {
 
     let mut led = gpiob.pb2.into_push_pull_output().downgrade();
 
-    let instant = Instant::new()
-        .set_year(19)
-        .set_month(9)
-        .set_day(26)
-        .set_hour(11)
-        .set_minute(57)
-        .set_second(0);
+    // Initialize RTC
+    let mut rtc = Rtc::new(dp.RTC, &mut rcc, &mut pwr, None).unwrap();
 
-    let mut rtc = RTC::new(dp.RTC, &mut rcc, &mut pwr, instant);
-
+    // Enable interrupts
     let exti_line = ConfigurableLine::RtcWakeup;
-
     rtc.enable_interrupts(rtc::Interrupts {
         wakeup_timer: true,
         ..rtc::Interrupts::default()

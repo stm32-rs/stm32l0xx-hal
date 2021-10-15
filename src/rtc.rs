@@ -1,6 +1,30 @@
-//! Interface to the Real-time clock (RTC) peripheral
+//! Interface to the Real-time clock (RTC) peripheral.
 //!
-//! See STM32L0x2 reference manual, chapter 26.
+//! The real-time clock (RTC) is an independent BCD timer/counter. The RTC
+//! provides a time- of-day clock/calendar with programmable alarm interrupts.
+//!
+//! ## Date Types
+//!
+//! The date/time types (`NaiveDate`, `NaiveTime` and `NaiveDateTime`), are
+//! re-exported from [`rtcc`](https://docs.rs/rtcc/), which in turn re-exports
+//! them from [`chrono`](https://docs.rs/chrono/).
+//!
+//! To use methods like `.year()` or `.hour()`, you may need to import the
+//! `Datelike` or `Timelike` traits.
+//!
+//! ## Valid Date Range
+//!
+//! The RTC only supports two-digit years (00-99). The value 00 corresponds to
+//! the year 2000 (not 1970!). Additionally, the year 00 cannot be used because
+//! this value is the RTC domain reset default value. This means that dates in
+//! the range 2001-01-01 to 2099-12-31 can be represented.
+//!
+//! ## More Information
+//!
+//! See STM32L0x2 reference manual, chapter 26 or STM32L0x1 reference manual,
+//! chapter 22 for more details.
+
+use core::convert::TryInto;
 
 use embedded_time::rate::Extensions;
 use void::Void;
@@ -12,25 +36,73 @@ use crate::{
     rcc::Rcc,
 };
 
-/// Entry point to the RTC API
-pub struct RTC {
+#[doc(no_inline)]
+pub use rtcc::{Datelike, NaiveDate, NaiveDateTime, NaiveTime, Timelike};
+
+/// Errors that can occur when dealing with the RTC.
+#[derive(Debug, PartialEq)]
+pub enum Error {
+    /// Invalid input data was used (e.g. a year outside the 2000-2099 range).
+    InvalidInputData,
+}
+
+/// Binary coded decimal with 2 bytes.
+struct Bcd2 {
+    pub tens: u8,
+    pub units: u8,
+}
+
+/// Two 32-bit registers (RTC_TR and RTC_DR) contain the seconds, minutes, hours
+/// (12- or 24-hour format), day (day of week), date (day of month), month, and
+/// year, expressed in binary coded decimal format (BCD). The sub-seconds value
+/// is also available in binary format.
+///
+/// The following helper functions encode into BCD format from integer and
+/// decode to an integer from a BCD value respectively.
+fn bcd2_encode(word: u32) -> Result<Bcd2, Error> {
+    let tens = (word / 10)
+        .try_into()
+        .map_err(|_| Error::InvalidInputData)?;
+    let units = (word % 10)
+        .try_into()
+        .map_err(|_| Error::InvalidInputData)?;
+    Ok(Bcd2 { tens, units })
+}
+
+fn bcd2_decode(first: u8, second: u8) -> u32 {
+    (first * 10 + second).into()
+}
+
+/// Entry point to the RTC API.
+pub struct Rtc {
     rtc: pac::RTC,
     read_twice: bool,
 }
 
-impl RTC {
-    /// Initializes the RTC API
+impl Rtc {
+    /// Initializes the RTC API.
     ///
-    /// The `initial_instant` argument will only be used, if the real-time clock
-    /// is not already configured. Its `subsecond` field will be ignore in any
-    /// case.
+    /// The `init` argument will only be used, if the real-time clock is not
+    /// already configured. If the clock is not yet configured, and init is set
+    /// to `None`, then the datetime corresponding to `2000-01-01 00:00:00`
+    /// will be used for initialization.
+    ///
+    /// # Errors
+    ///
+    /// Returns [`Error::InvalidInputData`] if the `init` datetime is outside
+    /// of the valid range (years 2000-2099).
     ///
     /// # Panics
     ///
     /// Panics, if the ABP1 clock frequency is lower than the RTC clock
     /// frequency. The RTC is currently hardcoded to use the LSE as clock source
     /// which runs at 32768 Hz.
-    pub fn new(rtc: pac::RTC, rcc: &mut Rcc, pwr: &PWR, init: Instant) -> Self {
+    pub fn new(
+        rtc: pac::RTC,
+        rcc: &mut Rcc,
+        pwr: &PWR,
+        init: Option<NaiveDateTime>,
+    ) -> Result<Self, Error> {
         // Backup write protection must be disabled by setting th DBP bit in
         // PWR_CR, otherwise it's not possible to access the RTC registers. We
         // assume that this was done during PWR initialization. To make sure it
@@ -71,11 +143,12 @@ impl RTC {
         // frequency, special care must be taken when reading some registers.
         let read_twice = apb1_clk.0 < 7 * rtc_clk.0;
 
-        let mut rtc = RTC { rtc, read_twice };
+        // Instantiate `Rtc` struct
+        let mut rtc = Self { rtc, read_twice };
 
+        // Initialize RTC, if not yet initialized
         if rtc.rtc.isr.read().inits().bit_is_clear() {
-            // RTC not yet initialized. Do that now.
-            rtc.set(init);
+            rtc.set(init.unwrap_or_else(|| NaiveDate::from_ymd(2001, 1, 1).and_hms(0, 0, 0)))?;
         }
 
         // Disable wakeup timer. It's periodic and persists over resets, but for
@@ -89,12 +162,29 @@ impl RTC {
         // necessary, according to section 26.4.8.
         rtc.rtc.isr.write(|w| w.rsf().set_bit());
 
-        rtc
+        Ok(rtc)
     }
 
-    /// Sets the date/time
-    pub fn set(&mut self, instant: Instant) {
-        self.write(|rtc| {
+    /// Sets the date/time.
+    ///
+    /// Note: Only dates in the range `2001-01-01 00:00:00` to
+    /// `2099-12-31 23:59:59` are supported. If a date outside this range is
+    /// passed in, [`Error::InvalidInputData`] will be returned.
+    pub fn set(&mut self, instant: NaiveDateTime) -> Result<(), Error> {
+        // Validate and encode datetime
+        let y: i32 = instant.year();
+        if !(2001..=2099).contains(&y) {
+            return Err(Error::InvalidInputData);
+        }
+        let year = bcd2_encode((y - 2000) as u32)?;
+        let month = bcd2_encode(instant.month())?;
+        let day = bcd2_encode(instant.day())?;
+        let hours = bcd2_encode(instant.hour())?;
+        let minutes = bcd2_encode(instant.minute())?;
+        let seconds = bcd2_encode(instant.second())?;
+
+        // Write instant to RTC
+        self.write(move |rtc| {
             // Start initialization
             rtc.isr.modify(|_, w| w.init().set_bit());
 
@@ -119,47 +209,43 @@ impl RTC {
 
             // Write time
             rtc.tr.write(|w|
-                // Safe, as `Instant` verifies that its fields are valid.
+                // Safe, as `NaiveTime` verifies that its fields are valid.
                 w
                     // 24-hour format
                     .pm().clear_bit()
-                    // Hour tens
-                    .ht().bits(instant.hour / 10)
-                    // Hour units
-                    .hu().bits(instant.hour % 10)
-                    // Minute tens
-                    .mnt().bits(instant.minute / 10)
-                    // Minute units
-                    .mnu().bits(instant.minute % 10)
-                    // Second tens
-                    .st().bits(instant.second / 10)
-                    // Second units
-                    .su().bits(instant.second % 10));
+                    // Hours
+                    .ht().bits(hours.tens)
+                    .hu().bits(hours.units)
+                    // Minutes
+                    .mnt().bits(minutes.tens)
+                    .mnu().bits(minutes.units)
+                    // Seconds
+                    .st().bits(seconds.tens)
+                    .su().bits(seconds.units));
 
             // Write date
             rtc.dr.write(|w|
-                // Safe, as `Instant` verifies that its fields are valid.
+                // Safe, as `NaiveDate` verifies that its fields are valid.
                 w
-                    // Year tens
-                    .yt().bits(instant.year / 10)
-                    // Year units
-                    .yu().bits(instant.year % 10)
-                    // Month tens
-                    .mt().bit(instant.month / 10 == 1)
-                    // Month units
-                    .mu().bits(instant.month % 10)
-                    // Date tens
-                    .dt().bits(instant.day / 10)
-                    // Date units
-                    .du().bits(instant.day % 10));
+                    // Year
+                    .yt().bits(year.tens)
+                    .yu().bits(year.units)
+                    // Month
+                    .mt().bit(month.tens > 0)
+                    .mu().bits(month.units)
+                    // Day
+                    .dt().bits(day.tens)
+                    .du().bits(day.units));
 
             // Exit initialization
             rtc.isr.modify(|_, w| w.init().clear_bit());
-        })
+        });
+
+        Ok(())
     }
 
-    /// Returns the current date/time
-    pub fn now(&mut self) -> Instant {
+    /// Read and return the current date/time from the RTC.
+    pub fn now(&mut self) -> NaiveDateTime {
         // We need to wait until the RSF bit is set, for a multitude of reasons:
         // - In case the last read was within two cycles of RTCCLK. Not sure why
         //   that's important, but the documentation says so.
@@ -198,15 +284,15 @@ impl RTC {
             rtc.isr.write(|w| w.rsf().set_bit());
         });
 
-        Instant {
-            year: dr.yt().bits() * 10 + dr.yu().bits(),
-            month: dr.mt().bit() as u8 * 10 + dr.mu().bits(),
-            day: dr.dt().bits() * 10 + dr.du().bits(),
+        // Read date and time
+        let year = bcd2_decode(dr.yt().bits(), dr.yu().bits()) as i32 + 2000;
+        let month = bcd2_decode(dr.mt().bit() as u8, dr.mu().bits());
+        let day = bcd2_decode(dr.dt().bits(), dr.du().bits());
+        let hour = bcd2_decode(tr.ht().bits(), tr.hu().bits());
+        let minute = bcd2_decode(tr.mnt().bits(), tr.mnu().bits());
+        let second = bcd2_decode(tr.st().bits(), tr.su().bits());
 
-            hour: tr.ht().bits() * 10 + tr.hu().bits(),
-            minute: tr.mnt().bits() * 10 + tr.mnu().bits(),
-            second: tr.st().bits() * 10 + tr.su().bits(),
-        }
+        NaiveDate::from_ymd(year, month, day).and_hms(hour, minute, second)
     }
 
     /// Enable interrupts
@@ -262,12 +348,14 @@ impl RTC {
         WakeupTimer { rtc: self }
     }
 
+    /// Disable write protection, run the passed in function, then re-enable
+    /// write protection.
     fn write<F, R>(&mut self, f: F) -> R
     where
         F: FnOnce(&pac::RTC) -> R,
     {
         // Disable write protection.
-        // This is safe, as we're only writin the correct and expected values.
+        // This is safe, as we're only writing the correct and expected values.
         self.rtc.wpr.write(|w| w.key().bits(0xca));
         self.rtc.wpr.write(|w| w.key().bits(0x53));
 
@@ -281,142 +369,7 @@ impl RTC {
     }
 }
 
-/// An instant in time
-///
-/// You can create an instance of this struct using [`Instant::new`] or
-/// [`RTC::now`].
-#[derive(Clone, Copy, Debug)]
-pub struct Instant {
-    year: u8,
-    month: u8,
-    day: u8,
-
-    hour: u8,
-    minute: u8,
-    second: u8,
-}
-
-impl Default for Instant {
-    fn default() -> Self {
-        Instant {
-            year: 1,
-            month: 1,
-            day: 1,
-
-            hour: 0,
-            minute: 0,
-            second: 0,
-        }
-    }
-}
-
-impl Instant {
-    /// Creates a new `Instant`
-    ///
-    /// Initializes all fields with a default state, with `year`/`month`/`day`
-    /// being `1` and `hour`/`minute`/`second` being `0`. You can use the
-    /// various `set_*` methods to change the fields.
-    ///
-    /// Please note that all `set_*` methods validate their input, and will
-    /// panic, if you pass an invalid value.
-    ///
-    /// Please also note, that the overall date is _not_ validated, so it's
-    /// possible to create an `Instant` set to  February 31, for example.
-    pub fn new() -> Self {
-        Default::default()
-    }
-
-    /// Change the year
-    ///
-    /// # Panics
-    ///
-    /// Panics, if `year` is larger than `99`.
-    pub fn set_year(mut self, year: u8) -> Self {
-        assert!(year <= 99);
-        self.year = year;
-        self
-    }
-
-    /// Change the month
-    ///
-    /// # Panics
-    ///
-    /// Panics, if `month` is not a value from `1` to `12`.
-    pub fn set_month(mut self, month: u8) -> Self {
-        assert!((1..=12).contains(&month));
-        self.month = month;
-        self
-    }
-
-    /// Change the day
-    ///
-    /// # Panics
-    ///
-    /// Panics, if `day` is not a value from `1` to `31`.
-    pub fn set_day(mut self, day: u8) -> Self {
-        assert!((1..=31).contains(&day));
-        self.day = day;
-        self
-    }
-
-    /// Change the hour
-    ///
-    /// # Panics
-    ///
-    /// Panics, if `hour` is larger than `23`.
-    pub fn set_hour(mut self, hour: u8) -> Self {
-        assert!(hour <= 23);
-        self.hour = hour;
-        self
-    }
-
-    /// Change the minute
-    ///
-    /// # Panics
-    ///
-    /// Panics, if `minute` larger than `59`.
-    pub fn set_minute(mut self, minute: u8) -> Self {
-        assert!(minute <= 59);
-        self.minute = minute;
-        self
-    }
-
-    /// Change the second
-    ///
-    /// # Panics
-    ///
-    /// Panics, if `second` is larger than `59`.
-    pub fn set_second(mut self, second: u8) -> Self {
-        assert!(second <= 59);
-        self.second = second;
-        self
-    }
-
-    pub fn year(&self) -> u8 {
-        self.year
-    }
-
-    pub fn month(&self) -> u8 {
-        self.month
-    }
-
-    pub fn day(&self) -> u8 {
-        self.day
-    }
-
-    pub fn hour(&self) -> u8 {
-        self.hour
-    }
-
-    pub fn minute(&self) -> u8 {
-        self.minute
-    }
-
-    pub fn second(&self) -> u8 {
-        self.second
-    }
-}
-
+/// Flags to enable/disable RTC interrupts.
 pub struct Interrupts {
     pub timestamp: bool,
     pub wakeup_timer: bool,
@@ -449,7 +402,7 @@ impl Default for Interrupts {
 /// You don't need to call `wait`, if you call `cancel`, as that also resets the
 /// flag. Restarting the timer by calling `start` will also reset the flag.
 pub struct WakeupTimer<'r> {
-    rtc: &'r mut RTC,
+    rtc: &'r mut Rtc,
 }
 
 impl timer::Periodic for WakeupTimer<'_> {}

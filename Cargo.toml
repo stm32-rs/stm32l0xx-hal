@@ -24,7 +24,7 @@ repository = "https://github.com/stm32-rs/stm32l0xx-hal"
 version = "0.7.0"
 
 [package.metadata.docs.rs]
-features = ["stm32l0x2", "rt", "stm32-usbd", "eeprom-2048"]
+features = ["stm32l0x2", "rt", "stm32-usbd", "eeprom-2048", "rtc"]
 targets = ["thumbv6m-none-eabi"]
 
 
@@ -36,6 +36,7 @@ cortex-m-rt = "0.6.8"
 cortex-m-semihosting = "0.3.2"
 nb = "1.0.0"
 embedded-time = "0.12.0"
+rtcc = { version = "0.2", optional = true }
 
 [dependencies.cast]
 version = "0.2.2"
@@ -64,6 +65,12 @@ usb-device = "0.2.3"
 usbd-serial = "0.1.0"
 
 [features]
+# Default features
+default = ["rtc"]
+
+# Support for RTC, pulls in rtcc and chrono dependencies
+rtc = ["rtcc"]
+
 # Miscellaneaous features
 rt = ["stm32l0/rt"]
 disable-linker-script = []

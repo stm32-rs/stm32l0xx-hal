@@ -12,7 +12,7 @@ use stm32l0xx_hal::{
     prelude::*,
     pwr::PWR,
     rcc,
-    rtc::{Instant, RTC},
+    rtc::{NaiveDate, Rtc, Timelike},
 };
 
 #[entry]
@@ -28,21 +28,14 @@ fn main() -> ! {
 
     let mut led = gpiob.pb5.into_push_pull_output();
 
-    let instant = Instant::new()
-        .set_year(19)
-        .set_month(8)
-        .set_day(9)
-        .set_hour(13)
-        .set_minute(36)
-        .set_second(0);
-
-    let mut rtc = RTC::new(dp.RTC, &mut rcc, &mut pwr, instant);
+    // Initialize RTC
+    let init = NaiveDate::from_ymd(2019, 8, 9).and_hms(13, 37, 42);
+    let mut rtc = Rtc::new(dp.RTC, &mut rcc, &mut pwr, Some(init)).unwrap();
 
     let mut last_second = 0;
 
     loop {
         let instant = rtc.now();
-
         if instant.second() != last_second {
             last_second = instant.second();
 

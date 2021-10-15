@@ -16,34 +16,40 @@ forget to update the links at the bottom of the changelog as well.-->
 ### Additions
 
 - Add `Timer::new` to create timer without starting #152
-
 - Add (untested) example `temperature` (#161) which uses `adc` to read the 
   internal temperature and also an externally connected TMP36 analog sensor.
-
 - Add `Pwm::set_frequency` to allow dynamically changing the underlying PWM timer's
-frequency. This was previously impossible without resorting to `unsafe` because the
-channels where moved out of the timer struct and Rust's ownership rules forbade us
-to borrow the timer to call `set_frequency`. ([#174])
-
+  frequency. This was previously impossible without resorting to `unsafe` because the
+  channels where moved out of the timer struct and Rust's ownership rules forbade us
+  to borrow the timer to call `set_frequency`. ([#174])
 - Add Cargo features for flash and RAM sizes allowing to pass the correct sizes to
-the linker instead of having a default for the whole sub-family. ([#173]) 
+  the linker instead of having a default for the whole sub-family. ([#173]) 
 
 ### Breaking Changes
 
 - Migrate from custom `Hertz` implementation to [`embedded-time`](https://crates.io/crates/embedded-time) ([#183])
-
 - Add `enable` to `GeneralPurposeTimer`
-
 - `Instance::clock_frequency` is now an associated function and doesn't take `&self` anymore.
-
 - Build script requires that exactly one `flash-*` and one `ram-*` feature is enabled. They are
-enabled automatically when using an `mcu-*` feature, but if you manually selected the other features
-before this will break the build because of the missing features.
+  enabled automatically when using an `mcu-*` feature, but if you manually selected the other features
+  before this will break the build because of the missing features.
+- The `rtc::RTC` struct has been renamed to `rtc::Rtc` and includes a big
+  refactoring and a few API changes. It now implements the traits from the
+  [rtcc crate](https://docs.rs/rtcc/) and uses date/time types from Chrono.
 
 ### Non-Breaking Changes
 
+- The crate now has an optional `rtc` feature (enabled by default). The `rtc`
+  module is only available if that feature is enabled. Enabling the feature
+  also pulls in the `rtcc` and `chrono` dependencies, in oder to support a
+  richer calendar / clock API.
+
 ### Fixes
+
 - Fixed potential race condition when flushing the tx serial buffer.
+- Fixed RTC year handling. Previously, the implementation incorrectly assumed
+  that the BCD year 00 corresponds to 1970, but this results in a wrong leap
+  year calculation. The correct time base is the year 2000.
 
 ### Documentation
 

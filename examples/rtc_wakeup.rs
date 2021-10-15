@@ -10,7 +10,7 @@ use stm32l0xx_hal::{
     prelude::*,
     pwr::PWR,
     rcc,
-    rtc::{self, Instant, RTC},
+    rtc::{self, Rtc},
 };
 
 #[entry]
@@ -32,15 +32,7 @@ fn main() -> ! {
     let mut exti = Exti::new(dp.EXTI);
     let mut pwr = PWR::new(dp.PWR, &mut rcc);
 
-    let instant = Instant::new()
-        .set_year(19)
-        .set_month(8)
-        .set_day(12)
-        .set_hour(12)
-        .set_minute(55)
-        .set_second(0);
-
-    let mut rtc = RTC::new(dp.RTC, &mut rcc, &mut pwr, instant);
+    let mut rtc = Rtc::new(dp.RTC, &mut rcc, &mut pwr, None).unwrap();
 
     let exti_line = ConfigurableLine::RtcWakeup;
 
