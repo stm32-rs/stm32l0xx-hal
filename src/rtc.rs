@@ -89,8 +89,8 @@ impl Rtc {
     ///
     /// # Errors
     ///
-    /// Returns [`Error::InvalidInputData`](Error::InvalidInputData) if the
-    /// `init` datetime is outside of the valid range (years 2000-2099).
+    /// Returns [`Error::InvalidInputData`] if the `init` datetime is outside
+    /// of the valid range (years 2000-2099).
     ///
     /// # Panics
     ///
@@ -169,8 +169,7 @@ impl Rtc {
     ///
     /// Note: Only dates in the range `2001-01-01 00:00:00` to
     /// `2099-12-31 23:59:59` are supported. If a date outside this range is
-    /// passed in, [`Error::InvalidInputData`](Error::InvalidInputData) will be
-    /// returned.
+    /// passed in, [`Error::InvalidInputData`] will be returned.
     pub fn set(&mut self, instant: NaiveDateTime) -> Result<(), Error> {
         // Validate and encode datetime
         let y: i32 = instant.year();
