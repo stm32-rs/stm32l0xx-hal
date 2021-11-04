@@ -2,7 +2,7 @@ use crate::gpio::gpioa::{PA0, PA1, PA2, PA3};
 use crate::gpio::{AltMode, PinMode};
 use crate::hal;
 use crate::pac::{tim2, TIM2, TIM3};
-use crate::rcc::Rcc;
+use crate::rcc::{Enable, Rcc, Reset};
 use cast::{u16, u32};
 use core::marker::PhantomData;
 use core::ops::Deref;
@@ -44,7 +44,8 @@ where
     pub fn new(timer: I, frequency: impl Into<Hertz>, rcc: &mut Rcc) -> Self {
         let frequency = frequency.into();
 
-        timer.enable(rcc);
+        I::enable(rcc);
+        I::reset(rcc);
 
         let mut tim = Self {
             instance: timer,
@@ -94,9 +95,8 @@ fn get_clock_config(freq: u32, clk: u32) -> (u16, u16) {
     (psc, arr)
 }
 
-pub trait Instance: Deref<Target = tim2::RegisterBlock> {
+pub trait Instance: Deref<Target = tim2::RegisterBlock> + Enable + Reset {
     fn ptr() -> *const tim2::RegisterBlock;
-    fn enable(&self, _: &mut Rcc);
     fn clock_frequency(_: &Rcc) -> u32;
 }
 
@@ -104,10 +104,6 @@ macro_rules! impl_instance {
     (
         $(
             $name:ty,
-            $apbXenr:ident,
-            $apbXrstr:ident,
-            $timXen:ident,
-            $timXrst:ident,
             $apbX_clk:ident;
         )*
     ) => {
@@ -115,12 +111,6 @@ macro_rules! impl_instance {
             impl Instance for $name {
                 fn ptr() -> *const tim2::RegisterBlock {
                     Self::ptr()
-                }
-
-                fn enable(&self, rcc: &mut Rcc) {
-                    rcc.rb.$apbXenr.modify(|_, w| w.$timXen().set_bit());
-                    rcc.rb.$apbXrstr.modify(|_, w| w.$timXrst().set_bit());
-                    rcc.rb.$apbXrstr.modify(|_, w| w.$timXrst().clear_bit());
                 }
 
                 fn clock_frequency(rcc: &Rcc) -> u32 {
@@ -132,8 +122,8 @@ macro_rules! impl_instance {
 }
 
 impl_instance!(
-    TIM2, apb1enr, apb1rstr, tim2en, tim2rst, apb1_clk;
-    TIM3, apb1enr, apb1rstr, tim3en, tim3rst, apb1_clk;
+    TIM2, apb1_clk;
+    TIM3, apb1_clk;
 );
 
 pub trait Channel {

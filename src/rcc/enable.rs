@@ -109,9 +109,9 @@ bus! {
     GPIOH => (IOP, iophen, iophsmen, iophrst), // 7
 
     DMA1 => (AHB, dmaen, dmasmen, dmarst), // 0
-    //MIF => (AHB, mifen, mifsmen, mifrst), // 8
+    FLASH => (AHB, mifen, mifsmen, mifrst), // 8
     CRC => (AHB, crcen, crcsmen, crcrst), // 12
-    //CRYP => (AHB, crypen, crypsmen, cryprst), // 24
+    AES => (AHB, crypen, crypsmen, cryprst), // 24
 
     TIM2 => (APB1, tim2en, tim2smen, tim2rst), // 0
     TIM6 => (APB1, tim6en, tim6smen, tim6rst), // 4

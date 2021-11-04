@@ -19,7 +19,7 @@
 #![deny(missing_docs)]
 
 use crate::pac::CRC;
-use crate::rcc::Rcc;
+use crate::rcc::{Enable, Rcc};
 use core::hash::Hasher;
 
 /// Extension trait to constrain the CRC peripheral.
@@ -31,7 +31,7 @@ pub trait CrcExt {
 impl CrcExt for CRC {
     fn constrain(self, rcc: &mut Rcc) -> Config {
         // Enable power to CRC unit
-        rcc.rb.ahbenr.modify(|_, w| w.crcen().set_bit());
+        CRC::enable(rcc);
 
         // Default values
         Config {

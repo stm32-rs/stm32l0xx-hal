@@ -12,7 +12,7 @@ use crate::{
     gpio::*,
     hal::adc::{Channel, OneShot},
     pac::ADC,
-    rcc::Rcc,
+    rcc::{Enable, Rcc},
 };
 
 use crate::dma::{self, Buffer as _};
@@ -96,7 +96,7 @@ pub struct Adc<State> {
 impl Adc<Ready> {
     pub fn new(adc: ADC, rcc: &mut Rcc) -> Self {
         // Enable ADC clocks
-        rcc.rb.apb2enr.modify(|_, w| w.adcen().set_bit());
+        ADC::enable(rcc);
         adc.cr.modify(|_, w| w.advregen().set_bit());
 
         Self {

@@ -14,7 +14,7 @@ use crate::pac::i2c1::{
     cr2::{AUTOEND_A, RD_WRN_A},
     RegisterBlock,
 };
-use crate::rcc::Rcc;
+use crate::rcc::{Enable, Rcc, Reset};
 use cast::u8;
 use embedded_time::rate::Hertz;
 
@@ -74,7 +74,10 @@ where
         sda.setup();
         scl.setup();
 
-        i2c.initialize(rcc);
+        // Enable clock for I2C
+        I::enable(rcc);
+        // Reset I2C
+        I::reset(rcc);
 
         let freq = freq.0;
 
@@ -452,9 +455,8 @@ where
     }
 }
 
-pub trait Instance: Deref<Target = RegisterBlock> {
+pub trait Instance: Deref<Target = RegisterBlock> + Enable + Reset {
     fn ptr() -> *const RegisterBlock;
-    fn initialize(&self, rcc: &mut Rcc);
 }
 
 // I2C SDA pin
@@ -485,7 +487,7 @@ pub trait I2cExt<I2C> {
 }
 
 macro_rules! i2c {
-    ($I2CX:ident, $i2cxen:ident, $i2crst:ident,
+    ($I2CX:ident,
         sda: [ $(($PSDA:ty, $afsda:expr),)+ ],
         scl: [ $(($PSCL:ty, $afscl:expr),)+ ],
     ) => {
@@ -525,22 +527,13 @@ macro_rules! i2c {
             fn ptr() -> *const RegisterBlock {
                 $I2CX::ptr()
             }
-
-            fn initialize(&self, rcc: &mut Rcc) {
-                // Enable clock for I2C
-                rcc.rb.apb1enr.modify(|_, w| w.$i2cxen().set_bit());
-
-                // Reset I2C
-                rcc.rb.apb1rstr.modify(|_, w| w.$i2crst().set_bit());
-                rcc.rb.apb1rstr.modify(|_, w| w.$i2crst().clear_bit());
-            }
         }
     };
 }
 
 #[cfg(feature = "io-STM32L021")]
 i2c!(
-    I2C1, i2c1en, i2c1rst,
+    I2C1,
     sda: [
         (PA10<Output<OpenDrain>>, AltMode::AF1),
         (PA13<Output<OpenDrain>>, AltMode::AF3),
@@ -556,7 +549,7 @@ i2c!(
 
 #[cfg(feature = "io-STM32L031")]
 i2c!(
-    I2C1, i2c1en, i2c1rst,
+    I2C1,
     sda: [
         (PA10<Output<OpenDrain>>, AltMode::AF1),
         (PB7<Output<OpenDrain>>, AltMode::AF1),
@@ -571,7 +564,7 @@ i2c!(
 
 #[cfg(feature = "io-STM32L051")]
 i2c!(
-    I2C1, i2c1en, i2c1rst,
+    I2C1,
     sda: [
         (PB7<Output<OpenDrain>>, AltMode::AF1),
         (PB9<Output<OpenDrain>>, AltMode::AF4),
@@ -584,7 +577,7 @@ i2c!(
 
 #[cfg(feature = "io-STM32L051")]
 i2c!(
-    I2C2, i2c2en, i2c2rst,
+    I2C2,
     sda: [
         (PB11<Output<OpenDrain>>, AltMode::AF6),
         (PB14<Output<OpenDrain>>, AltMode::AF5),
@@ -597,7 +590,7 @@ i2c!(
 
 #[cfg(feature = "io-STM32L071")]
 i2c!(
-    I2C1, i2c1en, i2c1rst,
+    I2C1,
     sda: [
         (PA10<Output<OpenDrain>>, AltMode::AF6),
         (PB7<Output<OpenDrain>>, AltMode::AF1),
@@ -612,7 +605,7 @@ i2c!(
 
 #[cfg(feature = "io-STM32L071")]
 i2c!(
-    I2C2, i2c2en, i2c2rst,
+    I2C2,
     sda: [
         (PB11<Output<OpenDrain>>, AltMode::AF6),
         (PB14<Output<OpenDrain>>, AltMode::AF5),
@@ -625,7 +618,7 @@ i2c!(
 
 #[cfg(feature = "io-STM32L071")]
 i2c!(
-    I2C3, i2c3en, i2c3rst,
+    I2C3,
     sda: [
         (PB4<Output<OpenDrain>>, AltMode::AF7),
         (PC1<Output<OpenDrain>>, AltMode::AF7),

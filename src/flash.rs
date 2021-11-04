@@ -12,7 +12,7 @@ use cortex_m::interrupt;
 
 use crate::{
     pac::{self, flash::acr::LATENCY_A},
-    rcc::Rcc,
+    rcc::{Enable, Rcc, Reset},
 };
 
 /// The first address of flash memory
@@ -76,11 +76,10 @@ impl FLASH {
         let eeprom_end = eeprom_start + EEPROM_SIZE;
 
         // Reset the peripheral interface
-        rcc.rb.ahbrstr.modify(|_, w| w.mifrst().set_bit());
-        rcc.rb.ahbrstr.modify(|_, w| w.mifrst().clear_bit());
+        pac::FLASH::reset(rcc);
 
         // Enable the peripheral interface
-        rcc.rb.ahbenr.modify(|_, w| w.mifen().set_bit());
+        pac::FLASH::enable(rcc);
 
         Self {
             flash,

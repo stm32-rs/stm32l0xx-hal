@@ -19,7 +19,7 @@ use crate::hal;
 use crate::pac::SPI1;
 #[cfg(any(feature = "stm32l0x2", feature = "stm32l0x3"))]
 use crate::pac::SPI2;
-use crate::rcc::Rcc;
+use crate::rcc::{Enable, Rcc};
 
 pub use hal::spi::{Mode, Phase, Polarity, MODE_0, MODE_1, MODE_2, MODE_3};
 
@@ -180,7 +180,7 @@ pub trait SpiExt<SPI>: Sized {
 }
 
 macro_rules! spi {
-    ($($SPIX:ident: ($spiX:ident, $apbXenr:ident, $spiXen:ident, $pclkX:ident),)+) => {
+    ($($SPIX:ident: ($spiX:ident, $pclkX:ident),)+) => {
         $(
             impl<PINS> Spi<$SPIX, PINS> {
                 pub fn $spiX<T>(
@@ -197,7 +197,7 @@ macro_rules! spi {
                     pins.setup();
 
                     // Enable clock for SPI
-                    rcc.rb.$apbXenr.modify(|_, w| w.$spiXen().set_bit());
+                    <$SPIX>::enable(rcc);
 
                     spi.cr2.write(|w| {
                         // disable SS output
@@ -428,12 +428,12 @@ macro_rules! spi {
 }
 
 spi! {
-    SPI1: (spi1, apb2enr, spi1en, apb2_clk),
+    SPI1: (spi1, apb2_clk),
 }
 
 #[cfg(any(feature = "stm32l0x2", feature = "stm32l0x3"))]
 spi! {
-    SPI2: (spi2, apb1enr, spi2en, apb1_clk),
+    SPI2: (spi2, apb1_clk),
 }
 
 /// Token used for DMA transfers

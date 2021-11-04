@@ -2,7 +2,10 @@
 //!
 //! See STM32L0x2 reference manual, chapter 10.
 
-use crate::{pac, rcc::Rcc};
+use crate::{
+    pac,
+    rcc::{Enable, Rcc, Reset},
+};
 
 type PacSyscfg = pac::SYSCFG;
 
@@ -13,11 +16,10 @@ pub struct SYSCFG {
 impl SYSCFG {
     pub fn new(syscfg: PacSyscfg, rcc: &mut Rcc) -> Self {
         // Reset SYSCFG peripheral
-        rcc.rb.apb2rstr.modify(|_, w| w.syscfgrst().set_bit());
-        rcc.rb.apb2rstr.modify(|_, w| w.syscfgrst().clear_bit());
+        PacSyscfg::reset(rcc);
 
         // Enable SYSCFG peripheral
-        rcc.rb.apb2enr.modify(|_, w| w.syscfgen().set_bit());
+        PacSyscfg::enable(rcc);
 
         SYSCFG { syscfg }
     }

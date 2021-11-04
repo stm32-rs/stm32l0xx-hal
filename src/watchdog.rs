@@ -1,6 +1,6 @@
 use crate::hal::watchdog;
 use crate::pac::{IWDG, WWDG};
-use crate::rcc::Rcc;
+use crate::rcc::{Enable, Rcc};
 use embedded_time::rate::Hertz;
 
 pub struct IndependedWatchdog {
@@ -126,7 +126,7 @@ pub trait WindowWatchdogExt {
 
 impl WindowWatchdogExt for WWDG {
     fn watchdog(self, rcc: &mut Rcc) -> WindowWatchdog {
-        rcc.rb.apb1enr.modify(|_, w| w.wwdgen().set_bit());
+        WWDG::enable(rcc);
         WindowWatchdog {
             wwdg: self,
             clk: rcc.clocks.apb1_clk().0 / 4096,

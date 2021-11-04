@@ -221,11 +221,10 @@ impl Rcc {
 impl Rcc {
     pub fn enable_hsi48(&mut self, syscfg: &mut SYSCFG, crs: CRS) -> HSI48 {
         // Reset CRS peripheral
-        self.rb.apb1rstr.modify(|_, w| w.crsrst().set_bit());
-        self.rb.apb1rstr.modify(|_, w| w.crsrst().clear_bit());
+        CRS::reset(self);
 
         // Enable CRS peripheral
-        self.rb.apb1enr.modify(|_, w| w.crsen().set_bit());
+        CRS::enable(self);
 
         // Initialize CRS
         crs.cfgr.write(|w|

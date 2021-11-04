@@ -238,7 +238,7 @@ gpio_trait!(gpioa);
 gpio_trait!(gpiob);
 
 macro_rules! gpio {
-    ($GPIOX:ident, $gpiox:ident, $iopxenr:ident, $PXx:ident, [
+    ($GPIOX:ident, $gpiox:ident, $PXx:ident, [
         $($PXi:ident: ($pxi:ident, $i:expr, $MODE:ty),)+
     ]) => {
         /// GPIO
@@ -247,7 +247,7 @@ macro_rules! gpio {
 
             use crate::hal::digital::v2::{toggleable, InputPin, OutputPin, StatefulOutputPin};
             use crate::pac::$GPIOX;
-            use crate::rcc::Rcc;
+            use crate::rcc::{Enable, Rcc};
             use super::{
                 Floating, GpioExt, Input, OpenDrain, Output, Speed,
                 PullDown, PullUp, PushPull, AltMode, Analog, Port,
@@ -266,7 +266,7 @@ macro_rules! gpio {
                 type Parts = Parts;
 
                 fn split(self, rcc: &mut Rcc) -> Parts {
-                    rcc.rb.iopenr.modify(|_, w| w.$iopxenr().set_bit());
+                    <$GPIOX>::enable(rcc);
 
                     Parts {
                         $(
@@ -611,7 +611,7 @@ macro_rules! gpio {
     }
 }
 
-gpio!(GPIOA, gpioa, iopaen, PA, [
+gpio!(GPIOA, gpioa, PA, [
     PA0: (pa0, 0, Analog),
     PA1: (pa1, 1, Analog),
     PA2: (pa2, 2, Analog),
@@ -630,7 +630,7 @@ gpio!(GPIOA, gpioa, iopaen, PA, [
     PA15: (pa15, 15, Analog),
 ]);
 
-gpio!(GPIOB, gpiob, iopben, PB, [
+gpio!(GPIOB, gpiob, PB, [
     PB0: (pb0, 0, Analog),
     PB1: (pb1, 1, Analog),
     PB2: (pb2, 2, Analog),
@@ -649,7 +649,7 @@ gpio!(GPIOB, gpiob, iopben, PB, [
     PB15: (pb15, 15, Analog),
 ]);
 
-gpio!(GPIOC, gpioc, iopcen, PC, [
+gpio!(GPIOC, gpioc, PC, [
     PC0: (pc0, 0, Analog),
     PC1: (pc1, 1, Analog),
     PC2: (pc2, 2, Analog),
@@ -668,7 +668,7 @@ gpio!(GPIOC, gpioc, iopcen, PC, [
     PC15: (pc15, 15, Analog),
 ]);
 
-gpio!(GPIOD, gpiod, iopden, PD, [
+gpio!(GPIOD, gpiod, PD, [
     PD0: (pd0, 0, Analog),
     PD1: (pd1, 1, Analog),
     PD2: (pd2, 2, Analog),
@@ -687,7 +687,7 @@ gpio!(GPIOD, gpiod, iopden, PD, [
     PD15: (pd15, 15, Analog),
 ]);
 
-gpio!(GPIOE, gpioe, iopeen, PE, [
+gpio!(GPIOE, gpioe, PE, [
     PE0:  (pe0,  0,  Analog),
     PE1:  (pe1,  1,  Analog),
     PE2:  (pe2,  2,  Analog),
@@ -706,7 +706,7 @@ gpio!(GPIOE, gpioe, iopeen, PE, [
     PE15: (pe15, 15, Analog),
 ]);
 
-gpio!(GPIOH, gpioh, iophen, PH, [
+gpio!(GPIOH, gpioh, PH, [
     PH0: (ph0, 0, Analog),
     PH1: (ph1, 1, Analog),
     PH9: (ph9, 9, Analog),

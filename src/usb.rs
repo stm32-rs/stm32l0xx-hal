@@ -14,7 +14,7 @@
 
 use crate::{
     pac::{self, RCC},
-    rcc::HSI48,
+    rcc::{Enable, Reset, HSI48},
 };
 use stm32_usbd::UsbPeripheral;
 
@@ -40,15 +40,12 @@ unsafe impl UsbPeripheral for USB {
     const EP_MEMORY_ACCESS_2X16: bool = true;
 
     fn enable() {
-        let rcc = unsafe { &*RCC::ptr() };
-
-        cortex_m::interrupt::free(|_| {
+        cortex_m::interrupt::free(|_| unsafe {
             // Enable USB peripheral
-            rcc.apb1enr.modify(|_, w| w.usben().set_bit());
+            pac::USB::enable_unchecked();
 
             // Reset USB peripheral
-            rcc.apb1rstr.modify(|_, w| w.usbrst().set_bit());
-            rcc.apb1rstr.modify(|_, w| w.usbrst().clear_bit());
+            pac::USB::reset_unchecked();
         });
     }
 

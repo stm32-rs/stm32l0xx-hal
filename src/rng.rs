@@ -1,4 +1,4 @@
-use crate::rcc::{Rcc, HSI48};
+use crate::rcc::{Enable, Rcc, Reset, HSI48};
 
 pub use crate::pac::{rng, RNG};
 
@@ -10,11 +10,10 @@ impl Rng {
     // Initializes the peripheral
     pub fn new(rng: RNG, rcc: &mut Rcc, _: HSI48) -> Rng {
         // Reset peripheral
-        rcc.rb.ahbrstr.modify(|_, w| w.rngrst().set_bit());
-        rcc.rb.ahbrstr.modify(|_, w| w.rngrst().clear_bit());
+        RNG::reset(rcc);
 
         // Enable peripheral clock
-        rcc.rb.ahbenr.modify(|_, w| w.rngen().set_bit());
+        RNG::enable(rcc);
 
         rng.cr.write(|w| w.rngen().set_bit().ie().clear_bit());
 
