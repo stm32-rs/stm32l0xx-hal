@@ -15,6 +15,19 @@ forget to update the links at the bottom of the changelog as well.-->
 
 ### Additions
 
+### Breaking Changes
+
+### Non-Breaking Changes
+
+### Fixes
+
+### Documentation
+
+
+## [v0.8.0] - 2021-11-04
+
+### Additions
+
 - Add `Timer::new` to create timer without starting. ([#152])
 - Add (untested) example `temperature` ([#161]) which uses `adc` to read the
   internal temperature and also an externally connected TMP36 analog sensor.
@@ -53,9 +66,6 @@ forget to update the links at the bottom of the changelog as well.-->
 - Fixed RTC year handling. Previously, the implementation incorrectly assumed
   that the BCD year 00 corresponds to 1970, but this results in a wrong leap
   year calculation. The correct time base is the year 2000.
-
-### Documentation
-
 
 
 ## [v0.7.0] - 2021-03-10
