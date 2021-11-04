@@ -2,7 +2,7 @@
 #![allow(non_camel_case_types)]
 #![allow(clippy::upper_case_acronyms)]
 
-#[cfg(not(any(feature = "stm32l0x1", feature = "stm32l0x2", feature = "stm32l0x3")))]
+#[cfg(not(feature = "device-selected"))]
 compile_error!(
     "This crate requires one of the following features enabled: stm32l0x1, stm32l0x2, stm32l0x3"
 );
@@ -69,3 +69,10 @@ pub mod timer;
 ))]
 pub mod usb;
 pub mod watchdog;
+
+#[cfg(feature = "device-selected")]
+mod sealed {
+    pub trait Sealed {}
+}
+#[cfg(feature = "device-selected")]
+pub(crate) use sealed::Sealed;

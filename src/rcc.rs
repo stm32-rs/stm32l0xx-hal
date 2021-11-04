@@ -7,6 +7,8 @@ use embedded_time::rate::{Extensions, Hertz};
 #[cfg(any(feature = "stm32l0x2", feature = "stm32l0x3"))]
 use crate::{pac::CRS, syscfg::SYSCFG};
 
+mod enable;
+
 /// System clock mux source
 #[derive(Clone, Copy)]
 pub enum ClockSrc {
@@ -193,6 +195,15 @@ impl Config {
 pub struct Rcc {
     pub clocks: Clocks,
     pub(crate) rb: RCC,
+}
+
+impl core::ops::Deref for Rcc {
+    type Target = RCC;
+
+    #[inline(always)]
+    fn deref(&self) -> &Self::Target {
+        &self.rb
+    }
 }
 
 impl Rcc {
@@ -473,3 +484,105 @@ pub struct MCOEnabled(());
 /// You can get an instance of this struct by calling [`Rcc::enable_lse`].
 #[derive(Clone, Copy)]
 pub struct LSE(());
+
+/// Bus associated to peripheral
+pub trait RccBus: crate::Sealed {
+    /// Bus type;
+    type Bus;
+}
+
+/// Enable/disable peripheral
+pub trait Enable: RccBus {
+    /// Enables peripheral
+    fn enable(rcc: &mut Rcc);
+
+    /// Disables peripheral
+    fn disable(rcc: &mut Rcc);
+
+    /// Check if peripheral enabled
+    fn is_enabled() -> bool;
+
+    /// Check if peripheral disabled
+    fn is_disabled() -> bool;
+
+    /// # Safety
+    ///
+    /// Enables peripheral. Takes access to RCC internally
+    unsafe fn enable_unchecked();
+
+    /// # Safety
+    ///
+    /// Disables peripheral. Takes access to RCC internally
+    unsafe fn disable_unchecked();
+}
+
+/// Enable/disable peripheral in Sleep mode
+pub trait SMEnable: RccBus {
+    /// Enables peripheral
+    fn enable_in_sleep_mode(rcc: &mut Rcc);
+
+    /// Disables peripheral
+    fn disable_in_sleep_mode(rcc: &mut Rcc);
+
+    /// Check if peripheral enabled
+    fn is_enabled_in_sleep_mode() -> bool;
+
+    /// Check if peripheral disabled
+    fn is_disabled_in_sleep_mode() -> bool;
+
+    /// # Safety
+    ///
+    /// Enables peripheral. Takes access to RCC internally
+    unsafe fn enable_in_sleep_mode_unchecked();
+
+    /// # Safety
+    ///
+    /// Disables peripheral. Takes access to RCC internally
+    unsafe fn disable_in_sleep_mode_unchecked();
+}
+
+/// Reset peripheral
+pub trait Reset: RccBus {
+    /// Resets peripheral
+    fn reset(rcc: &mut Rcc);
+
+    /// # Safety
+    ///
+    /// Resets peripheral. Takes access to RCC internally
+    unsafe fn reset_unchecked();
+}
+
+use crate::pac::rcc::{self, RegisterBlock as RccRB};
+
+macro_rules! bus_struct {
+    ($($busX:ident => ($EN:ident, $en:ident, $SMEN:ident, $smen:ident, $RST:ident, $rst:ident, $doc:literal),)+) => {
+        $(
+            #[doc = $doc]
+            pub struct $busX {
+                _0: (),
+            }
+
+            impl $busX {
+                #[inline(always)]
+                fn enr(rcc: &RccRB) -> &rcc::$EN {
+                    &rcc.$en
+                }
+                #[inline(always)]
+                fn smenr(rcc: &RccRB) -> &rcc::$SMEN {
+                    &rcc.$smen
+                }
+                #[inline(always)]
+                fn rstr(rcc: &RccRB) -> &rcc::$RST {
+                    &rcc.$rst
+                }
+            }
+        )+
+    };
+}
+
+bus_struct! {
+    AHB => (AHBENR, ahbenr, AHBSMENR, ahbsmenr, AHBRSTR, ahbrstr, "AMBA High-performance Bus (AHB) registers"),
+    APB1 => (APB1ENR, apb1enr, APB1SMENR, apb1smenr, APB1RSTR, apb1rstr, "Advanced Peripheral Bus 1 (APB1) registers"),
+    APB2 => (APB2ENR, apb2enr, APB2SMENR, apb2smenr, APB2RSTR, apb2rstr, "Advanced Peripheral Bus 2 (APB2) registers"),
+    IOP => (IOPENR, iopenr, IOPSMEN, iopsmen, IOPRSTR, ioprstr, "Input-Output Peripheral Bus (IOP) registers"),
+}
