@@ -6,6 +6,7 @@ macro_rules! bus_enable {
             #[inline(always)]
             fn enable(rcc: &mut Rcc) {
                 Self::Bus::enr(rcc).modify(|_, w| w.$en().set_bit());
+                cortex_m::asm::dsb();
             }
             #[inline(always)]
             fn disable(rcc: &mut Rcc) {
@@ -25,6 +26,7 @@ macro_rules! bus_enable {
             unsafe fn enable_unchecked() {
                 let rcc = &*RCC::ptr();
                 Self::Bus::enr(rcc).modify(|_, w| w.$en().set_bit());
+                cortex_m::asm::dsb();
             }
             #[inline(always)]
             unsafe fn disable_unchecked() {
@@ -40,6 +42,7 @@ macro_rules! bus_smenable {
             #[inline(always)]
             fn enable_in_sleep_mode(rcc: &mut Rcc) {
                 Self::Bus::smenr(rcc).modify(|_, w| w.$smen().set_bit());
+                cortex_m::asm::dsb();
             }
             #[inline(always)]
             fn disable_in_sleep_mode(rcc: &mut Rcc) {
@@ -59,6 +62,7 @@ macro_rules! bus_smenable {
             unsafe fn enable_in_sleep_mode_unchecked() {
                 let rcc = &*RCC::ptr();
                 Self::Bus::smenr(rcc).modify(|_, w| w.$smen().set_bit());
+                cortex_m::asm::dsb();
             }
             #[inline(always)]
             unsafe fn disable_in_sleep_mode_unchecked() {
