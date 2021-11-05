@@ -9,11 +9,10 @@ pub struct Rng {
 impl Rng {
     // Initializes the peripheral
     pub fn new(rng: RNG, rcc: &mut Rcc, _: HSI48) -> Rng {
-        // Reset peripheral
-        RNG::reset(rcc);
-
         // Enable peripheral clock
         RNG::enable(rcc);
+        // Reset peripheral
+        RNG::reset(rcc);
 
         rng.cr.write(|w| w.rngen().set_bit().ie().clear_bit());
 

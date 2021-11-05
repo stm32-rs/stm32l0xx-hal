@@ -220,11 +220,10 @@ impl Rcc {
 #[cfg(any(feature = "stm32l0x2", feature = "stm32l0x3"))]
 impl Rcc {
     pub fn enable_hsi48(&mut self, syscfg: &mut SYSCFG, crs: CRS) -> HSI48 {
-        // Reset CRS peripheral
-        CRS::reset(self);
-
         // Enable CRS peripheral
         CRS::enable(self);
+        // Reset CRS peripheral
+        CRS::reset(self);
 
         // Initialize CRS
         crs.cfgr.write(|w|

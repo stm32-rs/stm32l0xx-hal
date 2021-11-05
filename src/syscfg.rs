@@ -15,11 +15,10 @@ pub struct SYSCFG {
 
 impl SYSCFG {
     pub fn new(syscfg: PacSyscfg, rcc: &mut Rcc) -> Self {
-        // Reset SYSCFG peripheral
-        PacSyscfg::reset(rcc);
-
         // Enable SYSCFG peripheral
         PacSyscfg::enable(rcc);
+        // Reset SYSCFG peripheral
+        PacSyscfg::reset(rcc);
 
         SYSCFG { syscfg }
     }

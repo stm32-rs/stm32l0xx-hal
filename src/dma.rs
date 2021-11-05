@@ -61,11 +61,10 @@ pub struct DMA {
 impl DMA {
     /// Create an instance of the DMA API
     pub fn new(dma: pac::DMA1, rcc: &mut Rcc) -> Self {
-        // Reset peripheral
-        pac::DMA1::reset(rcc);
-
         // Enable peripheral clock
         pac::DMA1::enable(rcc);
+        // Reset peripheral
+        pac::DMA1::reset(rcc);
 
         Self {
             handle: Handle { dma },

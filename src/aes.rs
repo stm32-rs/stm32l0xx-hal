@@ -32,11 +32,10 @@ pub struct AES {
 impl AES {
     /// Initialize the AES peripheral
     pub fn new(aes: pac::AES, rcc: &mut Rcc) -> Self {
-        // Reset peripheral
-        pac::AES::reset(rcc);
-
         // Enable peripheral clock
         pac::AES::enable(rcc);
+        // Reset peripheral
+        pac::AES::reset(rcc);
 
         // Configure peripheral
         aes.cr.write(|w| {

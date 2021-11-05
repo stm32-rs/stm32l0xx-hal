@@ -75,11 +75,10 @@ impl FLASH {
         // first byte after it.
         let eeprom_end = eeprom_start + EEPROM_SIZE;
 
-        // Reset the peripheral interface
-        pac::FLASH::reset(rcc);
-
         // Enable the peripheral interface
         pac::FLASH::enable(rcc);
+        // Reset the peripheral interface
+        pac::FLASH::reset(rcc);
 
         Self {
             flash,
