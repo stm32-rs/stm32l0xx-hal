@@ -54,13 +54,11 @@ rtc = ["rtcc"]
 rt = ["stm32l0/rt"]
 disable-linker-script = []
 
-device-selected = []
-
 # STM32L0 subfamilies
 # (Warning: Some peripherals, e.g. GPIO, don't follow this subfamily grouping.)
-stm32l0x1 = ["device-selected", "stm32l0/stm32l0x1"]
-stm32l0x2 = ["device-selected", "stm32l0/stm32l0x2"]
-stm32l0x3 = ["device-selected", "stm32l0/stm32l0x3"]
+stm32l0x1 = ["stm32l0/stm32l0x1"]
+stm32l0x2 = ["stm32l0/stm32l0x2"]
+stm32l0x3 = ["stm32l0/stm32l0x3"]
 
 # Legacy features (don't use those anymore)
 stm32l052 = ["stm32l0x2"]
