@@ -2,7 +2,7 @@
 
 use crate::gpio::{gpioa, gpiob, AltMode, Analog};
 use crate::pac::{tim2, tim21, TIM2, TIM21};
-use crate::rcc::Rcc;
+use crate::rcc::{Enable, Rcc, Reset};
 use core::marker::PhantomData;
 
 pub trait Pins<TIM> {
@@ -90,7 +90,7 @@ pub struct Encoder<T, PINS> {
 }
 
 macro_rules! encoders {
-    ($($TIM:ident: ($timXen:ident, $timXrst:ident, $apbXenr:ident, $apbXrstr:ident, $sms:ty),)+) => {
+    ($($TIM:ident: ($sms:ty),)+) => {
         $(
             impl EncoderExt<$TIM> for $TIM {
                 fn encoder<PINS>(
@@ -113,9 +113,8 @@ macro_rules! encoders {
             {
                 fn new(timer: $TIM, pins: PINS, mode: Mode, arr: u16, rcc: &mut Rcc) -> Self {
                     // Enable peripheral, reset it
-                    rcc.rb.$apbXenr.modify(|_, w| w.$timXen().set_bit());
-                    rcc.rb.$apbXrstr.modify(|_, w| w.$timXrst().set_bit());
-                    rcc.rb.$apbXrstr.modify(|_, w| w.$timXrst().clear_bit());
+                    <$TIM>::enable(rcc);
+                    <$TIM>::reset(rcc);
 
                     // Disable the timer for configuration
                     timer.cr1.write(|w| w.cen().clear_bit());
@@ -228,6 +227,6 @@ macro_rules! encoders {
 }
 
 encoders! {
-    TIM2: (tim2en, tim2rst, apb1enr, apb1rstr, tim2::smcr::SMS_A),
-    TIM21: (tim21en, tim21rst, apb2enr, apb2rstr, tim21::smcr::SMS_A),
+    TIM2: (tim2::smcr::SMS_A),
+    TIM21: (tim21::smcr::SMS_A),
 }

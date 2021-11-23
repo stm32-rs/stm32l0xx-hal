@@ -21,7 +21,7 @@ use crate::{
         self,
         aes::{self, cr},
     },
-    rcc::Rcc,
+    rcc::{Enable, Rcc, Reset},
 };
 
 /// Entry point to the AES API
@@ -32,12 +32,10 @@ pub struct AES {
 impl AES {
     /// Initialize the AES peripheral
     pub fn new(aes: pac::AES, rcc: &mut Rcc) -> Self {
-        // Reset peripheral
-        rcc.rb.ahbrstr.modify(|_, w| w.cryprst().set_bit());
-        rcc.rb.ahbrstr.modify(|_, w| w.cryprst().clear_bit());
-
         // Enable peripheral clock
-        rcc.rb.ahbenr.modify(|_, w| w.crypen().set_bit());
+        pac::AES::enable(rcc);
+        // Reset peripheral
+        pac::AES::reset(rcc);
 
         // Configure peripheral
         aes.cr.write(|w| {

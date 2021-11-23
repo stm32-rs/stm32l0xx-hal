@@ -6,7 +6,7 @@ use cortex_m::{asm, peripheral::SCB};
 
 use crate::{
     pac,
-    rcc::{ClockSrc, Clocks, PLLSource, Rcc},
+    rcc::{ClockSrc, Clocks, Enable, PLLSource, Rcc},
 };
 
 /// Entry point to the PWR API
@@ -21,7 +21,7 @@ impl PWR {
         // See STM32L0x2 reference manual, section 6.4.1 (VOS field).
 
         // Enable peripheral clock
-        rcc.rb.apb1enr.modify(|_, w| w.pwren().set_bit());
+        pac::PWR::enable(rcc);
 
         // Disable backup write protection. This is required to access various
         // register of various peripherals, so don't remove this unless you know

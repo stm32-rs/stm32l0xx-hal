@@ -4,7 +4,7 @@ use crate::gpio::{self, gpiob};
 use crate::hal;
 use crate::pac::LPTIM;
 use crate::pwr::PWR;
-use crate::rcc::Rcc;
+use crate::rcc::{Enable, Rcc, Reset};
 use cast::{u32, u64};
 use core::convert::TryFrom;
 use core::marker::PhantomData;
@@ -237,10 +237,9 @@ impl<M: CountMode> LpTimer<M> {
         // Select and enable clock. Right now we only support the internal RCC clocks, but LPTIM can
         // also run as a counter with a dedicated external input.
         rcc.rb.ccipr.modify(|_, w| w.lptim1sel().bits(clk as u8));
-        rcc.rb.apb1enr.modify(|_, w| w.lptim1en().set_bit());
+        LPTIM::enable(rcc);
 
-        rcc.rb.apb1rstr.modify(|_, w| w.lptim1rst().set_bit());
-        rcc.rb.apb1rstr.modify(|_, w| w.lptim1rst().clear_bit());
+        LPTIM::reset(rcc);
 
         Self {
             lptim,

@@ -23,7 +23,7 @@ use as_slice::AsSlice;
 use crate::{
     adc,
     pac::{self, dma1::ch::cr},
-    rcc::Rcc,
+    rcc::{Enable, Rcc, Reset},
 };
 
 #[cfg(any(feature = "io-STM32L051", feature = "io-STM32L071"))]
@@ -61,12 +61,10 @@ pub struct DMA {
 impl DMA {
     /// Create an instance of the DMA API
     pub fn new(dma: pac::DMA1, rcc: &mut Rcc) -> Self {
-        // Reset peripheral
-        rcc.rb.ahbrstr.modify(|_, w| w.dmarst().set_bit());
-        rcc.rb.ahbrstr.modify(|_, w| w.dmarst().clear_bit());
-
         // Enable peripheral clock
-        rcc.rb.ahbenr.modify(|_, w| w.dmaen().set_bit());
+        pac::DMA1::enable(rcc);
+        // Reset peripheral
+        pac::DMA1::reset(rcc);
 
         Self {
             handle: Handle { dma },

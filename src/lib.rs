@@ -69,3 +69,8 @@ pub mod timer;
 ))]
 pub mod usb;
 pub mod watchdog;
+
+mod sealed {
+    pub trait Sealed {}
+}
+pub(crate) use sealed::Sealed;
