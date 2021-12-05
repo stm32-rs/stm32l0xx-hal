@@ -10,7 +10,7 @@ use stm32l0xx_hal::{crc::*, pac, prelude::*, rcc::Config};
 #[entry]
 fn main() -> ! {
     let dp = pac::Peripherals::take().unwrap();
-    let mut rcc = dp.RCC.freeze(Config::hsi16());
+    let mut rcc = dp.RCC.freeze(Config::hsi16(false));
 
     let crc = dp.CRC.constrain(&mut rcc);
 

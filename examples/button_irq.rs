@@ -26,7 +26,7 @@ fn main() -> ! {
     let dp = pac::Peripherals::take().unwrap();
 
     // Configure the clock.
-    let mut rcc = dp.RCC.freeze(Config::hsi16());
+    let mut rcc = dp.RCC.freeze(Config::hsi16(false));
 
     // Acquire the GPIOB peripheral. This also enables the clock for GPIOB in
     // the RCC register.

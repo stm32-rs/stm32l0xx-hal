@@ -40,7 +40,7 @@ enum TxState {
 fn main() -> ! {
     let dp = pac::Peripherals::take().unwrap();
 
-    let mut rcc = dp.RCC.freeze(Config::hsi16());
+    let mut rcc = dp.RCC.freeze(Config::hsi16(false));
     let mut dma = DMA::new(dp.DMA1, &mut rcc);
     let gpioa = dp.GPIOA.split(&mut rcc);
 

@@ -17,7 +17,7 @@ use stm32l0xx_hal::{
 fn main() -> ! {
     let dp = pac::Peripherals::take().unwrap();
 
-    let mut rcc = dp.RCC.freeze(Config::hsi16());
+    let mut rcc = dp.RCC.freeze(Config::hsi16(false));
     let mut aes = AES::new(dp.AES, &mut rcc);
 
     let key = [0x01234567, 0x89abcdef, 0x01234567, 0x89abcdef];

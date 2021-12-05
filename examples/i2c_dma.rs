@@ -25,7 +25,7 @@ fn main() -> ! {
     let dp = pac::Peripherals::take().unwrap();
 
     let mut scb = cp.SCB;
-    let mut rcc = dp.RCC.freeze(Config::hsi16());
+    let mut rcc = dp.RCC.freeze(Config::hsi16(false));
     let mut dma = DMA::new(dp.DMA1, &mut rcc);
     let mut delay = cp.SYST.delay(rcc.clocks);
     let mut pwr = PWR::new(dp.PWR, &mut rcc);

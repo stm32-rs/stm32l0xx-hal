@@ -22,7 +22,7 @@ fn main() -> ! {
     let dp = pac::Peripherals::take().unwrap();
 
     // Configure the 16MHz internal clock
-    let mut rcc = dp.RCC.freeze(Config::hsi16());
+    let mut rcc = dp.RCC.freeze(Config::hsi16(false));
 
     let gpioa = dp.GPIOA.split(&mut rcc);
 

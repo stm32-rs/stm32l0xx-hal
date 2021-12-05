@@ -13,7 +13,7 @@ fn main() -> ! {
     let cp = cortex_m::Peripherals::take().unwrap();
 
     // Configure the clock.
-    let mut rcc = dp.RCC.freeze(Config::hsi16());
+    let mut rcc = dp.RCC.freeze(Config::hsi16(false));
 
     // Acquire the GPI0A and GPIOB peripherals. This also enables the clock for
     // GPIOA and GPIOB in the RCC register.

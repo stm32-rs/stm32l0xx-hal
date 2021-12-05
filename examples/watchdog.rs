@@ -15,7 +15,7 @@ fn main() -> ! {
     let cp = cortex_m::Peripherals::take().unwrap();
 
     // Configure the clock.
-    let rcc = dp.RCC.freeze(Config::hsi16());
+    let rcc = dp.RCC.freeze(Config::hsi16(false));
 
     // Configure a delay to feed the watchdog.
     let mut delay = cp.SYST.delay(rcc.clocks);

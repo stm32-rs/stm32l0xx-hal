@@ -291,7 +291,9 @@ impl PowerMode for StopMode<'_> {
                 // Use MSI as clock source after wake-up
                 ClockSrc::MSI(_) => w.stopwuck().clear_bit(),
                 // Use HSI16 as clock source after wake-up
-                ClockSrc::HSI16 | ClockSrc::PLL(PLLSource::HSI16, _, _) => w.stopwuck().set_bit(),
+                ClockSrc::HSI16(_) | ClockSrc::PLL(PLLSource::HSI16(_), _, _) => {
+                    w.stopwuck().set_bit()
+                }
                 // External clock selected
                 //
                 // Unfortunately handling the external clock is not as
