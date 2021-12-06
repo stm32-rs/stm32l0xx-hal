@@ -370,22 +370,12 @@ impl Rtc {
 }
 
 /// Flags to enable/disable RTC interrupts.
+#[derive(Default)]
 pub struct Interrupts {
     pub timestamp: bool,
     pub wakeup_timer: bool,
     pub alarm_a: bool,
     pub alarm_b: bool,
-}
-
-impl Default for Interrupts {
-    fn default() -> Self {
-        Self {
-            timestamp: false,
-            wakeup_timer: false,
-            alarm_a: false,
-            alarm_b: false,
-        }
-    }
 }
 
 /// The RTC wakeup timer

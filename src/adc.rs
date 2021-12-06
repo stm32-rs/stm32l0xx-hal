@@ -332,14 +332,9 @@ pub struct Active<DmaChan, Buf> {
 /// A collection of channels
 ///
 /// Used to set up multi-channel conversions.
+#[derive(Default)]
 pub struct Channels {
     flags: u32,
-}
-
-impl Default for Channels {
-    fn default() -> Self {
-        Channels { flags: 0 }
-    }
 }
 
 impl Channels {
