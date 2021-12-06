@@ -660,19 +660,9 @@ impl SupportedWordSize for u32 {
     }
 }
 
-#[derive(Clone, Copy)]
+#[derive(Clone, Copy, Default)]
 pub struct Interrupts {
     pub transfer_error: bool,
     pub half_transfer: bool,
     pub transfer_complete: bool,
-}
-
-impl Default for Interrupts {
-    fn default() -> Self {
-        Self {
-            transfer_error: false,
-            half_transfer: false,
-            transfer_complete: false,
-        }
-    }
 }
