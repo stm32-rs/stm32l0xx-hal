@@ -15,7 +15,7 @@ pub enum ClockSrc {
     MSI(MSIRange),
     PLL(PLLSource, PLLMul, PLLDiv),
     HSE(Hertz),
-    HSI16,
+    HSI16(HSI16Div),
 }
 
 /// MSI Clock Range
@@ -44,6 +44,13 @@ impl Default for MSIRange {
     fn default() -> MSIRange {
         MSIRange::Range5
     }
+}
+
+/// HSI16 divider
+#[derive(Clone, Copy)]
+pub enum HSI16Div {
+    Div1 = 1,
+    Div4 = 4,
 }
 
 /// PLL divider
@@ -95,7 +102,7 @@ pub enum APBPrescaler {
 /// PLL clock input source
 #[derive(Clone, Copy)]
 pub enum PLLSource {
-    HSI16,
+    HSI16(HSI16Div),
     HSE(Hertz),
 }
 
@@ -150,7 +157,7 @@ impl Config {
     #[inline]
     pub fn hsi16() -> Config {
         Config {
-            mux: ClockSrc::HSI16,
+            mux: ClockSrc::HSI16(HSI16Div::Div1),
             ahb_pre: AHBPrescaler::NotDivided,
             apb1_pre: APBPrescaler::NotDivided,
             apb2_pre: APBPrescaler::NotDivided,
@@ -295,12 +302,21 @@ impl RccExt for RCC {
                 let freq = 32_768 * (1 << (range + 1));
                 (freq, 0)
             }
-            ClockSrc::HSI16 => {
-                // Enable HSI16
-                self.cr.write(|w| w.hsi16on().set_bit());
+            ClockSrc::HSI16(div) => {
+                // Set HSI16 div4 state and enable HSI16
+                let freq: u32 = match div {
+                    HSI16Div::Div4 => {
+                        self.cr
+                            .write(|w| w.hsi16diven().set_bit().hsi16on().set_bit());
+                        HSI_FREQ / 4
+                    }
+                    HSI16Div::Div1 => {
+                        self.cr.write(|w| w.hsi16on().set_bit());
+                        HSI_FREQ
+                    }
+                };
                 while self.cr.read().hsi16rdyf().bit_is_clear() {}
-
-                (HSI_FREQ, 1)
+                (freq, 1)
             }
             ClockSrc::HSE(freq) => {
                 // Enable HSE
@@ -317,11 +333,21 @@ impl RccExt for RCC {
                         while self.cr.read().hserdy().bit_is_clear() {}
                         (true, freq.0)
                     }
-                    PLLSource::HSI16 => {
-                        // Enable HSI
-                        self.cr.write(|w| w.hsi16on().set_bit());
+                    PLLSource::HSI16(div) => {
+                        // Set HSI16 div4 state and enable HSI
+                        let freq: u32 = match div {
+                            HSI16Div::Div4 => {
+                                self.cr
+                                    .write(|w| w.hsi16diven().set_bit().hsi16on().set_bit());
+                                HSI_FREQ / 4
+                            }
+                            HSI16Div::Div1 => {
+                                self.cr.write(|w| w.hsi16on().set_bit());
+                                HSI_FREQ
+                            }
+                        };
                         while self.cr.read().hsi16rdyf().bit_is_clear() {}
-                        (false, HSI_FREQ)
+                        (false, freq)
                     }
                 };
 
