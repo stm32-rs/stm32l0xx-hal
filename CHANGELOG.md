@@ -175,7 +175,8 @@ in the URL for both issues and pull requests. -->
 [#98]: https://github.com/stm32-rs/stm32l0xx-hal/issues/98
 
 <!-- Links to version diffs. -->
-[Unreleased]: https://github.com/stm32-rs/stm32l0xx-hal/compare/v0.7.0...HEAD
+[Unreleased]: https://github.com/stm32-rs/stm32l0xx-hal/compare/v0.8.0...HEAD
+[v0.8.0]: https://github.com/stm32-rs/stm32l0xx-hal/compare/v0.7.0...v0.8.0
 [v0.7.0]: https://github.com/stm32-rs/stm32l0xx-hal/compare/v0.6.2...v0.7.0
 [v0.6.2]: https://github.com/stm32-rs/stm32l0xx-hal/compare/v0.6.1...v0.6.2
 [v0.6.1]: https://github.com/stm32-rs/stm32l0xx-hal/compare/v0.6.0...v0.6.1
