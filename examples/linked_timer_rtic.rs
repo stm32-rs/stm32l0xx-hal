@@ -32,7 +32,7 @@ const APP: () = {
         let dp: pac::Peripherals = ctx.device;
 
         // Configure the clock
-        let mut rcc = dp.RCC.freeze(Config::hsi16(false));
+        let mut rcc = dp.RCC.freeze(Config::hsi16());
 
         // Get delay provider
         let mut delay = cp.SYST.delay(rcc.clocks);

@@ -11,7 +11,7 @@ use stm32l0xx_hal::{pac, prelude::*, rcc::Config};
 fn main() -> ! {
     let dp = pac::Peripherals::take().unwrap();
 
-    let mut rcc = dp.RCC.freeze(Config::hsi16(false));
+    let mut rcc = dp.RCC.freeze(Config::hsi16());
     let mut adc = dp.ADC.constrain(&mut rcc);
     let gpioa = dp.GPIOA.split(&mut rcc);
     let gpiob = dp.GPIOB.split(&mut rcc);

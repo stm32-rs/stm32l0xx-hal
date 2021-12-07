@@ -18,7 +18,7 @@ fn main() -> ! {
     let cp = pac::CorePeripherals::take().unwrap();
     let dp = pac::Peripherals::take().unwrap();
 
-    let mut rcc = dp.RCC.freeze(rcc::Config::hsi16(false));
+    let mut rcc = dp.RCC.freeze(rcc::Config::hsi16());
 
     // Initialize all the GPIO we need
     let gpiob = dp.GPIOB.split(&mut rcc);

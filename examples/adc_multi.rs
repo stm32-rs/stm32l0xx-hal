@@ -20,7 +20,7 @@ use stm32l0xx_hal::{
 fn main() -> ! {
     let dp = pac::Peripherals::take().unwrap();
 
-    let mut rcc = dp.RCC.freeze(rcc::Config::hsi16(false));
+    let mut rcc = dp.RCC.freeze(rcc::Config::hsi16());
     let adc = dp.ADC.constrain(&mut rcc);
     let mut dma = DMA::new(dp.DMA1, &mut rcc);
     let gpioa = dp.GPIOA.split(&mut rcc);

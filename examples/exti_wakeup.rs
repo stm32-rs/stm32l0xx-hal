@@ -18,7 +18,7 @@ fn main() -> ! {
     let cp = pac::CorePeripherals::take().unwrap();
     let dp = pac::Peripherals::take().unwrap();
 
-    let mut rcc = dp.RCC.freeze(Config::hsi16(false));
+    let mut rcc = dp.RCC.freeze(Config::hsi16());
     let gpiob = dp.GPIOB.split(&mut rcc);
     let mut exti = Exti::new(dp.EXTI);
     let mut pwr = PWR::new(dp.PWR, &mut rcc);

@@ -16,7 +16,7 @@ fn main() -> ! {
     let cp = cortex_m::Peripherals::take().unwrap();
     let dp = pac::Peripherals::take().unwrap();
 
-    let mut rcc = dp.RCC.freeze(rcc::Config::hsi16(false));
+    let mut rcc = dp.RCC.freeze(rcc::Config::hsi16());
     let mut flash = FLASH::new(dp.FLASH, &mut rcc);
     let gpiob = dp.GPIOB.split(&mut rcc);
 

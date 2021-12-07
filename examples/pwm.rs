@@ -14,7 +14,7 @@ fn main() -> ! {
     let cp = cortex_m::Peripherals::take().unwrap();
 
     // Configure the clock.
-    let mut rcc = dp.RCC.freeze(Config::hsi16(false));
+    let mut rcc = dp.RCC.freeze(Config::hsi16());
 
     // Get the delay provider.
     let mut delay = cp.SYST.delay(rcc.clocks);

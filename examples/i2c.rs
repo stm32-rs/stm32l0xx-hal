@@ -13,7 +13,7 @@ fn main() -> ! {
     let dp = pac::Peripherals::take().unwrap();
 
     // Configure the clock.
-    let mut rcc = dp.RCC.freeze(Config::hsi16(false));
+    let mut rcc = dp.RCC.freeze(Config::hsi16());
 
     // Acquire the GPIOA peripheral. This also enables the clock for GPIOA in
     // the RCC register.

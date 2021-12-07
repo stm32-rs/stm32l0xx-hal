@@ -54,7 +54,7 @@ fn setup() -> (impl ReadTempC, impl ReadTempC + ReadMV, Adc<Ready>) {
     // No channel is specified for the mcutemp because it uses an internal channel ADC_IN18.
 
     let p = Peripherals::take().unwrap();
-    let mut rcc = p.RCC.freeze(rcc::Config::hsi16(false));
+    let mut rcc = p.RCC.freeze(rcc::Config::hsi16());
     let adc = p.ADC.constrain(&mut rcc);
 
     let gpiob = p.GPIOB.split(&mut rcc);

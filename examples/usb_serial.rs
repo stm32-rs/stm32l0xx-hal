@@ -14,7 +14,7 @@ use usbd_serial::{SerialPort, USB_CLASS_CDC};
 fn main() -> ! {
     let dp = pac::Peripherals::take().unwrap();
 
-    let mut rcc = dp.RCC.freeze(rcc::Config::hsi16(false));
+    let mut rcc = dp.RCC.freeze(rcc::Config::hsi16());
     let mut syscfg = SYSCFG::new(dp.SYSCFG, &mut rcc);
     let hsi48 = rcc.enable_hsi48(&mut syscfg, dp.CRS);
 

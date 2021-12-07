@@ -26,7 +26,7 @@ const APP: () = {
         let device = ctx.device;
 
         // Configure the clock.
-        let mut rcc = device.RCC.freeze(Config::hsi16(false));
+        let mut rcc = device.RCC.freeze(Config::hsi16());
 
         // Acquire the GPIOB peripheral. This also enables the clock for GPIOB in
         // the RCC register.
