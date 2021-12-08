@@ -17,7 +17,7 @@ repository = "https://github.com/stm32-rs/stm32l0xx-hal"
 version = "0.8.0"
 
 [package.metadata.docs.rs]
-features = ["stm32l0x2", "rt", "stm32-usbd", "eeprom-2048", "rtc"]
+features = ["mcu-STM32L071KBTx", "rt", "stm32-usbd", "rtc"]
 targets = ["thumbv6m-none-eabi"]
 
 [dependencies]
