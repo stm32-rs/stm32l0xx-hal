@@ -24,6 +24,25 @@ forget to update the links at the bottom of the changelog as well.-->
 ### Documentation
 
 
+## [v0.8.1] - 2021-12-09
+
+### Additions
+
+- Unify RCC enable / reset ([#196])
+
+### Breaking Changes
+
+- Setup hsi16diven when running Rcc::freeze ([#197])
+
+### Non-Breaking Changes
+
+- Fix clippy lints ([#200])
+
+### Documentation
+
+- Fix Cargo features used by docs.rs ([#203])
+
+
 ## [v0.8.0] - 2021-11-04
 
 ### Additions
@@ -141,6 +160,10 @@ _Not yet tracked in this changelog._
 
 <!-- Links to pull requests and issues. Note that you can use "issues"
 in the URL for both issues and pull requests. -->
+[#203]: https://github.com/stm32-rs/stm32l0xx-hal/issues/203
+[#200]: https://github.com/stm32-rs/stm32l0xx-hal/issues/200
+[#197]: https://github.com/stm32-rs/stm32l0xx-hal/issues/197
+[#196]: https://github.com/stm32-rs/stm32l0xx-hal/issues/196
 [#190]: https://github.com/stm32-rs/stm32l0xx-hal/issues/190
 [#183]: https://github.com/stm32-rs/stm32l0xx-hal/issues/183
 [#174]: https://github.com/stm32-rs/stm32l0xx-hal/issues/174
@@ -175,7 +198,8 @@ in the URL for both issues and pull requests. -->
 [#98]: https://github.com/stm32-rs/stm32l0xx-hal/issues/98
 
 <!-- Links to version diffs. -->
-[Unreleased]: https://github.com/stm32-rs/stm32l0xx-hal/compare/v0.8.0...HEAD
+[Unreleased]: https://github.com/stm32-rs/stm32l0xx-hal/compare/v0.8.1...HEAD
+[v0.8.1]: https://github.com/stm32-rs/stm32l0xx-hal/compare/v0.8.0...v0.8.1
 [v0.8.0]: https://github.com/stm32-rs/stm32l0xx-hal/compare/v0.7.0...v0.8.0
 [v0.7.0]: https://github.com/stm32-rs/stm32l0xx-hal/compare/v0.6.2...v0.7.0
 [v0.6.2]: https://github.com/stm32-rs/stm32l0xx-hal/compare/v0.6.1...v0.6.2
