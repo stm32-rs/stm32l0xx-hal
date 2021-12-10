@@ -496,6 +496,28 @@ macro_rules! usart {
             }
 
             impl Rx<$USARTX> {
+                /// Returns true if the line idle status is set
+                /// This reads the ISR register's IDLE bit. This bit is set by hardware
+                /// when an Idle Line is detected. And can be cleared by calling `clear_idle_interrupt`.
+                ///
+                /// This flag is set by hardware even when interrupts are disabled (IDLEIE=0 in CR1)
+                pub fn is_idle(&self) -> bool {
+                    let isr = unsafe { (*$USARTX::ptr()).isr.read() };
+                    isr.idle().bit_is_set()
+                }
+
+                /// Returns true if the rx register is not empty (and can be read)
+                pub fn is_rx_not_empty(&self) -> bool {
+                    let isr = unsafe { (*$USARTX::ptr()).isr.read() };
+                    isr.rxne().bit_is_set()
+                }
+
+                /// Clear idle line interrupt flag
+                pub fn clear_idle_interrupt(&self) {
+                    let icr = unsafe { &(*$USARTX::ptr()).icr };
+                    icr.write(|w| w.idlecf().set_bit());
+                }
+
                 /// Checks for reception errors that may have occurred.
                 ///
                 /// Note that multiple errors can be signaled at the same time. In that case,
@@ -645,6 +667,14 @@ macro_rules! usart {
                     } else {
                         Err(nb::Error::WouldBlock)
                     }
+                }
+            }
+
+            impl Tx<$USARTX> {
+                /// Returns true if the tx register is empty (and can accept data)
+                pub fn is_tx_empty(&self) -> bool {
+                    let isr = unsafe { (*$USARTX::ptr()).isr.read() };
+                    isr.txe().bit_is_set()
                 }
             }
 
