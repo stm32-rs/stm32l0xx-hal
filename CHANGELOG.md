@@ -24,6 +24,27 @@ forget to update the links at the bottom of the changelog as well.-->
 ### Documentation
 
 
+## [v0.9.0] - 2021-12-11
+
+### Additions
+
+- Add `is_idle`, `is_rx_not_empty` and `clear_idle_interrupt` methods to serial ([#206])
+
+### Breaking Changes
+
+- Unify RCC enable / reset ([#196])
+- Setup `hsi16diven` when running `Rcc::freeze` ([#197])
+
+### Non-Breaking Changes
+
+- Fix clippy lints ([#200])
+- Make cortex-m-semihosting a dev dependency ([#208])
+
+### Documentation
+
+- Fix Cargo features used by docs.rs ([#203])
+
+
 ## [v0.8.0] - 2021-11-04
 
 ### Additions
@@ -139,43 +160,49 @@ _Not yet tracked in this changelog._
 
 
 
-<!-- Links to pull requests and issues. Note that you can use "issues"
-in the URL for both issues and pull requests. -->
-[#190]: https://github.com/stm32-rs/stm32l0xx-hal/issues/190
-[#183]: https://github.com/stm32-rs/stm32l0xx-hal/issues/183
-[#174]: https://github.com/stm32-rs/stm32l0xx-hal/issues/174
-[#173]: https://github.com/stm32-rs/stm32l0xx-hal/issues/173
+<!-- Links to pull requests and issues. -->
+[#208]: https://github.com/stm32-rs/stm32l0xx-hal/pull/208
+[#206]: https://github.com/stm32-rs/stm32l0xx-hal/pull/206
+[#203]: https://github.com/stm32-rs/stm32l0xx-hal/pull/203
+[#200]: https://github.com/stm32-rs/stm32l0xx-hal/pull/200
+[#197]: https://github.com/stm32-rs/stm32l0xx-hal/pull/197
+[#196]: https://github.com/stm32-rs/stm32l0xx-hal/pull/196
+[#190]: https://github.com/stm32-rs/stm32l0xx-hal/pull/190
+[#183]: https://github.com/stm32-rs/stm32l0xx-hal/pull/183
+[#174]: https://github.com/stm32-rs/stm32l0xx-hal/pull/174
+[#173]: https://github.com/stm32-rs/stm32l0xx-hal/pull/173
 [#161]: https://github.com/stm32-rs/stm32l0xx-hal/issues/161
-[#152]: https://github.com/stm32-rs/stm32l0xx-hal/issues/152
-[#148]: https://github.com/stm32-rs/stm32l0xx-hal/issues/148
-[#145]: https://github.com/stm32-rs/stm32l0xx-hal/issues/145
-[#144]: https://github.com/stm32-rs/stm32l0xx-hal/issues/144
-[#143]: https://github.com/stm32-rs/stm32l0xx-hal/issues/143
-[#142]: https://github.com/stm32-rs/stm32l0xx-hal/issues/142
-[#140]: https://github.com/stm32-rs/stm32l0xx-hal/issues/140
-[#137]: https://github.com/stm32-rs/stm32l0xx-hal/issues/137
-[#136]: https://github.com/stm32-rs/stm32l0xx-hal/issues/136
-[#134]: https://github.com/stm32-rs/stm32l0xx-hal/issues/134
-[#133]: https://github.com/stm32-rs/stm32l0xx-hal/issues/133
-[#131]: https://github.com/stm32-rs/stm32l0xx-hal/issues/131
-[#130]: https://github.com/stm32-rs/stm32l0xx-hal/issues/130
-[#129]: https://github.com/stm32-rs/stm32l0xx-hal/issues/129
-[#127]: https://github.com/stm32-rs/stm32l0xx-hal/issues/127
-[#124]: https://github.com/stm32-rs/stm32l0xx-hal/issues/124
-[#121]: https://github.com/stm32-rs/stm32l0xx-hal/issues/121
-[#119]: https://github.com/stm32-rs/stm32l0xx-hal/issues/119
-[#116]: https://github.com/stm32-rs/stm32l0xx-hal/issues/116
-[#115]: https://github.com/stm32-rs/stm32l0xx-hal/issues/115
-[#107]: https://github.com/stm32-rs/stm32l0xx-hal/issues/107
+[#152]: https://github.com/stm32-rs/stm32l0xx-hal/pull/152
+[#148]: https://github.com/stm32-rs/stm32l0xx-hal/pull/148
+[#145]: https://github.com/stm32-rs/stm32l0xx-hal/pull/145
+[#144]: https://github.com/stm32-rs/stm32l0xx-hal/pull/144
+[#143]: https://github.com/stm32-rs/stm32l0xx-hal/pull/143
+[#142]: https://github.com/stm32-rs/stm32l0xx-hal/pull/142
+[#140]: https://github.com/stm32-rs/stm32l0xx-hal/pull/140
+[#137]: https://github.com/stm32-rs/stm32l0xx-hal/pull/137
+[#136]: https://github.com/stm32-rs/stm32l0xx-hal/pull/136
+[#134]: https://github.com/stm32-rs/stm32l0xx-hal/pull/134
+[#133]: https://github.com/stm32-rs/stm32l0xx-hal/pull/133
+[#131]: https://github.com/stm32-rs/stm32l0xx-hal/pull/131
+[#130]: https://github.com/stm32-rs/stm32l0xx-hal/pull/130
+[#129]: https://github.com/stm32-rs/stm32l0xx-hal/pull/129
+[#127]: https://github.com/stm32-rs/stm32l0xx-hal/pull/127
+[#124]: https://github.com/stm32-rs/stm32l0xx-hal/pull/124
+[#121]: https://github.com/stm32-rs/stm32l0xx-hal/pull/121
+[#119]: https://github.com/stm32-rs/stm32l0xx-hal/pull/119
+[#116]: https://github.com/stm32-rs/stm32l0xx-hal/pull/116
+[#115]: https://github.com/stm32-rs/stm32l0xx-hal/pull/115
+[#107]: https://github.com/stm32-rs/stm32l0xx-hal/pull/107
 [#104]: https://github.com/stm32-rs/stm32l0xx-hal/issues/104
-[#102]: https://github.com/stm32-rs/stm32l0xx-hal/issues/102
-[#101]: https://github.com/stm32-rs/stm32l0xx-hal/issues/101
-[#100]: https://github.com/stm32-rs/stm32l0xx-hal/issues/100
-[#99]: https://github.com/stm32-rs/stm32l0xx-hal/issues/99
-[#98]: https://github.com/stm32-rs/stm32l0xx-hal/issues/98
+[#102]: https://github.com/stm32-rs/stm32l0xx-hal/pull/102
+[#101]: https://github.com/stm32-rs/stm32l0xx-hal/pull/101
+[#100]: https://github.com/stm32-rs/stm32l0xx-hal/pull/100
+[#99]: https://github.com/stm32-rs/stm32l0xx-hal/pull/99
+[#98]: https://github.com/stm32-rs/stm32l0xx-hal/pull/98
 
 <!-- Links to version diffs. -->
-[Unreleased]: https://github.com/stm32-rs/stm32l0xx-hal/compare/v0.8.0...HEAD
+[Unreleased]: https://github.com/stm32-rs/stm32l0xx-hal/compare/v0.9.0...HEAD
+[v0.9.0]: https://github.com/stm32-rs/stm32l0xx-hal/compare/v0.8.0...v0.9.0
 [v0.8.0]: https://github.com/stm32-rs/stm32l0xx-hal/compare/v0.7.0...v0.8.0
 [v0.7.0]: https://github.com/stm32-rs/stm32l0xx-hal/compare/v0.6.2...v0.7.0
 [v0.6.2]: https://github.com/stm32-rs/stm32l0xx-hal/compare/v0.6.1...v0.6.2
