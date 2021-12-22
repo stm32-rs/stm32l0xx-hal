@@ -20,6 +20,7 @@ forget to update the links at the bottom of the changelog as well.-->
 ### Non-Breaking Changes
 
 ### Fixes
+- Add other possible pins for SPI1 for L0x1 family
 
 ### Documentation
 
