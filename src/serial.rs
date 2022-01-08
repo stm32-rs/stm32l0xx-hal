@@ -11,19 +11,19 @@ pub use crate::pac::{LPUART1, USART1, USART2, USART4, USART5};
 use crate::rcc::{Enable, Rcc, LSE};
 use embedded_time::rate::{Baud, Extensions};
 
-#[cfg(any(feature = "stm32l0x2", feature = "stm32l0x3"))]
+#[cfg(any(feature = "stm32l0x1", feature = "stm32l0x2", feature = "stm32l0x3"))]
 use core::{
     ops::{Deref, DerefMut},
     pin::Pin,
 };
 
-#[cfg(any(feature = "stm32l0x2", feature = "stm32l0x3"))]
+#[cfg(any(feature = "stm32l0x1", feature = "stm32l0x2", feature = "stm32l0x3"))]
 use as_slice::{AsMutSlice, AsSlice};
 
-#[cfg(any(feature = "stm32l0x2", feature = "stm32l0x3"))]
+#[cfg(any(feature = "stm32l0x1", feature = "stm32l0x2", feature = "stm32l0x3"))]
 pub use crate::dma;
 
-#[cfg(any(feature = "stm32l0x2", feature = "stm32l0x3"))]
+#[cfg(any(feature = "stm32l0x1", feature = "stm32l0x2", feature = "stm32l0x3"))]
 use crate::dma::Buffer;
 
 #[cfg(any(
@@ -559,7 +559,7 @@ macro_rules! usart {
             }
 
             /// DMA operations.
-            #[cfg(any(feature = "stm32l0x2", feature = "stm32l0x3"))]
+            #[cfg(any(feature = "stm32l0x1", feature = "stm32l0x2", feature = "stm32l0x3"))]
             impl Rx<$USARTX> {
                 pub fn read_all<Buffer, Channel>(self,
                     dma:     &mut dma::Handle,
@@ -678,7 +678,7 @@ macro_rules! usart {
                 }
             }
 
-            #[cfg(any(feature = "stm32l0x2", feature = "stm32l0x3"))]
+            #[cfg(any(feature = "stm32l0x1", feature = "stm32l0x2", feature = "stm32l0x3"))]
             impl Tx<$USARTX> {
                 pub fn write_all<Buffer, Channel>(self,
                     dma:     &mut dma::Handle,
