@@ -55,9 +55,11 @@ fn main() -> ! {
         .unwrap()
         .split();
 
-    // we only have two elements for each queue, so U2 is fine (size is max 2)
-    let mut rx_buffers: Queue<Pin<DmaBuffer>, 2> = Queue::new();
-    let mut tx_buffers: Queue<Pin<DmaBuffer>, 2> = Queue::new();
+    // we only have two elements for each queue, so size is max 2 is fine.
+    // Note that due to current const generics limitations the queue capacity
+    // is calculated by heapless as N-1, so we declare it as '3-1' elements.
+    let mut rx_buffers: Queue<Pin<DmaBuffer>, 3> = Queue::new();
+    let mut tx_buffers: Queue<Pin<DmaBuffer>, 3> = Queue::new();
 
     // enqueue as many buffers as available into rx_buffers
     unsafe {
