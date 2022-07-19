@@ -260,8 +260,8 @@ where
         self.start_transfer(
             address,
             buffer.as_slice().len(),
-            RD_WRN_A::WRITE,
-            AUTOEND_A::AUTOMATIC,
+            RD_WRN_A::Write,
+            AUTOEND_A::Automatic,
         );
 
         // This token represents the transmission capability of I2C and this is
@@ -339,8 +339,8 @@ where
         self.start_transfer(
             address,
             buffer.as_slice().len(),
-            RD_WRN_A::READ,
-            AUTOEND_A::AUTOMATIC,
+            RD_WRN_A::Read,
+            AUTOEND_A::Automatic,
         );
 
         // See explanation of tokens in `write_all`.
@@ -395,9 +395,9 @@ where
             self.i2c.isr.write(|w| w.txe().set_bit());
 
             if reading {
-                self.start_transfer(addr, bytes.len(), RD_WRN_A::WRITE, AUTOEND_A::SOFTWARE);
+                self.start_transfer(addr, bytes.len(), RD_WRN_A::Write, AUTOEND_A::Software);
             } else {
-                self.start_transfer(addr, bytes.len(), RD_WRN_A::WRITE, AUTOEND_A::AUTOMATIC);
+                self.start_transfer(addr, bytes.len(), RD_WRN_A::Write, AUTOEND_A::Automatic);
             }
 
             // Send bytes
@@ -421,7 +421,7 @@ where
             self.i2c.rxdr.read();
 
             //send a new start condition and transfer
-            self.start_transfer(addr, buffer.len(), RD_WRN_A::READ, AUTOEND_A::AUTOMATIC);
+            self.start_transfer(addr, buffer.len(), RD_WRN_A::Read, AUTOEND_A::Automatic);
 
             // Receive bytes into buffer
             for c in buffer {

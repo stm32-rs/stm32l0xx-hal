@@ -272,14 +272,14 @@ macro_rules! linked_timers {
                     // In the MMS (Master Mode Selection) register, set the master mode so
                     // that a rising edge is output on the trigger output TRGO every time
                     // an update event is generated.
-                    tim_primary.cr2.modify(|_, w| w.mms().variant(<$mms>::UPDATE));
+                    tim_primary.cr2.modify(|_, w| w.mms().variant(<$mms>::Update));
 
                     // In the SMCR (Slave Mode Control Register), select the
                     // appropriate internal trigger source (TS).
                     tim_secondary.smcr.modify(|_, w| w.ts().variant($ts));
                     // Set the SMS (Slave Mode Selection) register to "external clock mode 1",
                     // where the rising edges of the selected trigger (TRGI) clock the counter.
-                    tim_secondary.smcr.modify(|_, w| w.sms().variant(<$sms>::EXT_CLOCK_MODE));
+                    tim_secondary.smcr.modify(|_, w| w.sms().variant(<$sms>::ExtClockMode));
 
                     Self { tim_primary, tim_secondary }
                 }
@@ -344,9 +344,9 @@ timers! {
 
 linked_timers! {
     // Internal trigger connection: RM0377 table 76
-    (TIM2, TIM3): (tim2_tim3, tim2::cr2::MMS_A, tim2::smcr::SMS_A, tim2::smcr::TS_A::ITR0),
+    (TIM2, TIM3): (tim2_tim3, tim2::cr2::MMS_A, tim2::smcr::SMS_A, tim2::smcr::TS_A::Itr0),
     // Internal trigger connection: RM0377 table 80
-    (TIM21, TIM22): (tim21_tim22, tim21::cr2::MMS_A, tim22::smcr::SMS_A, tim22::smcr::TS_A::ITR0),
+    (TIM21, TIM22): (tim21_tim22, tim21::cr2::MMS_A, tim22::smcr::SMS_A, tim22::smcr::TS_A::Itr0),
 
     // Note: Other combinations would be possible as well, e.g. (TIM21, TIM2) or (TIM2, TIM22).
     // They can be implemented if needed.
