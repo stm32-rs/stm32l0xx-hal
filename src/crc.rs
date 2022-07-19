@@ -120,8 +120,8 @@ impl Config {
             Some(BitReversal::ByWord) => 0b11,
         };
 
-        crc.init.write(|w| unsafe { w.bits(init) });
-        crc.pol.write(|w| unsafe { w.bits(poly) });
+        crc.init.write(|w| w.bits(init));
+        crc.pol.write(|w| w.bits(poly));
         crc.cr.write(|w| {
             w.rev_in()
                 .bits(in_rev_bits)
@@ -161,7 +161,7 @@ impl Crc {
     pub fn reset_with_inital_value(&mut self, initial_value: u32) {
         let crc = unsafe { &(*CRC::ptr()) };
 
-        crc.init.write(|w| unsafe { w.bits(initial_value) });
+        crc.init.write(|w| w.bits(initial_value));
         crc.cr.modify(|_, w| w.reset().set_bit());
     }
 
@@ -170,7 +170,7 @@ impl Crc {
     pub fn feed(&mut self, data: &[u8]) {
         let crc = unsafe { &(*CRC::ptr()) };
         for &byte in data {
-            crc.dr8().write(|w| unsafe { w.bits(byte) });
+            crc.dr8().write(|w| w.bits(byte));
         }
     }
 
