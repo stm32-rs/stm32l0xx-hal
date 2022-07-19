@@ -110,10 +110,10 @@ fn main() -> ! {
 
     loop {
         let mcu_value = mcutemp.read_tempc(&mut adc);
-        hprintln!("inaccurate MCU temp: {}", mcu_value).unwrap();
+        hprintln!("inaccurate MCU temp: {}", mcu_value);
 
         let tmp36_mv: u32 = tmp36.read_mv(&mut adc);
         let tmp36_temp: i32 = tmp36.read_tempc(&mut adc);
-        hprintln!("external sensor: {} mV,   {} C.", tmp36_mv, tmp36_temp).unwrap();
+        hprintln!("external sensor: {} mV,   {} C.", tmp36_mv, tmp36_temp);
     }
 }
