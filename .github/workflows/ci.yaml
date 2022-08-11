@@ -34,7 +34,6 @@ jobs:
           target: thumbv6m-none-eabi
       - uses: actions-rs/cargo@v1
         with:
-          use-cross: true
           command: clippy
           # dummy feature to satisfy build.rs
           args: --features mcu-STM32L083VZTx -- -D warnings
@@ -50,7 +49,6 @@ jobs:
           target: thumbv6m-none-eabi
       - uses: actions-rs/cargo@v1
         with:
-          use-cross: true
           command: package
           args: --no-verify
   build_and_test:
@@ -80,6 +78,5 @@ jobs:
         env:
           RUSTFLAGS: "-D warnings"
         with:
-          use-cross: true
           command: build
           args: --release --examples --features "${{ matrix.features }}"
