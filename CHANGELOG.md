@@ -17,6 +17,26 @@ forget to update the links at the bottom of the changelog as well.-->
 
 ### Breaking Changes
 
+- Upgrade `stm32l0` to latest version, and other dependency updates ([#215]):
+  
+  `dependencies`
+
+  | crate       | from   | to     |
+  | ----------- | ------ | ------ |
+  | cast        | 0.2.2  | 0.3.0  |
+  | cortex-m-rt | 0.6.8  | 0.7.0  |
+  | rtcc        | 0.2    | 0.3.0  |
+  | stm32l0     | 0.13.0 | 0.15.1 |
+
+  `dev-dependencies`
+
+  | crate                | from  | to    |
+  | -------------------- | ----- | ----- |
+  | aligned              | 0.3.1 | 0.4.1 |
+  | cortex-m-rtic        | 0.5.6 | 1.1.3 |
+  | cortex-m-semihosting | 0.3.2 | 0.5.0 |
+  | panic-semihosting    | 0.5.1 | 0.6.0 |
+
 ### Non-Breaking Changes
 
 ### Fixes
@@ -162,6 +182,7 @@ _Not yet tracked in this changelog._
 
 
 <!-- Links to pull requests and issues. -->
+[#215]: https://github.com/stm32-rs/stm32l0xx-hal/pull/215
 [#208]: https://github.com/stm32-rs/stm32l0xx-hal/pull/208
 [#206]: https://github.com/stm32-rs/stm32l0xx-hal/pull/206
 [#203]: https://github.com/stm32-rs/stm32l0xx-hal/pull/203
