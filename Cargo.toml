@@ -4,6 +4,7 @@ authors = [
     "Arko <arko2600@gmail.com>",
     "Hanno Braun <hanno@braun-odw.eu>",
     "Danilo Bargen <mail@dbrgn.ch>",
+    "James Waples <james@wapl.es>",
 ]
 categories = ["embedded", "hardware-support", "no-std"]
 description = "Peripheral access API for STM32L0 series microcontrollers"
