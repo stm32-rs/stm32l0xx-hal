@@ -40,7 +40,7 @@ use crate::{
 pub use rtcc::{Datelike, NaiveDate, NaiveDateTime, NaiveTime, Timelike};
 
 /// Errors that can occur when dealing with the RTC.
-#[derive(Debug, PartialEq)]
+#[derive(Debug, Eq, PartialEq)]
 pub enum Error {
     /// Invalid input data was used (e.g. a year outside the 2000-2099 range).
     InvalidInputData,

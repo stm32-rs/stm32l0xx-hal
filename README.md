@@ -31,7 +31,7 @@ For example, when using the STM32L071KBTx MCU:
 
 ```toml
 [dependencies]
-stm32l0xx-hal = { version = "0.9.0", features = ["mcu-STM32L071KBTx", "rt"] }
+stm32l0xx-hal = { version = "0.10.0", features = ["mcu-STM32L071KBTx", "rt"] }
 ```
 
 
@@ -55,7 +55,7 @@ feature. For example, when using the STM32L071KBTx MCU, you just set the
 ```toml
 # Cargo.toml
 [dependencies]
-stm32l0xx-hal = { version = "0.9.0", features = ["mcu-STM32L071KBTx", "rt"] }
+stm32l0xx-hal = { version = "0.10.0", features = ["mcu-STM32L071KBTx", "rt"] }
 ```
 
 If you take a look at the [`Cargo.toml`
@@ -129,7 +129,7 @@ And finally add the `disable-linker-script` feature to your `stm32l0xx-hal` depe
 ```toml
 # Cargo.toml
 [dependencies]
-stm32l0xx-hal = { version = "0.9.0", features = ["mcu-STM32L071K8Ux", "disable-linker-script"] }
+stm32l0xx-hal = { version = "0.10.0", features = ["mcu-STM32L071K8Ux", "disable-linker-script"] }
 ```
 
 # Other Cargo Features

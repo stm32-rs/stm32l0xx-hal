@@ -28,7 +28,7 @@ impl AdcExt for ADC {
 }
 
 /// ADC Result Alignment
-#[derive(PartialEq)]
+#[derive(Eq, PartialEq)]
 pub enum Align {
     /// Right aligned results (least significant bits)
     ///
@@ -44,7 +44,7 @@ pub enum Align {
 }
 
 /// ADC Sampling Precision
-#[derive(Copy, Clone, PartialEq)]
+#[derive(Copy, Clone, Eq, PartialEq)]
 pub enum Precision {
     /// 12 bit precision
     B_12 = 0b00,
@@ -57,7 +57,7 @@ pub enum Precision {
 }
 
 /// ADC Sampling time
-#[derive(Copy, Clone, PartialEq)]
+#[derive(Copy, Clone, Eq, PartialEq)]
 pub enum SampleTime {
     /// 1.5 ADC clock cycles
     T_1_5 = 0b000,

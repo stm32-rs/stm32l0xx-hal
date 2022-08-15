@@ -15,6 +15,18 @@ forget to update the links at the bottom of the changelog as well.-->
 
 ### Breaking Changes
 
+### Non-Breaking Changes
+
+### Fixes
+
+### Documentation
+
+## [v0.10.0] - 2022-08-15
+
+### Additions
+
+### Breaking Changes
+
 - Upgrade `stm32l0` to latest version, and other dependency updates ([#215]):
 
   `dependencies`
@@ -210,6 +222,7 @@ _Not yet tracked in this changelog._
 <!-- Links to version diffs. -->
 
 [unreleased]: https://github.com/stm32-rs/stm32l0xx-hal/compare/v0.9.0...HEAD
+[v0.10.0]: https://github.com/stm32-rs/stm32l0xx-hal/compare/v0.9.0...v0.10.0
 [v0.9.0]: https://github.com/stm32-rs/stm32l0xx-hal/compare/v0.8.0...v0.9.0
 [v0.8.0]: https://github.com/stm32-rs/stm32l0xx-hal/compare/v0.7.0...v0.8.0
 [v0.7.0]: https://github.com/stm32-rs/stm32l0xx-hal/compare/v0.6.2...v0.7.0
