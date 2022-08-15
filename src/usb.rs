@@ -13,7 +13,7 @@
 //! fits together.
 
 use crate::{
-    pac::{self, RCC},
+    pac,
     rcc::{Enable, Reset, HSI48},
 };
 use stm32_usbd::UsbPeripheral;

@@ -131,9 +131,9 @@ macro_rules! encoders {
                             // Count edges on TI1, direction set by TI2
                             .sms()
                             .variant(match mode {
-                                Mode::CountTi1 => <$sms>::ENCODER_MODE_1,
-                                Mode::CountTi2 => <$sms>::ENCODER_MODE_2,
-                                Mode::Qei => <$sms>::ENCODER_MODE_3,
+                                Mode::CountTi1 => <$sms>::EncoderMode1,
+                                Mode::CountTi2 => <$sms>::EncoderMode2,
+                                Mode::Qei => <$sms>::EncoderMode3,
                             })
                     });
 

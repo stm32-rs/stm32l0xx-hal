@@ -63,10 +63,10 @@ impl AES {
     {
         // Write key. This is safe, as the register accepts the full range of
         // `u32`.
-        self.aes.keyr0.write(|w| unsafe { w.bits(key[0]) });
-        self.aes.keyr1.write(|w| unsafe { w.bits(key[1]) });
-        self.aes.keyr2.write(|w| unsafe { w.bits(key[2]) });
-        self.aes.keyr3.write(|w| unsafe { w.bits(key[3]) });
+        self.aes.keyr0.write(|w| w.bits(key[0]));
+        self.aes.keyr1.write(|w| w.bits(key[1]));
+        self.aes.keyr2.write(|w| w.bits(key[2]));
+        self.aes.keyr3.write(|w| w.bits(key[3]));
 
         mode.prepare(&self.aes);
 
@@ -164,7 +164,7 @@ impl Tx {
                 let word = word.try_into().unwrap();
                 let word = u32::from_le_bytes(word);
 
-                unsafe { w.bits(word) }
+                w.bits(word)
             });
         }
 
@@ -420,10 +420,10 @@ pub struct CBC<Mode> {
 impl Mode for CBC<Encrypt> {
     fn prepare(&self, aes: &aes::RegisterBlock) {
         // Safe, as the registers accept the full range of `u32`.
-        aes.ivr3.write(|w| unsafe { w.bits(self.init_vector[0]) });
-        aes.ivr2.write(|w| unsafe { w.bits(self.init_vector[1]) });
-        aes.ivr1.write(|w| unsafe { w.bits(self.init_vector[2]) });
-        aes.ivr0.write(|w| unsafe { w.bits(self.init_vector[3]) });
+        aes.ivr3.write(|w| w.bits(self.init_vector[0]));
+        aes.ivr2.write(|w| w.bits(self.init_vector[1]));
+        aes.ivr1.write(|w| w.bits(self.init_vector[2]));
+        aes.ivr0.write(|w| w.bits(self.init_vector[3]));
     }
 
     fn select(&self, w: &mut cr::W) {
@@ -442,10 +442,10 @@ impl Mode for CBC<Decrypt> {
         derive_key(aes);
 
         // Safe, as the registers accept the full range of `u32`.
-        aes.ivr3.write(|w| unsafe { w.bits(self.init_vector[0]) });
-        aes.ivr2.write(|w| unsafe { w.bits(self.init_vector[1]) });
-        aes.ivr1.write(|w| unsafe { w.bits(self.init_vector[2]) });
-        aes.ivr0.write(|w| unsafe { w.bits(self.init_vector[3]) });
+        aes.ivr3.write(|w| w.bits(self.init_vector[0]));
+        aes.ivr2.write(|w| w.bits(self.init_vector[1]));
+        aes.ivr1.write(|w| w.bits(self.init_vector[2]));
+        aes.ivr0.write(|w| w.bits(self.init_vector[3]));
     }
 
     fn select(&self, w: &mut cr::W) {
@@ -475,10 +475,10 @@ impl Mode for CTR {
         // Initialize initialization vector
         //
         // See STM32L0x2 reference manual, table 78 on page 408.
-        aes.ivr3.write(|w| unsafe { w.bits(self.init_vector[0]) });
-        aes.ivr2.write(|w| unsafe { w.bits(self.init_vector[1]) });
-        aes.ivr1.write(|w| unsafe { w.bits(self.init_vector[2]) });
-        aes.ivr0.write(|w| unsafe { w.bits(0x0001) }); // counter
+        aes.ivr3.write(|w| w.bits(self.init_vector[0]));
+        aes.ivr2.write(|w| w.bits(self.init_vector[1]));
+        aes.ivr1.write(|w| w.bits(self.init_vector[2]));
+        aes.ivr0.write(|w| w.bits(0x0001)); // counter
     }
 
     fn select(&self, w: &mut cr::W) {

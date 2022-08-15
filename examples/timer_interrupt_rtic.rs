@@ -3,20 +3,24 @@
 #![no_main]
 #![no_std]
 
-extern crate panic_halt;
-
+use panic_halt as _;
 use rtic::app;
-use stm32l0xx_hal::{gpio::*, pac, prelude::*, rcc::Config, timer::Timer};
 
 #[app(device = stm32l0xx_hal::pac, peripherals = true)]
-const APP: () = {
-    struct Resources {
+mod app {
+    use stm32l0xx_hal::{gpio::*, pac, prelude::*, rcc::Config, timer::Timer};
+
+    #[shared]
+    struct Shared {}
+
+    #[local]
+    struct Local {
         led: Pin<Output<PushPull>>,
         timer: Timer<pac::TIM2>,
     }
 
     #[init]
-    fn init(ctx: init::Context) -> init::LateResources {
+    fn init(ctx: init::Context) -> (Shared, Local, init::Monotonics) {
         let device = ctx.device;
 
         // Configure the clock.
@@ -30,27 +34,25 @@ const APP: () = {
         let led = gpioa.pa1.into_push_pull_output().downgrade();
 
         // Configure the timer.
-        let mut timer = device.TIM2.timer(1.Hz(), &mut rcc);
+        let mut timer = device.TIM2.timer(1u32.Hz(), &mut rcc);
         timer.listen();
 
         // Return the initialised resources.
-        init::LateResources { led, timer }
+        (Shared {}, Local { led, timer }, init::Monotonics())
     }
 
-    #[task(binds = TIM2, resources = [led, timer])]
-    fn TIM2(ctx: TIM2::Context) {
-        static mut STATE: bool = false;
-
+    #[task(binds = TIM2, local = [ led, timer, state: bool = false ])]
+    fn tim2(ctx: tim2::Context) {
         // Clear the interrupt flag.
-        ctx.resources.timer.clear_irq();
+        ctx.local.timer.clear_irq();
 
         // Change the LED state on each interrupt.
-        if *STATE {
-            ctx.resources.led.set_low().unwrap();
-            *STATE = false;
+        if *ctx.local.state {
+            ctx.local.led.set_low().unwrap();
+            *ctx.local.state = false;
         } else {
-            ctx.resources.led.set_high().unwrap();
-            *STATE = true;
+            ctx.local.led.set_high().unwrap();
+            *ctx.local.state = true;
         }
     }
-};
+}

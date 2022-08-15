@@ -27,13 +27,13 @@ fn main() -> ! {
     let gpioa = dp.GPIOA.split(&mut rcc);
 
     // Source MCO from HSI16, configure prescaler to divide by 8 to get 2MHz output.
-    rcc.configure_mco(MCOSEL_A::HSI16, MCOPRE_A::DIV8, (gpioa.pa8, gpioa.pa9));
+    rcc.configure_mco(MCOSEL_A::Hsi16, MCOPRE_A::Div8, (gpioa.pa8, gpioa.pa9));
 
     // Individual pins can also be set by passing them directly:
-    // rcc.enable_mco(MCOSEL_A::HSI16, MCOPRE_A::DIV8, gpioa.pa8);
+    // rcc.enable_mco(MCOSEL_A::Hsi16, MCOPRE_A::Div8, gpioa.pa8);
 
     // Or for larger devices, all 3 MCO pins can be configured:
-    // rcc.configure_mco(MCOSEL_A::HSI16, MCOPRE_A::DIV8, (gpioa.pa8, gpioa.pa9, gpiob.pb13));
+    // rcc.configure_mco(MCOSEL_A::Hsi16, MCOPRE_A::Div8, (gpioa.pa8, gpioa.pa9, gpiob.pb13));
 
     // Probe PA8 or PA9 to see generated 2MHz MCO signal.
     loop {}

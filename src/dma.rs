@@ -242,19 +242,19 @@ pub struct Priority(cr::PL_A);
 
 impl Priority {
     pub fn low() -> Self {
-        Self(cr::PL_A::LOW)
+        Self(cr::PL_A::Low)
     }
 
     pub fn medium() -> Self {
-        Self(cr::PL_A::MEDIUM)
+        Self(cr::PL_A::Medium)
     }
 
     pub fn high() -> Self {
-        Self(cr::PL_A::HIGH)
+        Self(cr::PL_A::High)
     }
 
     pub fn very_high() -> Self {
-        Self(cr::PL_A::VERYHIGH)
+        Self(cr::PL_A::VeryHigh)
     }
 }
 
@@ -263,11 +263,11 @@ pub(crate) struct Direction(cr::DIR_A);
 
 impl Direction {
     pub fn memory_to_peripheral() -> Self {
-        Self(cr::DIR_A::FROMMEMORY)
+        Self(cr::DIR_A::FromMemory)
     }
 
     pub fn peripheral_to_memory() -> Self {
-        Self(cr::DIR_A::FROMPERIPHERAL)
+        Self(cr::DIR_A::FromPeripheral)
     }
 }
 
@@ -644,19 +644,19 @@ pub trait SupportedWordSize {
 
 impl SupportedWordSize for u8 {
     fn size() -> cr::MSIZE_A {
-        cr::MSIZE_A::BITS8
+        cr::MSIZE_A::Bits8
     }
 }
 
 impl SupportedWordSize for u16 {
     fn size() -> cr::MSIZE_A {
-        cr::MSIZE_A::BITS16
+        cr::MSIZE_A::Bits16
     }
 }
 
 impl SupportedWordSize for u32 {
     fn size() -> cr::MSIZE_A {
-        cr::MSIZE_A::BITS32
+        cr::MSIZE_A::Bits32
     }
 }
 

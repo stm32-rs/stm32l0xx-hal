@@ -1,28 +1,31 @@
-// #![deny(warnings)]
+#![deny(warnings)]
 #![deny(unsafe_code)]
 #![no_main]
 #![no_std]
 
-extern crate panic_halt;
-
+use panic_halt as _;
 use rtic::app;
-use stm32l0xx_hal::{
-    exti::{Exti, ExtiLine, GpioLine, TriggerEdge},
-    gpio::*,
-    prelude::*,
-    rcc::Config,
-    syscfg::SYSCFG,
-};
 
 #[app(device = stm32l0xx_hal::pac, peripherals = true)]
-const APP: () = {
-    struct Resources {
+mod app {
+    use stm32l0xx_hal::{
+        exti::{Exti, ExtiLine, GpioLine, TriggerEdge},
+        gpio::*,
+        prelude::*,
+        rcc::Config,
+        syscfg::SYSCFG,
+    };
+
+    #[shared]
+    struct Shared {}
+
+    #[local]
+    struct Local {
         led: Pin<Output<PushPull>>,
-        int: Exti,
     }
 
     #[init]
-    fn init(ctx: init::Context) -> init::LateResources {
+    fn init(ctx: init::Context) -> (Shared, Local, init::Monotonics) {
         let device = ctx.device;
 
         // Configure the clock.
@@ -46,23 +49,21 @@ const APP: () = {
         exti.listen_gpio(&mut syscfg, button.port(), line, TriggerEdge::Falling);
 
         // Return the initialised resources.
-        init::LateResources { led, int: exti }
+        (Shared {}, Local { led }, init::Monotonics())
     }
 
-    #[task(binds = EXTI0_1, resources = [led])]
-    fn EXTI0_1(ctx: EXTI0_1::Context) {
-        static mut STATE: bool = false;
-
+    #[task(binds = EXTI0_1, local = [ led, state: bool = false ])]
+    fn exti0_1(ctx: exti0_1::Context) {
         // Clear the interrupt flag.
         Exti::unpend(GpioLine::from_raw_line(0).unwrap());
 
         // Change the LED state on each interrupt.
-        if *STATE {
-            ctx.resources.led.set_low().unwrap();
-            *STATE = false;
+        if *ctx.local.state {
+            ctx.local.led.set_low().unwrap();
+            *ctx.local.state = false;
         } else {
-            ctx.resources.led.set_high().unwrap();
-            *STATE = true;
+            ctx.local.led.set_high().unwrap();
+            *ctx.local.state = true;
         }
     }
-};
+}
