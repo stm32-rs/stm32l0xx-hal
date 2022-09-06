@@ -9,6 +9,7 @@ use crate::{gpio, pac};
 use cortex_m::{interrupt, peripheral::NVIC};
 
 /// Edges that can trigger a configurable interrupt line.
+#[derive(Copy, Clone, PartialEq, Eq)]
 pub enum TriggerEdge {
     /// Trigger on rising edges only.
     Rising,
