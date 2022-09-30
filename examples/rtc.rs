@@ -21,7 +21,7 @@ use stm32l0xx_hal::{
     prelude::*,
     pwr::PWR,
     rcc,
-    rtc::{Instant, RTC},
+    rtc::{ClockSource, Instant, Rtc},
     serial,
 };
 
@@ -55,7 +55,9 @@ fn main() -> ! {
         .set_minute(36)
         .set_second(0);
 
-    let mut rtc = RTC::new(dp.RTC, &mut rcc, &mut pwr, instant);
+    // If the target hardware has an external crystal, ClockSource::LSE can be used
+    // instead of ClockSource::LSI for greater accuracy
+    let mut rtc = Rtc::new(dp.RTC, &mut rcc, &pwr, ClockSource::LSI, instant);
 
     loop {
         let mut instant = rtc.now();

@@ -261,7 +261,7 @@ impl Rx {
             let word = doutr.read().bits();
             let word = word.to_le_bytes();
 
-            (&mut block[i..i + 4]).copy_from_slice(&word);
+            (block[i..i + 4]).copy_from_slice(&word);
         }
 
         // Clear CCF flag

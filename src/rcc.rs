@@ -214,6 +214,7 @@ impl core::ops::Deref for Rcc {
 }
 
 impl Rcc {
+    /// Enable the Low Speed External (LSE) clock.
     pub fn enable_lse(&mut self, _: &PWR) -> LSE {
         self.rb.csr.modify(|_, w| {
             // Enable LSE clock
@@ -221,6 +222,16 @@ impl Rcc {
         });
         while self.rb.csr.read().lserdy().bit_is_clear() {}
         LSE(())
+    }
+
+    /// Enable the Low Speed Internal (LSI) clock.
+    pub fn enable_lsi(&mut self, _: &PWR) -> LSI {
+        self.rb.csr.modify(|_, w| {
+            // Enable LSI clock
+            w.lsion().set_bit()
+        });
+        while self.rb.csr.read().lsirdy().bit_is_clear() {}
+        LSI(())
     }
 }
 
@@ -503,11 +514,16 @@ pub struct HSI48(());
 #[derive(Clone, Copy)]
 pub struct MCOEnabled(());
 
-/// Token that exists only, if the LSE clock has been enabled
+/// A token that exists only if the LSE clock has been enabled
 ///
-/// You can get an instance of this struct by calling [`Rcc::enable_lse`].
+/// The token is returned by calling [`Rcc::enable_lse`].
 #[derive(Clone, Copy)]
 pub struct LSE(());
+
+/// A token that exists only if the LSI clock has been enabled
+///
+/// The token is returned by calling [`Rcc::enable_lsi`].
+pub struct LSI(());
 
 /// Bus associated to peripheral
 pub trait RccBus: crate::Sealed {

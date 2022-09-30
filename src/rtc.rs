@@ -46,6 +46,14 @@ pub enum Error {
     InvalidInputData,
 }
 
+/// Low speed clock source to be used by the RTC.
+pub enum ClockSource {
+    /// External low speed clock. High-accuracy but requires external crystal.
+    LSE,
+    /// Internal low speed clock. No crystal required but much lower accuracy.
+    LSI,
+}
+
 /// Binary coded decimal with 2 bytes.
 struct Bcd2 {
     pub tens: u8,
@@ -101,6 +109,7 @@ impl Rtc {
         rtc: pac::RTC,
         rcc: &mut Rcc,
         pwr: &PWR,
+        clock_source: ClockSource,
         init: Option<NaiveDateTime>,
     ) -> Result<Self, Error> {
         // Backup write protection must be disabled by setting th DBP bit in
@@ -118,18 +127,32 @@ impl Rtc {
         // that the frequency is 32768 Hz. If you change the clock selection
         // here, you have to adapt the prescaler settings too.
 
-        // Enable LSE clock
-        rcc.enable_lse(pwr);
+        let rtc_clk;
+        let rtc_sel_mask;
+
+        // Enable the selected LS clock
+        match clock_source {
+            ClockSource::LSE => {
+                rcc.enable_lse(pwr);
+                rtc_clk = 32_768u32.Hz(); // LSE crystal frequency
+                rtc_sel_mask = 0b01;
+            }
+            ClockSource::LSI => {
+                rcc.enable_lsi(pwr);
+                rtc_clk = 37u32.Hz(); // Approx freq given in datasheet
+                rtc_sel_mask = 0b10;
+            }
+        }
+
         rcc.rb.csr.modify(|_, w| {
             // Select LSE as RTC clock source.
             // This is safe, as we're writing a valid bit pattern.
-            w.rtcsel().bits(0b01);
+            w.rtcsel().bits(rtc_sel_mask);
             // Enable RTC clock
             w.rtcen().set_bit()
         });
 
         let apb1_clk = rcc.clocks.apb1_clk();
-        let rtc_clk = 32_768u32.Hz(); // LSE crystal frequency
 
         // The APB1 clock must not be slower than the RTC clock.
         if apb1_clk < rtc_clk {

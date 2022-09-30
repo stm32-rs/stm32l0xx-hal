@@ -10,7 +10,7 @@ use stm32l0xx_hal::{
     prelude::*,
     pwr::PWR,
     rcc,
-    rtc::{self, Rtc},
+    rtc::{self, ClockSource, Rtc},
 };
 
 #[entry]
@@ -32,7 +32,9 @@ fn main() -> ! {
     let mut exti = Exti::new(dp.EXTI);
     let mut pwr = PWR::new(dp.PWR, &mut rcc);
 
-    let mut rtc = Rtc::new(dp.RTC, &mut rcc, &mut pwr, None).unwrap();
+    // If the target hardware has an external crystal, ClockSource::LSE can be used
+    // instead of ClockSource::LSI for greater accuracy
+    let mut rtc = Rtc::new(dp.RTC, &mut rcc, &pwr, ClockSource::LSI, None).unwrap();
 
     let exti_line = ConfigurableLine::RtcWakeup;
 
