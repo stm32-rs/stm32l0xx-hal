@@ -12,7 +12,7 @@ use stm32l0xx_hal::{
     prelude::*,
     pwr::PWR,
     rcc,
-    rtc::{NaiveDate, Rtc, Timelike},
+    rtc::{ClockSource, NaiveDate, Rtc, Timelike},
 };
 
 #[entry]
@@ -23,14 +23,16 @@ fn main() -> ! {
     // code correctly. Exactly the range that is still acceptable, but requires
     // special handling in the RTC code.
     let mut rcc = dp.RCC.freeze(rcc::Config::msi(rcc::MSIRange::Range0));
-    let mut pwr = PWR::new(dp.PWR, &mut rcc);
+    let pwr = PWR::new(dp.PWR, &mut rcc);
     let gpiob = dp.GPIOB.split(&mut rcc);
 
     let mut led = gpiob.pb5.into_push_pull_output();
 
     // Initialize RTC
     let init = NaiveDate::from_ymd(2019, 8, 9).and_hms(13, 37, 42);
-    let mut rtc = Rtc::new(dp.RTC, &mut rcc, &mut pwr, Some(init)).unwrap();
+    // If the target hardware has an external crystal, ClockSource::LSE can be used
+    // instead of ClockSource::LSI for greater accuracy
+    let mut rtc = Rtc::new(dp.RTC, &mut rcc, &pwr, ClockSource::LSI, Some(init)).unwrap();
 
     let mut last_second = 0;
 

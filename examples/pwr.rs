@@ -12,7 +12,7 @@ use stm32l0xx_hal::{
     prelude::*,
     pwr::{self, PWR},
     rcc,
-    rtc::{self, Rtc},
+    rtc::{self, ClockSource, Rtc},
 };
 
 #[entry]
@@ -29,7 +29,7 @@ fn main() -> ! {
     let mut led = gpiob.pb2.into_push_pull_output().downgrade();
 
     // Initialize RTC
-    let mut rtc = Rtc::new(dp.RTC, &mut rcc, &mut pwr, None).unwrap();
+    let mut rtc = Rtc::new(dp.RTC, &mut rcc, &pwr, ClockSource::LSI, None).unwrap();
 
     // Enable interrupts
     let exti_line = ConfigurableLine::RtcWakeup;

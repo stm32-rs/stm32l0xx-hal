@@ -15,6 +15,8 @@ forget to update the links at the bottom of the changelog as well.-->
 
 ### Breaking Changes
 
+- Allow selection of RTC clock source to be LSE or LSI ([#218])
+
 ### Non-Breaking Changes
 
 ### Fixes
@@ -179,6 +181,7 @@ _Not yet tracked in this changelog._
 
 <!-- Links to pull requests and issues. -->
 
+[#218]: https://github.com/stm32-rs/stm32l0xx-hal/pull/218
 [#215]: https://github.com/stm32-rs/stm32l0xx-hal/pull/215
 [#208]: https://github.com/stm32-rs/stm32l0xx-hal/pull/208
 [#206]: https://github.com/stm32-rs/stm32l0xx-hal/pull/206
