@@ -301,8 +301,8 @@ macro_rules! linked_timers {
 
                 /// Resume counting
                 fn resume(&mut self) {
-                    self.tim_primary.cr1.modify(|_, w| w.cen().set_bit());
                     self.tim_secondary.cr1.modify(|_, w| w.cen().set_bit());
+                    self.tim_primary.cr1.modify(|_, w| w.cen().set_bit());
                 }
             }
 
