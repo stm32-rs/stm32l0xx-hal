@@ -139,19 +139,28 @@ macro_rules! timers {
                 }
 
                 /// Releases the TIM peripheral
-                pub fn release(self) -> $TIM {
-                    self.tim.cr1.modify(|_, w| w.cen().clear_bit());
+                pub fn release(mut self) -> $TIM {
+                    self.pause();
                     self.tim
+                }
+
+                /// Pause counting
+                pub fn pause(&mut self) {
+                    self.tim.cr1.modify(|_, w| w.cen().clear_bit());
+                }
+                /// Resume counting
+                pub fn resume(&mut self) {
+                    self.tim.cr1.modify(|_, w| w.cen().set_bit());
                 }
 
                 /// Reset counter
                 pub fn reset(&mut self) {
                     // pause
-                    self.tim.cr1.modify(|_, w| w.cen().clear_bit());
+                    self.pause();
                     // reset counter
                     self.tim.cnt.reset();
                     // continue
-                    self.tim.cr1.modify(|_, w| w.cen().set_bit());
+                    self.resume();
                 }
 
                 /// Select master mode
@@ -170,7 +179,7 @@ macro_rules! timers {
                     T: Into<Hertz>,
                 {
                     // pause
-                    self.tim.cr1.modify(|_, w| w.cen().clear_bit());
+                    self.pause();
                     // reset counter
                     self.tim.cnt.reset();
 
@@ -192,7 +201,7 @@ macro_rules! timers {
                     self.tim.cr1.modify(|_, w| w.urs().set_bit());
                     self.tim.egr.write(|w| w.ug().set_bit());
 
-                    self.tim.cr1.modify(|_, w| w.cen().set_bit());
+                    self.resume();
                 }
 
                 fn wait(&mut self) -> nb::Result<(), Void> {
@@ -283,6 +292,18 @@ macro_rules! linked_timers {
 
                     Self { tim_primary, tim_secondary }
                 }
+
+                /// Pause counting
+                fn pause(&mut self) {
+                    self.tim_primary.cr1.modify(|_, w| w.cen().clear_bit());
+                    self.tim_secondary.cr1.modify(|_, w| w.cen().clear_bit());
+                }
+
+                /// Resume counting
+                fn resume(&mut self) {
+                    self.tim_primary.cr1.modify(|_, w| w.cen().set_bit());
+                    self.tim_secondary.cr1.modify(|_, w| w.cen().set_bit());
+                }
             }
 
             impl LinkedTimer for LinkedTimerPair<$PRIMARY, $SECONDARY> {
@@ -320,14 +341,12 @@ macro_rules! linked_timers {
 
                 fn reset(&mut self) {
                     // Pause
-                    self.tim_primary.cr1.modify(|_, w| w.cen().clear_bit());
-                    self.tim_secondary.cr1.modify(|_, w| w.cen().clear_bit());
+                    self.pause();
                     // Reset counter
                     self.tim_primary.cnt.reset();
                     self.tim_secondary.cnt.reset();
                     // Continue
-                    self.tim_secondary.cr1.modify(|_, w| w.cen().set_bit());
-                    self.tim_primary.cr1.modify(|_, w| w.cen().set_bit());
+                    self.resume();
                 }
             }
         )+
