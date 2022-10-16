@@ -13,6 +13,8 @@ forget to update the links at the bottom of the changelog as well.-->
 
 ### Additions
 
+- Add `pause` and `resume` methods to timers ([#220])
+
 ### Breaking Changes
 
 - Allow selection of RTC clock source to be LSE or LSI ([#218])
@@ -181,6 +183,7 @@ _Not yet tracked in this changelog._
 
 <!-- Links to pull requests and issues. -->
 
+[#220]: https://github.com/stm32-rs/stm32l0xx-hal/pull/218
 [#218]: https://github.com/stm32-rs/stm32l0xx-hal/pull/218
 [#215]: https://github.com/stm32-rs/stm32l0xx-hal/pull/215
 [#208]: https://github.com/stm32-rs/stm32l0xx-hal/pull/208
