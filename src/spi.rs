@@ -16,7 +16,12 @@ use crate::gpio::gpiob::*;
 use crate::gpio::{AltMode, Analog};
 use crate::hal;
 use crate::pac::SPI1;
-#[cfg(any(feature = "stm32l0x2", feature = "stm32l0x3"))]
+#[cfg(any(
+    feature = "io-STM32L051",
+    feature = "io-STM32L071",
+    feature = "stm32l0x2",
+    feature = "stm32l0x3"
+))]
 use crate::pac::SPI2;
 use crate::rcc::{Enable, Rcc};
 
@@ -131,7 +136,12 @@ pins! {
         ]
 }
 
-#[cfg(any(feature = "stm32l0x2", feature = "stm32l0x3"))]
+#[cfg(any(
+    feature = "io-STM32L051",
+    feature = "io-STM32L071",
+    feature = "stm32l0x2",
+    feature = "stm32l0x3"
+))]
 pins! {
     SPI2:
         SCK: [
@@ -435,7 +445,12 @@ spi! {
     SPI1: (spi1, apb2_clk),
 }
 
-#[cfg(any(feature = "stm32l0x2", feature = "stm32l0x3"))]
+#[cfg(any(
+    feature = "io-STM32L051",
+    feature = "io-STM32L071",
+    feature = "stm32l0x2",
+    feature = "stm32l0x3"
+))]
 spi! {
     SPI2: (spi2, apb1_clk),
 }

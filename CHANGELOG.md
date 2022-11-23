@@ -11,6 +11,8 @@ make upgrading the HAL as painless as possible! If it makes sense, feel free
 to add upgrade notes and examples. When adding an issue or PR reference, don't
 forget to update the links at the bottom of the changelog as well.-->
 
+- Enable SPI2 on subset of stm32l0x1 devices ([#221])
+
 ### Additions
 
 - Add `pause` and `resume` methods to timers ([#220])
