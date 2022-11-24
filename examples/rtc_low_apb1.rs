@@ -29,7 +29,10 @@ fn main() -> ! {
     let mut led = gpiob.pb5.into_push_pull_output();
 
     // Initialize RTC
-    let init = NaiveDate::from_ymd(2019, 8, 9).and_hms(13, 37, 42);
+    let init = NaiveDate::from_ymd_opt(2019, 8, 9)
+        .unwrap()
+        .and_hms_opt(13, 37, 42)
+        .unwrap();
     // If the target hardware has an external crystal, ClockSource::LSE can be used
     // instead of ClockSource::LSI for greater accuracy
     let mut rtc = Rtc::new(dp.RTC, &mut rcc, &pwr, ClockSource::LSI, Some(init)).unwrap();
