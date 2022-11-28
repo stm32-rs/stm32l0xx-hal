@@ -171,7 +171,12 @@ impl Rtc {
 
         // Initialize RTC, if not yet initialized
         if rtc.rtc.isr.read().inits().bit_is_clear() {
-            rtc.set(init.unwrap_or_else(|| NaiveDate::from_ymd(2001, 1, 1).and_hms(0, 0, 0)))?;
+            rtc.set(init.unwrap_or_else(|| {
+                NaiveDate::from_ymd_opt(2001, 1, 1)
+                    .unwrap()
+                    .and_hms_opt(0, 0, 0)
+                    .unwrap()
+            }))?;
         }
 
         // Disable wakeup timer. It's periodic and persists over resets, but for
@@ -315,7 +320,10 @@ impl Rtc {
         let minute = bcd2_decode(tr.mnt().bits(), tr.mnu().bits());
         let second = bcd2_decode(tr.st().bits(), tr.su().bits());
 
-        NaiveDate::from_ymd(year, month, day).and_hms(hour, minute, second)
+        NaiveDate::from_ymd_opt(year, month, day)
+            .unwrap()
+            .and_hms_opt(hour, minute, second)
+            .unwrap()
     }
 
     /// Enable interrupts
