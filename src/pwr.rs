@@ -336,7 +336,13 @@ impl PowerMode for StopMode<'_> {
             // Enter Stop mode
             w.pdds().stop_mode();
             // Disable internal voltage regulator
-            w.lpds().set_bit()
+            // Cat 1 devices of stm32l0x1 family do this differently than the rest
+            if cfg!(feature = "io-STM32L021") {
+                w.lpsdsr().clear_bit();
+                w.lpds().set_bit()
+            } else {
+                w.lpsdsr().set_bit()
+            }
         });
 
         // Wait for WUF to be cleared
