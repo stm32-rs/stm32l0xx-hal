@@ -695,6 +695,7 @@ where
     ///
     /// This function will return immediately, if [`Transfer::is_active`]
     /// returns `false`.
+    #[allow(clippy::type_complexity)]
     pub fn wait(
         self,
     ) -> Result<
@@ -706,7 +707,7 @@ where
         let target = self.target;
 
         let map_resources = |res: dma::TransferResources<_, _, _>| dma::TransferResources {
-            target: target,
+            target,
             channel: res.channel,
             buffer: res.buffer,
         };

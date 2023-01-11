@@ -113,6 +113,7 @@ impl FLASH {
     /// This method will panic, unless all of the following is true:
     /// - `address` points to Flash memory
     /// - `address` is aligned to a page boundary (32 words, 128 bytes)
+    #[allow(clippy::not_unsafe_ptr_arg_deref)]
     pub fn erase_flash_page(&mut self, address: *mut u32) -> Result {
         self.unlock(|self_| {
             let memory = self_.verify_address(address);
@@ -161,6 +162,7 @@ impl FLASH {
     /// # Panics
     ///
     /// Panics, if `address` does not point to Flash memory or EEPROM.
+    #[allow(clippy::not_unsafe_ptr_arg_deref)]
     pub fn write_word(&mut self, address: *mut u32, word: u32) -> Result {
         self.unlock(|self_| {
             self_.verify_address(address);
@@ -199,6 +201,7 @@ impl FLASH {
     /// # Panics
     ///
     /// Panics, if `address` does not point to EEPROM.
+    #[allow(clippy::not_unsafe_ptr_arg_deref)]
     pub fn write_byte(&mut self, address: *mut u8, byte: u8) -> Result {
         self.unlock(|self_| {
             // Verify that the address points to EEPROM
@@ -212,6 +215,7 @@ impl FLASH {
 
             // Write memory
             // Safe, as we know that this points to flash or EEPROM.
+
             unsafe { address.write_volatile(byte) }
 
             // Wait for operation to complete
@@ -232,6 +236,7 @@ impl FLASH {
     /// - `address` points to Flash memory
     /// - `address` is aligned to a half-page boundary (16 words, 64 bytes)
     /// - `words` has a length of 16
+    #[allow(clippy::not_unsafe_ptr_arg_deref)]
     pub fn write_flash_half_page(&mut self, address: *mut u32, words: &[u32]) -> Result {
         self.unlock(|self_| {
             let memory = self_.verify_address(address);
