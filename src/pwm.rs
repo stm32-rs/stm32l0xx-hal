@@ -239,11 +239,7 @@ where
         // Safe, as we're only doing an atomic read.
         let tim = unsafe { &*I::ptr() };
 
-        // This cast to `u16` is fine. The type is already `u16`, but on
-        // STM32L0x2, the SVD file seems to be wrong about that (or the
-        // reference manual is wrong; but in any case, we only ever write `u16`
-        // into this field).
-        tim.arr.read().arr().bits() as u16
+        tim.arr.read().arr().bits()
     }
 
     fn set_duty(&mut self, duty: u16) {
