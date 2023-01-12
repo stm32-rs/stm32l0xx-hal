@@ -70,6 +70,7 @@ fn main() -> ! {
 
     // 5 seconds of low-power sleep mode
     exti.wait_for_irq(exti_line, pwr.low_power_sleep_mode(&mut scb, &mut rcc));
+    pwr.exit_low_power_run_mode();
     timer.wait().unwrap(); // returns immediately; we just got the interrupt
 
     blink(&mut led);
