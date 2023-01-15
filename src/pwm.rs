@@ -1,4 +1,8 @@
 use crate::gpio::gpioa::{PA0, PA1, PA2, PA3};
+use crate::gpio::{
+    gpioa::{PA15, PA5},
+    gpiob::PB3,
+};
 use crate::gpio::{AltMode, PinMode};
 use crate::hal;
 use crate::pac::{tim2, TIM2, TIM3};
@@ -10,10 +14,7 @@ use cortex_m::interrupt;
 use embedded_time::rate::Hertz;
 
 #[cfg(any(feature = "stm32l0x2", feature = "stm32l0x3"))]
-use crate::gpio::{
-    gpioa::{PA15, PA5},
-    gpiob::{PB10, PB11, PB3},
-};
+use crate::gpio::gpiob::{PB10, PB11};
 
 #[cfg(any(feature = "stm32l072", feature = "stm32l082", feature = "io-STM32L071",))]
 use crate::gpio::{
@@ -299,15 +300,15 @@ impl_pin!(
         PA1, C2, AF2;
         PA2, C3, AF2;
         PA3, C4, AF2;
+        PA5,  C1, AF5;
+        PA15, C1, AF5;
+        PB3,  C2, AF2;
     )
 );
 
 #[cfg(any(feature = "stm32l0x2", feature = "stm32l0x3"))]
 impl_pin!(
     TIM2: (
-        PA5,  C1, AF5;
-        PA15, C1, AF5;
-        PB3,  C2, AF2;
         PB10, C3, AF2;
         PB11, C4, AF2;
     )
