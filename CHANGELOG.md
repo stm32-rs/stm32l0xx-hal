@@ -11,10 +11,11 @@ make upgrading the HAL as painless as possible! If it makes sense, feel free
 to add upgrade notes and examples. When adding an issue or PR reference, don't
 forget to update the links at the bottom of the changelog as well.-->
 
-- Enable SPI2 on subset of stm32l0x1 devices ([#221])
-
 ### Additions
 
+- Enable TIM2 outputs on `PA5`, `PA15`, `PB3` for all devices in the L0 family (previously only 0x2
+  and 0x3) ([#224])
+- Enable SPI2 on subset of stm32l0x1 devices ([#221])
 - Add `pause` and `resume` methods to timers ([#220])
 
 ### Breaking Changes
@@ -185,6 +186,8 @@ _Not yet tracked in this changelog._
 
 <!-- Links to pull requests and issues. -->
 
+[#224]: https://github.com/stm32-rs/stm32l0xx-hal/pull/224
+[#221]: https://github.com/stm32-rs/stm32l0xx-hal/pull/221
 [#220]: https://github.com/stm32-rs/stm32l0xx-hal/pull/218
 [#218]: https://github.com/stm32-rs/stm32l0xx-hal/pull/218
 [#215]: https://github.com/stm32-rs/stm32l0xx-hal/pull/215
