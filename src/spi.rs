@@ -13,7 +13,7 @@ use crate::dma::{self, Buffer};
 use crate::gpio::gpioa::*;
 use crate::gpio::gpiob::*;
 
-use crate::gpio::{AltMode, Analog};
+use crate::gpio::{AltMode, Analog, OpenDrain, Output};
 use crate::hal;
 use crate::pac::SPI1;
 #[cfg(any(
@@ -164,6 +164,7 @@ pins! {
         SCK: [
             [NoSck, None],
             [PA5<Analog>, AltMode::AF0],
+            [PA5<Output<OpenDrain>>, AltMode::AF0],
             [PB3<Analog>, AltMode::AF0]
         ]
         MISO: [
@@ -175,6 +176,7 @@ pins! {
         MOSI: [
             [NoMosi, None],
             [PA7<Analog>, AltMode::AF0],
+            [PA7<Output<OpenDrain>>, AltMode::AF0],
             [PA12<Analog>, AltMode::AF0],
             [PB5<Analog>, AltMode::AF0]
         ]
