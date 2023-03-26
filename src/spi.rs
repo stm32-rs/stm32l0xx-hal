@@ -13,7 +13,7 @@ use crate::dma::{self, Buffer};
 use crate::gpio::gpioa::*;
 use crate::gpio::gpiob::*;
 
-use crate::gpio::{AltMode, Analog, OpenDrain, Output};
+use crate::gpio::{AltMode, Analog, OpenDrain, Output, PushPull};
 use crate::hal;
 use crate::pac::SPI1;
 #[cfg(any(
@@ -119,8 +119,12 @@ pins! {
     SPI1:
         SCK: [
             [NoSck, None],
+            [PA5<Analog>, AltMode::AF0],
+            [PA5<Output<OpenDrain>>, AltMode::AF0],
+            [PA5<Output<PushPull>>, AltMode::AF0],
             [PB3<Analog>, AltMode::AF0],
-            [PA5<Analog>, AltMode::AF0]
+            [PB3<Output<OpenDrain>>, AltMode::AF0],
+            [PB3<Output<PushPull>>, AltMode::AF0]
         ]
         MISO: [
             [NoMiso, None],
@@ -131,8 +135,14 @@ pins! {
         MOSI: [
             [NoMosi, None],
             [PA7<Analog>, AltMode::AF0],
+            [PA7<Output<OpenDrain>>, AltMode::AF0],
+            [PA7<Output<PushPull>>, AltMode::AF0],
             [PA12<Analog>, AltMode::AF0],
-            [PB5<Analog>, AltMode::AF0]
+            [PA12<Output<OpenDrain>>, AltMode::AF0],
+            [PA12<Output<PushPull>>, AltMode::AF0],
+            [PB5<Analog>, AltMode::AF0],
+            [PB5<Output<OpenDrain>>, AltMode::AF0],
+            [PB5<Output<PushPull>>, AltMode::AF0]
         ]
 }
 
@@ -146,7 +156,9 @@ pins! {
     SPI2:
         SCK: [
             [NoSck, None],
-            [PB13<Analog>, AltMode::AF0]
+            [PB13<Analog>, AltMode::AF0],
+            [PB13<Output<OpenDrain>>, AltMode::AF0],
+            [PB13<Output<PushPull>>, AltMode::AF0]
         ]
         MISO: [
             [NoMiso, None],
@@ -154,7 +166,9 @@ pins! {
         ]
         MOSI: [
             [NoMosi, None],
-            [PB15<Analog>, AltMode::AF0]
+            [PB15<Analog>, AltMode::AF0],
+            [PB15<Output<OpenDrain>>, AltMode::AF0],
+            [PB15<Output<PushPull>>, AltMode::AF0]
         ]
 }
 
@@ -165,7 +179,10 @@ pins! {
             [NoSck, None],
             [PA5<Analog>, AltMode::AF0],
             [PA5<Output<OpenDrain>>, AltMode::AF0],
-            [PB3<Analog>, AltMode::AF0]
+            [PA5<Output<PushPull>>, AltMode::AF0],
+            [PB3<Analog>, AltMode::AF0],
+            [PB3<Output<OpenDrain>>, AltMode::AF0],
+            [PB3<Output<PushPull>>, AltMode::AF0]
         ]
         MISO: [
             [NoMiso, None],
@@ -177,8 +194,13 @@ pins! {
             [NoMosi, None],
             [PA7<Analog>, AltMode::AF0],
             [PA7<Output<OpenDrain>>, AltMode::AF0],
+            [PA7<Output<PushPull>>, AltMode::AF0],
             [PA12<Analog>, AltMode::AF0],
-            [PB5<Analog>, AltMode::AF0]
+            [PA12<Output<OpenDrain>>, AltMode::AF0],
+            [PA12<Output<PushPull>>, AltMode::AF0],
+            [PB5<Analog>, AltMode::AF0],
+            [PB5<Output<OpenDrain>>, AltMode::AF0],
+            [PB5<Output<PushPull>>, AltMode::AF0]
         ]
 }
 
