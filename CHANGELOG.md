@@ -13,6 +13,7 @@ forget to update the links at the bottom of the changelog as well.-->
 
 ### Additions
 
+- SPI: Allow output pins of mode `PushPull` and `OpenDrain` ([#226])
 - Enable TIM2 outputs on `PA5`, `PA15`, `PB3` for all devices in the L0 family (previously only 0x2
   and 0x3) ([#224])
 - Enable SPI2 on subset of stm32l0x1 devices ([#221])
@@ -186,6 +187,7 @@ _Not yet tracked in this changelog._
 
 <!-- Links to pull requests and issues. -->
 
+[#226]: https://github.com/stm32-rs/stm32l0xx-hal/pull/226
 [#224]: https://github.com/stm32-rs/stm32l0xx-hal/pull/224
 [#221]: https://github.com/stm32-rs/stm32l0xx-hal/pull/221
 [#220]: https://github.com/stm32-rs/stm32l0xx-hal/pull/218
