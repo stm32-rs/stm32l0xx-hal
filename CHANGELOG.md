@@ -27,6 +27,8 @@ forget to update the links at the bottom of the changelog as well.-->
 
 ### Fixes
 
+- Correct calculation of AHB prescaler for factors > 16 ([#228])
+
 ### Documentation
 
 ## [v0.10.0] - 2022-08-15
