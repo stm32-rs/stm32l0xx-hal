@@ -190,6 +190,7 @@ _Not yet tracked in this changelog._
 <!-- Links to pull requests and issues. -->
 
 [#226]: https://github.com/stm32-rs/stm32l0xx-hal/pull/226
+[#228]: https://github.com/stm32-rs/stm32l0xx-hal/pull/228
 [#224]: https://github.com/stm32-rs/stm32l0xx-hal/pull/224
 [#221]: https://github.com/stm32-rs/stm32l0xx-hal/pull/221
 [#220]: https://github.com/stm32-rs/stm32l0xx-hal/pull/218
