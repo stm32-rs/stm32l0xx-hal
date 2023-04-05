@@ -27,6 +27,8 @@ forget to update the links at the bottom of the changelog as well.-->
 
 ### Fixes
 
+- Correct calculation of AHB prescaler for factors > 16 ([#228])
+
 ### Documentation
 
 ## [v0.10.0] - 2022-08-15
@@ -188,6 +190,7 @@ _Not yet tracked in this changelog._
 <!-- Links to pull requests and issues. -->
 
 [#226]: https://github.com/stm32-rs/stm32l0xx-hal/pull/226
+[#228]: https://github.com/stm32-rs/stm32l0xx-hal/pull/228
 [#224]: https://github.com/stm32-rs/stm32l0xx-hal/pull/224
 [#221]: https://github.com/stm32-rs/stm32l0xx-hal/pull/221
 [#220]: https://github.com/stm32-rs/stm32l0xx-hal/pull/218

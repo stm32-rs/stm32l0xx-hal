@@ -413,6 +413,8 @@ impl RccExt for RCC {
 
         let ahb_freq = match cfgr.ahb_pre {
             AHBPrescaler::NotDivided => sys_clk,
+            // skip /32
+            pre if pre as u8 & 0b0100 > 0 => sys_clk / (1 << (pre as u8 - 6)),
             pre => sys_clk / (1 << (pre as u8 - 7)),
         };
 
