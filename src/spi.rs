@@ -1,4 +1,5 @@
 use core::{
+    cell::UnsafeCell,
     marker::PhantomData,
     ops::{Deref, DerefMut},
     pin::Pin,
@@ -449,7 +450,7 @@ macro_rules! spi {
                         nb::Error::Other(Error::Crc)
                     } else if sr.txe().bit_is_set() {
                         // NOTE(write_volatile) see note above
-                        unsafe { ptr::write_volatile(&self.spi.dr as *const _ as *mut u8, byte) }
+                        unsafe { ptr::write_volatile(UnsafeCell::raw_get(&self.spi.dr as *const _ as _), byte) }
                         return Ok(());
                     } else {
                         nb::Error::WouldBlock

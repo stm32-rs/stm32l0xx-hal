@@ -1,3 +1,4 @@
+use core::cell::UnsafeCell;
 use core::fmt;
 use core::marker::PhantomData;
 use core::ptr;
@@ -33,7 +34,7 @@ use crate::dma::Buffer;
 ))]
 use crate::gpio::gpioc::*;
 use crate::gpio::{gpioa::*, gpiob::*};
-#[cfg(any(feature = "io-STM32L071"))]
+#[cfg(feature = "io-STM32L071")]
 use crate::gpio::{gpiod::*, gpioe::*};
 
 /// Serial error
@@ -661,7 +662,7 @@ macro_rules! usart {
                     if isr.txe().bit_is_set() {
                         // NOTE(unsafe) atomic write to stateless register
                         // NOTE(write_volatile) 8-bit write that's not possible through the svd2rust API
-                        unsafe { ptr::write_volatile(&(*$USARTX::ptr()).tdr as *const _ as *mut _, byte) }
+                        unsafe { ptr::write_volatile(UnsafeCell::raw_get(&(*$USARTX::ptr()).tdr as *const _ as _), byte) }
 
                         Ok(())
                     } else {

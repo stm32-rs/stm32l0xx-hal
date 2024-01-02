@@ -69,7 +69,7 @@ impl Exti {
 
         unsafe {
             match line {
-                0 | 1 | 2 | 3 => {
+                0..=3 => {
                     syscfg.syscfg.exticr1.modify(|_, w| match line {
                         0 => w.exti0().bits(port_bm),
                         1 => w.exti1().bits(port_bm),
@@ -78,7 +78,7 @@ impl Exti {
                         _ => w,
                     });
                 }
-                4 | 5 | 6 | 7 => {
+                4..=7 => {
                     // no need to assert that PH is not port,
                     // since line is assert on port above
                     syscfg.syscfg.exticr2.modify(|_, w| match line {
@@ -89,7 +89,7 @@ impl Exti {
                         _ => w,
                     });
                 }
-                8 | 9 | 10 | 11 => {
+                8..=11 => {
                     syscfg.syscfg.exticr3.modify(|_, w| match line {
                         8 => w.exti8().bits(port_bm),
                         9 => w.exti9().bits(port_bm),
@@ -98,7 +98,7 @@ impl Exti {
                         _ => w,
                     });
                 }
-                12 | 13 | 14 | 15 => {
+                12..=15 => {
                     syscfg.syscfg.exticr4.modify(|_, w| match line {
                         12 => w.exti12().bits(port_bm),
                         13 => w.exti13().bits(port_bm),
