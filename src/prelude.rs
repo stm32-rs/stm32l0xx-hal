@@ -41,5 +41,5 @@ pub use crate::serial::{Serial1Ext as _, Serial1LpExt as _};
     feature = "io-STM32L071",
 ))]
 pub use crate::serial::{Serial1LpExt as _, Serial2Ext as _};
-#[cfg(any(feature = "io-STM32L071",))]
+#[cfg(feature = "io-STM32L071")]
 pub use crate::serial::{Serial4Ext as _, Serial5Ext as _};
