@@ -136,12 +136,8 @@ impl Adc<Ready> {
         }
 
         self.rb.cr.modify(|_, w| w.adcal().set_bit());
-        for _ in 0..1000 {
-            if self.rb.isr.read().eocal().is_complete() {
-                return Ok(());
-            }
-        }
-        Err(Error::InternalCalibrationTimedOut)
+        while self.rb.cr.read().adcal().bit_is_set() {}
+        Ok(())
     }
 
     /// Starts a continuous conversion process
@@ -637,9 +633,6 @@ pub enum Error {
     /// just keeps writing more values. It does mean that some values in the
     /// buffer were overwritten though.
     BufferOverrun,
-
-    /// ADC timed out during internal calibration
-    InternalCalibrationTimedOut,
 
     /// Invalid ADC state for requested operation
     InvalidAdcState,
