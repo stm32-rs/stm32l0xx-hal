@@ -123,6 +123,27 @@ impl Adc<Ready> {
         self.precision = precision;
     }
 
+    /// Trigger internal ADC calibration
+    ///
+    /// This process is documented in Reference Manual RM377, section 13.3.3
+    /// Calibration (ADCAL)
+    pub fn calibrate(&mut self) -> Result<(), Error> {
+        if self._state != Ready
+            || self.rb.cr.read().aden().bit_is_set()
+            || self.rb.cfgr1.read().dmaen().bit_is_set()
+        {
+            return Err(Error::InvalidAdcState);
+        }
+
+        self.rb.cr.modify(|_, w| w.adcal().set_bit());
+        for _ in 0..1000 {
+            if self.rb.isr.read().eocal().is_complete() {
+                return Ok(());
+            }
+        }
+        Err(Error::InternalCalibrationTimedOut)
+    }
+
     /// Starts a continuous conversion process
     ///
     /// The `channel` argument specifies which channel should be converted.
@@ -321,6 +342,7 @@ where
 }
 
 /// Indicates that the ADC peripheral is ready
+#[derive(PartialEq)]
 pub struct Ready;
 
 /// Indicates that the ADC peripheral is performing conversions
@@ -615,6 +637,12 @@ pub enum Error {
     /// just keeps writing more values. It does mean that some values in the
     /// buffer were overwritten though.
     BufferOverrun,
+
+    /// ADC timed out during internal calibration
+    InternalCalibrationTimedOut,
+
+    /// Invalid ADC state for requested operation
+    InvalidAdcState,
 }
 
 macro_rules! int_adc {
