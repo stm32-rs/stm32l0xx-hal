@@ -42,7 +42,7 @@ pub fn device_id_hex() -> &'static str {
             });
         }
 
-        core::str::from_utf8_unchecked(&DEVICE_ID_STR)
+        core::str::from_utf8_unchecked(&*core::ptr::addr_of!(DEVICE_ID_STR))
     }
 }
 
