@@ -30,7 +30,7 @@ use embedded_time::rate::Extensions;
 use void::Void;
 
 use crate::{
-    hal::timer::{self, Cancel as _},
+    hal_02::timer::{self, Cancel as _},
     pac,
     pwr::PWR,
     rcc::Rcc,

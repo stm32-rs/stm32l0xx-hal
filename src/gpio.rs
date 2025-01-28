@@ -49,7 +49,7 @@ pub struct Output<MODE> {
 /// Push pull output (type state)
 pub struct PushPull;
 
-use embedded_hal::digital::v2::{toggleable, InputPin, OutputPin, StatefulOutputPin};
+use crate::hal_02::digital::v2::{toggleable, InputPin, OutputPin, StatefulOutputPin};
 
 /// Fully erased pin
 pub struct Pin<MODE> {
@@ -245,7 +245,7 @@ macro_rules! gpio {
         pub mod $gpiox {
             use core::marker::PhantomData;
 
-            use crate::hal::digital::v2::{toggleable, InputPin, OutputPin, StatefulOutputPin};
+            use crate::hal_02::digital::v2::{toggleable, InputPin, OutputPin, StatefulOutputPin};
             use crate::pac::$GPIOX;
             use crate::rcc::{Enable, Rcc};
             use super::{

@@ -6,8 +6,8 @@ use core::ptr;
 use nb::block;
 
 use crate::gpio::{AltMode, PinMode};
-use crate::hal;
-use crate::hal::prelude::*;
+use crate::hal_02;
+use crate::hal_02::prelude::*;
 pub use crate::pac::{LPUART1, USART1, USART2, USART4, USART5};
 use crate::rcc::{Enable, Rcc, LSE};
 use embedded_time::rate::{Baud, Extensions};
@@ -476,7 +476,7 @@ macro_rules! usart {
                 }
             }
 
-            impl hal::serial::Read<u8> for Serial<$USARTX> {
+            impl hal_02::serial::Read<u8> for Serial<$USARTX> {
                 type Error = Error;
 
                 fn read(&mut self) -> nb::Result<u8, Error> {
@@ -484,7 +484,7 @@ macro_rules! usart {
                 }
             }
 
-             impl hal::serial::Write<u8> for  Serial<$USARTX> {
+             impl hal_02::serial::Write<u8> for  Serial<$USARTX> {
                 type Error = Error;
 
                 fn flush(&mut self) -> nb::Result<(), Self::Error> {
@@ -614,7 +614,7 @@ macro_rules! usart {
                 }
             }
 
-            impl hal::serial::Read<u8> for Rx<$USARTX> {
+            impl hal_02::serial::Read<u8> for Rx<$USARTX> {
                 type Error = Error;
 
                 fn read(&mut self) -> nb::Result<u8, Error> {
@@ -636,7 +636,7 @@ macro_rules! usart {
                 }
             }
 
-            impl hal::serial::Write<u8> for Tx<$USARTX> {
+            impl hal_02::serial::Write<u8> for Tx<$USARTX> {
                 type Error = Error;
 
                 fn flush(&mut self) -> nb::Result<(), Self::Error> {
@@ -798,7 +798,7 @@ impl Serial<LPUART1> {
 
 impl<USART> fmt::Write for Serial<USART>
 where
-    Serial<USART>: hal::serial::Write<u8>,
+    Serial<USART>: hal_02::serial::Write<u8>,
 {
     fn write_str(&mut self, s: &str) -> fmt::Result {
         let _ = s.as_bytes().iter().map(|c| block!(self.write(*c))).last();
@@ -811,7 +811,7 @@ where
 
 impl<USART> fmt::Write for Tx<USART>
 where
-    Tx<USART>: hal::serial::Write<u8>,
+    Tx<USART>: hal_02::serial::Write<u8>,
 {
     fn write_str(&mut self, s: &str) -> fmt::Result {
         let _ = s.as_bytes().iter().map(|c| block!(self.write(*c))).last();

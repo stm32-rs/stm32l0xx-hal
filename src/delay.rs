@@ -1,6 +1,6 @@
 //! Delays
 
-use crate::hal::blocking::delay::{DelayMs, DelayUs};
+use crate::hal_02::blocking::delay::{DelayMs, DelayUs};
 use crate::rcc::Clocks;
 use cast::u32;
 use core::convert::TryInto;

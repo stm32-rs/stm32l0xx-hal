@@ -4,7 +4,7 @@ use crate::gpio::{
     gpiob::PB3,
 };
 use crate::gpio::{AltMode, PinMode};
-use crate::hal;
+use crate::hal_02;
 use crate::pac::{tim2, TIM2, TIM3};
 use crate::rcc::{Enable, Rcc, Reset};
 use cast::{u16, u32};
@@ -212,7 +212,7 @@ impl<I, C> Pwm<I, C, Unassigned> {
     }
 }
 
-impl<I, C, P> hal::PwmPin for Pwm<I, C, Assigned<P>>
+impl<I, C, P> hal_02::PwmPin for Pwm<I, C, Assigned<P>>
 where
     I: Instance,
     C: Channel,

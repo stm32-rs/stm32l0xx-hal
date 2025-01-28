@@ -1,5 +1,5 @@
 //! Timers
-use crate::hal::timer::{CountDown, Periodic};
+use crate::hal_02::timer::{CountDown, Periodic};
 use crate::pac::{tim2, tim21, tim22, tim6, TIM2, TIM21, TIM22, TIM3, TIM6};
 use crate::rcc::{Clocks, Enable, Rcc, Reset};
 use cast::{u16, u32};

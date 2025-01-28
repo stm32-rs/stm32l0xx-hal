@@ -15,7 +15,7 @@ use crate::gpio::gpioa::*;
 use crate::gpio::gpiob::*;
 
 use crate::gpio::{AltMode, Analog, OpenDrain, Output, PushPull};
-use crate::hal;
+use crate::hal_02;
 use crate::pac::SPI1;
 #[cfg(any(
     feature = "io-STM32L051",
@@ -26,7 +26,7 @@ use crate::pac::SPI1;
 use crate::pac::SPI2;
 use crate::rcc::{Enable, Rcc};
 
-pub use hal::spi::{Mode, Phase, Polarity, MODE_0, MODE_1, MODE_2, MODE_3};
+pub use hal_02::spi::{Mode, Phase, Polarity, MODE_0, MODE_1, MODE_2, MODE_3};
 
 /// SPI error
 #[derive(Debug)]
@@ -416,7 +416,7 @@ macro_rules! spi {
                     }
             }
 
-            impl<PINS> hal::spi::FullDuplex<u8> for Spi<$SPIX, PINS> {
+            impl<PINS> hal_02::spi::FullDuplex<u8> for Spi<$SPIX, PINS> {
                 type Error = Error;
 
                 fn read(&mut self) -> nb::Result<u8, Error> {
@@ -459,9 +459,9 @@ macro_rules! spi {
 
             }
 
-            impl<PINS> crate::hal::blocking::spi::transfer::Default<u8> for Spi<$SPIX, PINS> {}
+            impl<PINS> hal_02::blocking::spi::transfer::Default<u8> for Spi<$SPIX, PINS> {}
 
-            impl<PINS> crate::hal::blocking::spi::write::Default<u8> for Spi<$SPIX, PINS> {}
+            impl<PINS> hal_02::blocking::spi::write::Default<u8> for Spi<$SPIX, PINS> {}
         )+
     }
 }

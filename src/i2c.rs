@@ -19,7 +19,7 @@ use cast::u8;
 use embedded_time::rate::Hertz;
 
 // I²C traits
-use crate::hal::blocking::i2c::{Read, Write, WriteRead};
+use crate::hal_02::blocking::i2c::{Read, Write, WriteRead};
 
 // I/O Imports
 use crate::gpio::{AltMode, OpenDrain, Output};

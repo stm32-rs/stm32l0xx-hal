@@ -10,7 +10,7 @@ use as_slice::AsMutSlice;
 
 use crate::{
     gpio::*,
-    hal::adc::{Channel, OneShot},
+    hal_02::adc::{Channel, OneShot},
     pac::ADC,
     rcc::{Enable, Rcc},
 };

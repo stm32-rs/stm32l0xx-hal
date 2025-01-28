@@ -7,7 +7,8 @@ compile_error!(
     "This crate requires one of the following features enabled: stm32l0x1, stm32l0x2, stm32l0x3"
 );
 
-use embedded_hal as hal;
+pub use embedded_hal as hal;
+pub use embedded_hal_02 as hal_02;
 
 #[cfg(feature = "stm32l0x1")]
 pub use stm32l0::stm32l0x1 as pac;

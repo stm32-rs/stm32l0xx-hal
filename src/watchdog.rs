@@ -1,4 +1,4 @@
-use crate::hal::watchdog;
+use crate::hal_02::watchdog;
 use crate::pac::{IWDG, WWDG};
 use crate::rcc::{Enable, Rcc};
 use embedded_time::rate::Hertz;

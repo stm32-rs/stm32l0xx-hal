@@ -1,4 +1,4 @@
-pub use embedded_hal::{
+pub use crate::hal_02::{
     adc::OneShot as _,
     digital::v2::*,
     prelude::*,

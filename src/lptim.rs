@@ -1,7 +1,7 @@
 //! Low-Power Timer (LPTIM) support.
 
 use crate::gpio::{self, gpiob};
-use crate::hal;
+use crate::hal_02;
 use crate::pac::LPTIM;
 use crate::pwr::PWR;
 use crate::rcc::{Enable, Rcc, Reset};
@@ -337,7 +337,7 @@ impl<M: CountMode> LpTimer<M> {
     }
 }
 
-impl hal::timer::CountDown for LpTimer<Periodic> {
+impl hal_02::timer::CountDown for LpTimer<Periodic> {
     type Time = Hertz;
 
     fn start<T>(&mut self, freq: T)
@@ -362,9 +362,9 @@ impl hal::timer::CountDown for LpTimer<Periodic> {
     }
 }
 
-impl hal::timer::Periodic for LpTimer<Periodic> {}
+impl hal_02::timer::Periodic for LpTimer<Periodic> {}
 
-impl hal::timer::CountDown for LpTimer<OneShot> {
+impl hal_02::timer::CountDown for LpTimer<OneShot> {
     type Time = Microseconds;
 
     fn start<T>(&mut self, period: T)
