@@ -139,7 +139,7 @@ bus! {
     DBG => (APB2, dbgen, dbgsmen, dbgrst), // 22
 }
 
-#[cfg(any(feature = "stm32l0x0", feature = "stm32l0x1"))]
+#[cfg(feature = "stm32l0x1")]
 bus! {
     WWDG => (APB1, wwdgen, wwdgsmen, wwdgrst), // 11
     USART2 => (APB1, usart2en, usart2smen, usart2rst), // 17
