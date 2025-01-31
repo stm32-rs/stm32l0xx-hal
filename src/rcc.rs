@@ -12,16 +12,24 @@ mod enable;
 /// System clock mux source
 #[derive(Clone, Copy)]
 pub enum ClockSrc {
+    /// Select the MSI (Multispeed Internal) oscillator
+    /// with the given range as the system clock source
     MSI(MSIRange),
+    /// Select the PLL (Phase Locked Loop) with the given source,
+    /// multiplier, and divider as the system clock source
     PLL(PLLSource, PLLMul, PLLDiv),
+    /// Select the HSE (High Speed External) oscillator
+    /// as the system clock source
     HSE(Hertz),
+    /// Select the HSI16 (High Speed Internal 16MHz) oscillator
+    /// with the given divider as the system clock source
     HSI16(HSI16Div),
 }
 
 /// MSI Clock Range
 ///
-/// These ranges control the frequency of the MSI. Internally, these ranges map
-/// to the `MSIRANGE` bits in the `RCC_ICSCR` register.
+/// These ranges control the frequency of the MSI (Multispeed Internal) oscillator.
+/// Internally, these ranges map to the `MSIRANGE` bits in the `RCC_ICSCR` register.
 #[derive(Clone, Copy, Default)]
 pub enum MSIRange {
     /// Around 65.536 kHz
@@ -41,7 +49,7 @@ pub enum MSIRange {
     Range6 = 6,
 }
 
-/// HSI16 divider
+/// HSI16 (High Speed Internal 16MHz) divider
 #[derive(Clone, Copy)]
 pub enum HSI16Div {
     Div1 = 1,
@@ -70,7 +78,7 @@ pub enum PLLMul {
     Mul48 = 8,
 }
 
-/// AHB prescaler
+/// AHB (Advanced High-performance Bus) prescaler
 #[derive(Clone, Copy)]
 pub enum AHBPrescaler {
     NotDivided = 0,
@@ -97,18 +105,25 @@ pub enum APBPrescaler {
 /// PLL clock input source
 #[derive(Clone, Copy)]
 pub enum PLLSource {
+    /// Select the HSI (High Speed Internal 16MHz) oscillator
+    /// with the given divider as the PLL input clock
     HSI16(HSI16Div),
+    /// Select the HSE (High Speed External) oscillator as the PLL input clock
     HSE(Hertz),
 }
 
 /// HSI speed
 pub const HSI_FREQ: u32 = 16_000_000;
 
-/// Clocks configutation
+/// Clocks configuration
 pub struct Config {
+    /// System Clock Source
     mux: ClockSrc,
+    /// Advanced High-performance Bus (AHB) prescaler
     ahb_pre: AHBPrescaler,
+    /// Advanced Peripheral Bus 1 (APB1) prescaler
     apb1_pre: APBPrescaler,
+    /// Advanced Peripheral Bus 2 (APB2) prescaler
     apb2_pre: APBPrescaler,
 }
 
@@ -125,30 +140,36 @@ impl Default for Config {
 }
 
 impl Config {
+    /// Modify the System Clock Source of a `Config`
     #[inline]
     pub fn clock_src(mut self, mux: ClockSrc) -> Self {
         self.mux = mux;
         self
     }
 
+    /// Modify the Advanced High-performance Bus (AHB) prescaler of a `Config`
     #[inline]
     pub fn ahb_pre(mut self, pre: AHBPrescaler) -> Self {
         self.ahb_pre = pre;
         self
     }
 
+    /// Modify the Advanced Peripheral Bus 1 (APB1) prescaler of a `Config`
     #[inline]
     pub fn apb1_pre(mut self, pre: APBPrescaler) -> Self {
         self.apb1_pre = pre;
         self
     }
 
+    /// Modify the Advanced Peripheral Bus 2 (APB2) prescaler of a `Config`
     #[inline]
     pub fn apb2_pre(mut self, pre: APBPrescaler) -> Self {
         self.apb2_pre = pre;
         self
     }
 
+    /// Create a clock config with the HSI16 (High Speed Internal 16MHz) oscillator
+    /// as the system clock source
     #[inline]
     pub fn hsi16() -> Config {
         Config {
@@ -159,6 +180,8 @@ impl Config {
         }
     }
 
+    /// Create a clock config with the MSI (Multispeed Internal) oscillator
+    /// as the system clock source
     #[inline]
     pub fn msi(range: MSIRange) -> Config {
         Config {
@@ -169,6 +192,7 @@ impl Config {
         }
     }
 
+    /// Create a clock config with the PLL (Phase Locked Loop) as the system clock source
     #[inline]
     pub fn pll(pll_src: PLLSource, pll_mul: PLLMul, pll_div: PLLDiv) -> Config {
         Config {
@@ -179,6 +203,8 @@ impl Config {
         }
     }
 
+    /// Create a clock config with the HSE (High Speed External) oscillator
+    /// as the system clock source
     #[inline]
     pub fn hse<T>(freq: T) -> Config
     where
@@ -193,12 +219,13 @@ impl Config {
     }
 }
 
-/// RCC peripheral
+/// Reset and Clock Control (RCC) peripheral
 pub struct Rcc {
     pub clocks: Clocks,
     pub(crate) rb: RCC,
 }
 
+/// Deref to RCC register block
 impl core::ops::Deref for Rcc {
     type Target = RCC;
 
@@ -216,7 +243,7 @@ impl Rcc {
             w.lseon().set_bit()
         });
         while self.rb.csr.read().lserdy().bit_is_clear() {}
-        LSE(())
+        LSE
     }
 
     /// Enable the Low Speed Internal (LSI) clock.
@@ -226,12 +253,13 @@ impl Rcc {
             w.lsion().set_bit()
         });
         while self.rb.csr.read().lsirdy().bit_is_clear() {}
-        LSI(())
+        LSI
     }
 }
 
 #[cfg(any(feature = "stm32l0x2", feature = "stm32l0x3"))]
 impl Rcc {
+    /// Enable the HSI48 (High Speed Internal 48MHz) clock.
     pub fn enable_hsi48(&mut self, syscfg: &mut SYSCFG, crs: CRS) -> HSI48 {
         // Enable CRS peripheral
         CRS::enable(self);
@@ -258,7 +286,7 @@ impl Rcc {
         self.rb.crrcr.modify(|_, w| w.hsi48on().set_bit());
         while self.rb.crrcr.read().hsi48rdy().bit_is_clear() {}
 
-        HSI48(())
+        HSI48
     }
 }
 
@@ -280,7 +308,7 @@ impl Rcc {
             w.mcopre().variant(prescaler)
         });
 
-        MCOEnabled(())
+        MCOEnabled
     }
 }
 
@@ -503,24 +531,29 @@ impl Clocks {
 ///
 /// You can get an instance of this struct by calling [`Rcc::enable_hsi48`].
 #[derive(Clone, Copy)]
-pub struct HSI48(());
+#[non_exhaustive]
+pub struct HSI48;
 
 /// Token that exists only if MCO (Microcontroller Clock Out) has been enabled.
 ///
 /// You can get an instance of this struct by calling [`Rcc::configure_mco`].
 #[derive(Clone, Copy)]
-pub struct MCOEnabled(());
+#[non_exhaustive]
+pub struct MCOEnabled;
 
 /// A token that exists only if the LSE clock has been enabled
 ///
 /// The token is returned by calling [`Rcc::enable_lse`].
 #[derive(Clone, Copy)]
-pub struct LSE(());
+#[non_exhaustive]
+pub struct LSE;
 
 /// A token that exists only if the LSI clock has been enabled
 ///
 /// The token is returned by calling [`Rcc::enable_lsi`].
-pub struct LSI(());
+#[derive(Clone, Copy)]
+#[non_exhaustive]
+pub struct LSI;
 
 /// Bus associated to peripheral
 pub trait RccBus: crate::Sealed {
