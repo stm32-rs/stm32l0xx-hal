@@ -7,6 +7,7 @@ use core::{marker::PhantomData, ops::DerefMut, pin::Pin};
 
 #[cfg(feature = "stm32l0x2")]
 use as_slice::{AsMutSlice, AsSlice};
+use embedded_hal::blocking::i2c::Operation;
 
 #[cfg(feature = "stm32l0x2")]
 use crate::dma::{self, Buffer};
@@ -19,7 +20,7 @@ use cast::u8;
 use embedded_time::rate::Hertz;
 
 // I²C traits
-use crate::hal::blocking::i2c::{Read, Write, WriteRead};
+use crate::hal::blocking::i2c::{Read, TransactionalIter, Write, WriteRead};
 
 // I/O Imports
 use crate::gpio::{AltMode, OpenDrain, Output};
@@ -452,6 +453,26 @@ where
 
     fn read(&mut self, addr: u8, buffer: &mut [u8]) -> Result<(), Self::Error> {
         self.write_read(addr, &[], buffer)
+    }
+}
+
+impl<I, SDA, SCL> TransactionalIter for I2c<I, SDA, SCL>
+where
+    I: Instance,
+{
+    type Error = Error;
+
+    fn exec_iter<'a, O>(&mut self, address: u8, operations: O) -> Result<(), Self::Error>
+    where
+        O: IntoIterator<Item = Operation<'a>>,
+    {
+        for o in operations {
+            match o {
+                Operation::Read(bytes) => self.read(address, bytes)?,
+                Operation::Write(bytes) => self.write(address, bytes)?,
+            }
+        }
+        Ok(())
     }
 }
 
