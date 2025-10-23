@@ -5,7 +5,10 @@ use crate::gpio::{
 };
 use crate::gpio::{AltMode, PinMode};
 use crate::hal;
-use crate::pac::{tim2, TIM2, TIM3};
+#[cfg(any(feature = "stm32l0x1", feature = "stm32l0x2", feature = "stm32l0x3"))]
+use crate::pac::TIM3;
+use crate::pac::{tim2, TIM2};
+
 use crate::rcc::{Enable, Rcc, Reset};
 use cast::{u16, u32};
 use core::marker::PhantomData;
@@ -124,6 +127,10 @@ macro_rules! impl_instance {
 
 impl_instance!(
     TIM2, apb1_clk;
+);
+
+#[cfg(any(feature = "stm32l0x1", feature = "stm32l0x2", feature = "stm32l0x3"))]
+impl_instance!(
     TIM3, apb1_clk;
 );
 

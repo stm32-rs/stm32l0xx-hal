@@ -309,6 +309,7 @@ impl ExtiLine for GpioLine {
 /// both.
 #[derive(Copy, Clone, PartialEq, Eq)]
 pub enum ConfigurableLine {
+    #[cfg(any(feature = "stm32l0x1", feature = "stm32l0x2", feature = "stm32l0x3"))]
     Pvd = 16,
     RtcAlarm = 17,
     RtcTamper_CssLse = 19,
@@ -322,6 +323,7 @@ impl ExtiLine for ConfigurableLine {
         use ConfigurableLine::*;
 
         Some(match line {
+            #[cfg(any(feature = "stm32l0x1", feature = "stm32l0x2", feature = "stm32l0x3"))]
             16 => Pvd,
             17 => RtcAlarm,
             // 18 = USB (or reserved)
@@ -342,9 +344,13 @@ impl ExtiLine for ConfigurableLine {
         use ConfigurableLine::*;
 
         match self {
+            #[cfg(any(feature = "stm32l0x1", feature = "stm32l0x2", feature = "stm32l0x3"))]
             Pvd => Interrupt::PVD,
             RtcAlarm | RtcTamper_CssLse | RtcWakeup => Interrupt::RTC,
+            #[cfg(any(feature = "stm32l0x1", feature = "stm32l0x2", feature = "stm32l0x3"))]
             Comp1 | Comp2 => Interrupt::ADC_COMP,
+            #[cfg(feature = "stm32l0x0")]
+            Comp1 | Comp2 => Interrupt::ADC,
         }
     }
 }
@@ -355,10 +361,13 @@ pub enum DirectLine {
     #[cfg(any(feature = "stm32l0x2", feature = "stm32l0x3"))]
     Usb = 18,
     I2C1 = 23,
+    #[cfg(any(feature = "stm32l0x1", feature = "stm32l0x2", feature = "stm32l0x3"))]
     I2C3 = 24,
+    #[cfg(any(feature = "stm32l0x1", feature = "stm32l0x2", feature = "stm32l0x3"))]
     Usart1 = 25,
     Usart2 = 26,
     // 27 = reserved
+    #[cfg(any(feature = "stm32l0x1", feature = "stm32l0x2", feature = "stm32l0x3"))]
     Lpuart1 = 28,
     Lptim1 = 29,
 }
@@ -371,10 +380,13 @@ impl ExtiLine for DirectLine {
             #[cfg(any(feature = "stm32l0x2", feature = "stm32l0x3"))]
             18 => Usb,
             23 => I2C1,
+            #[cfg(any(feature = "stm32l0x1", feature = "stm32l0x2", feature = "stm32l0x3"))]
             24 => I2C3,
+            #[cfg(any(feature = "stm32l0x1", feature = "stm32l0x2", feature = "stm32l0x3"))]
             25 => Usart1,
             26 => Usart2,
             // 27 = reserved
+            #[cfg(any(feature = "stm32l0x1", feature = "stm32l0x2", feature = "stm32l0x3"))]
             28 => Lpuart1,
             29 => Lptim1,
             _ => return None,
@@ -393,9 +405,12 @@ impl ExtiLine for DirectLine {
             #[cfg(any(feature = "stm32l0x2", feature = "stm32l0x3"))]
             Usb => Interrupt::USB,
             I2C1 => Interrupt::I2C1,
+            #[cfg(any(feature = "stm32l0x1", feature = "stm32l0x2", feature = "stm32l0x3"))]
             I2C3 => Interrupt::I2C3,
+            #[cfg(any(feature = "stm32l0x1", feature = "stm32l0x2", feature = "stm32l0x3"))]
             Usart1 => Interrupt::USART1,
             Usart2 => Interrupt::USART2,
+            #[cfg(any(feature = "stm32l0x1", feature = "stm32l0x2", feature = "stm32l0x3"))]
             Lpuart1 => Interrupt::AES_RNG_LPUART1,
             Lptim1 => Interrupt::LPTIM1,
         }

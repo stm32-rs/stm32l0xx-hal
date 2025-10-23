@@ -115,19 +115,11 @@ bus! {
     DMA1 => (AHB, dmaen, dmasmen, dmarst), // 0
     FLASH => (AHB, mifen, mifsmen, mifrst), // 8
     CRC => (AHB, crcen, crcsmen, crcrst), // 12
-    AES => (AHB, crypen, crypsmen, cryprst), // 24
 
     TIM2 => (APB1, tim2en, tim2smen, tim2rst), // 0
-    TIM6 => (APB1, tim6en, tim6smen, tim6rst), // 4
-    TIM7 => (APB1, tim7en, tim7smen, tim7rst), // 5
-    SPI2 => (APB1, spi2en, spi2smen, spi2rst), // 14
     LPUART1 => (APB1, lpuart1en, lpuart1smen, lpuart1rst), // 20
-    USART4 => (APB1, usart4en, usart4smen, usart4rst), // 19
-    USART5 => (APB1, usart5en, usart5smen, usart5rst), // 20
     I2C1 => (APB1, i2c1en, i2c1smen, i2c1rst), // 21
-    I2C2 => (APB1, i2c2en, i2c2smen, i2c2rst), // 22
     PWR => (APB1, pwren, pwrsmen, pwrrst), // 28
-    I2C3 => (APB1, i2c3en, i2c3smen, i2c3rst), // 30
     LPTIM => (APB1, lptim1en, lptim1smen, lptim1rst), // 31
 
     SYSCFG => (APB2, syscfgen, syscfgsmen, syscfgrst), // 0
@@ -135,8 +127,22 @@ bus! {
     TIM22 => (APB2, tim22en, tim22smen, tim22rst), // 5
     ADC => (APB2, adcen, adcsmen, adcrst), // 9
     SPI1 => (APB2, spi1en, spi1smen, spi1rst), // 12
-    USART1 => (APB2, usart1en, usart1smen, usart1rst), // 14
     DBG => (APB2, dbgen, dbgsmen, dbgrst), // 22
+}
+
+#[cfg(any(feature = "stm32l0x1", feature = "stm32l0x2", feature = "stm32l0x3"))]
+bus! {
+    AES => (AHB, crypen, crypsmen, cryprst), // 24
+
+    TIM6 => (APB1, tim6en, tim6smen, tim6rst), // 4
+    TIM7 => (APB1, tim7en, tim7smen, tim7rst), // 5
+    SPI2 => (APB1, spi2en, spi2smen, spi2rst), // 14
+    USART4 => (APB1, usart4en, usart4smen, usart4rst), // 19
+    USART5 => (APB1, usart5en, usart5smen, usart5rst), // 20
+    I2C2 => (APB1, i2c2en, i2c2smen, i2c2rst), // 22
+    I2C3 => (APB1, i2c3en, i2c3smen, i2c3rst), // 30
+
+    USART1 => (APB2, usart1en, usart1smen, usart1rst), // 14
 }
 
 #[cfg(any(feature = "stm32l0x0", feature = "stm32l0x1"))]

@@ -8,7 +8,9 @@ use nb::block;
 use crate::gpio::{AltMode, PinMode};
 use crate::hal;
 use crate::hal::prelude::*;
-pub use crate::pac::{LPUART1, USART1, USART2, USART4, USART5};
+pub use crate::pac::{LPUART1, USART2};
+#[cfg(any(feature = "stm32l0x1", feature = "stm32l0x2", feature = "stm32l0x3"))]
+pub use crate::pac::{USART1, USART4, USART5};
 use crate::rcc::{Enable, Rcc, LSE};
 use embedded_time::rate::{Baud, Extensions};
 

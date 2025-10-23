@@ -9,6 +9,10 @@ fn main() {
 
     let mut feature_count = 0;
 
+    if cfg!(feature = "stm32l0x0") {
+        feature_count += 1;
+    }
+
     if cfg!(feature = "stm32l0x1") {
         feature_count += 1;
     }
@@ -23,7 +27,7 @@ fn main() {
 
     if !cfg!(feature = "disable-linker-script") {
         if feature_count != 1 {
-            panic!("\n\nMust select exactly one package for linker script generation!\nChoices: 'stm32l0x1' or 'stm32l0x2' or 'stm32l0x3'\nAlternatively, pick the mcu-feature that matches your MCU, for example 'mcu-STM32L071KBTx'\n\n");
+            panic!("\n\nMust select exactly one package for linker script generation!\nChoices: 'stm32l0x0', 'stm32l0x1' or 'stm32l0x2' or 'stm32l0x3'\nAlternatively, pick the mcu-feature that matches your MCU, for example 'mcu-STM32L071KBTx'\n\n");
         }
 
         let flash_features: Vec<u32> = [

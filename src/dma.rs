@@ -37,9 +37,12 @@ use crate::pac::USART1;
 ))]
 use crate::{
     i2c,
-    pac::{I2C1, I2C2, I2C3, USART2},
+    pac::{I2C1, USART2},
     serial,
 };
+
+#[cfg(any(feature = "stm32l0x1", feature = "stm32l0x2", feature = "stm32l0x3"))]
+use crate::pac::{I2C2, I2C3};
 
 use crate::{pac::SPI1, spi};
 

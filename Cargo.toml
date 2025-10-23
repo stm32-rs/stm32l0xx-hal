@@ -57,6 +57,7 @@ disable-linker-script = []
 
 # STM32L0 subfamilies
 # (Warning: Some peripherals, e.g. GPIO, don't follow this subfamily grouping.)
+stm32l0x0 = ["stm32l0/stm32l0x0"]
 stm32l0x1 = ["stm32l0/stm32l0x1"]
 stm32l0x2 = ["stm32l0/stm32l0x2"]
 stm32l0x3 = ["stm32l0/stm32l0x3"]
@@ -122,12 +123,12 @@ wlcsp49 = []
 #
 # Note: These are just aliases, they should not be used to directly feature gate
 # functionality in the HAL! However, user code should usually depend on a MCU alias.
-mcu-STM32L010C6Tx = ["lqfp48", "io-STM32L031", "eeprom-256", "flash-32", "ram-8"]
-mcu-STM32L010F4Px = ["tssop20", "io-STM32L021", "eeprom-128", "flash-16", "ram-2"]
-mcu-STM32L010K4Tx = ["lqfp32", "io-STM32L021", "eeprom-128", "flash-16", "ram-2"]
-mcu-STM32L010K8Tx = ["lqfp32", "io-STM32L051", "eeprom-256", "flash-64", "ram-8"]
-mcu-STM32L010R8Tx = ["lqfp64", "io-STM32L051", "eeprom-256", "flash-64", "ram-8"]
-mcu-STM32L010RBTx = ["lqfp64", "io-STM32L071", "eeprom-512", "flash-128", "ram-20"]
+mcu-STM32L010C6Tx = ["stm32l0x0", "lqfp48", "io-STM32L031", "eeprom-256", "flash-32", "ram-8"]
+mcu-STM32L010F4Px = ["stm32l0x0", "tssop20", "io-STM32L021", "eeprom-128", "flash-16", "ram-2"]
+mcu-STM32L010K4Tx = ["stm32l0x0", "lqfp32", "io-STM32L021", "eeprom-128", "flash-16", "ram-2"]
+mcu-STM32L010K8Tx = ["stm32l0x0", "lqfp32", "io-STM32L051", "eeprom-256", "flash-64", "ram-8"]
+mcu-STM32L010R8Tx = ["stm32l0x0", "lqfp64", "io-STM32L051", "eeprom-256", "flash-64", "ram-8"]
+mcu-STM32L010RBTx = ["stm32l0x0", "lqfp64", "io-STM32L071", "eeprom-512", "flash-128", "ram-20"]
 mcu-STM32L011D3Px = ["stm32l0x1", "tssop14", "io-STM32L021", "eeprom-512", "flash-8", "ram-2"]
 mcu-STM32L011D4Px = ["stm32l0x1", "tssop14", "io-STM32L021", "eeprom-512", "flash-16", "ram-2"]
 mcu-STM32L011E3Yx = ["stm32l0x1", "wlcsp25", "io-STM32L021", "eeprom-512", "flash-8", "ram-2"]

@@ -1,6 +1,8 @@
 //! Timers
 use crate::hal::timer::{CountDown, Periodic};
-use crate::pac::{tim2, tim21, tim22, tim6, TIM2, TIM21, TIM22, TIM3, TIM6};
+use crate::pac::{tim2, tim21, tim22, TIM2, TIM21, TIM22};
+#[cfg(any(feature = "stm32l0x1", feature = "stm32l0x2", feature = "stm32l0x3"))]
+use crate::pac::{tim6, TIM3, TIM6};
 use crate::rcc::{Clocks, Enable, Rcc, Reset};
 use cast::{u16, u32};
 use cortex_m::peripheral::syst::SystClkSource;
@@ -355,18 +357,26 @@ macro_rules! linked_timers {
 
 timers! {
     TIM2: (tim2, apb1_tim_clk, tim2::cr2::MMS_A),
-    TIM3: (tim3, apb1_tim_clk, tim2::cr2::MMS_A),
-    TIM6: (tim6, apb1_tim_clk, tim6::cr2::MMS_A),
     TIM21: (tim21, apb2_tim_clk, tim21::cr2::MMS_A),
     TIM22: (tim22, apb2_tim_clk, tim22::cr2::MMS_A),
 }
 
+#[cfg(any(feature = "stm32l0x1", feature = "stm32l0x2", feature = "stm32l0x3"))]
+timers! {
+    TIM3: (tim3, apb1_tim_clk, tim2::cr2::MMS_A),
+    TIM6: (tim6, apb1_tim_clk, tim6::cr2::MMS_A),
+}
+
 linked_timers! {
-    // Internal trigger connection: RM0377 table 76
-    (TIM2, TIM3): (tim2_tim3, tim2::cr2::MMS_A, tim2::smcr::SMS_A, tim2::smcr::TS_A::Itr0),
     // Internal trigger connection: RM0377 table 80
     (TIM21, TIM22): (tim21_tim22, tim21::cr2::MMS_A, tim22::smcr::SMS_A, tim22::smcr::TS_A::Itr0),
 
     // Note: Other combinations would be possible as well, e.g. (TIM21, TIM2) or (TIM2, TIM22).
     // They can be implemented if needed.
+}
+
+#[cfg(any(feature = "stm32l0x1", feature = "stm32l0x2", feature = "stm32l0x3"))]
+linked_timers! {
+    // Internal trigger connection: RM0377 table 76
+    (TIM2, TIM3): (tim2_tim3, tim2::cr2::MMS_A, tim2::smcr::SMS_A, tim2::smcr::TS_A::Itr0),
 }
