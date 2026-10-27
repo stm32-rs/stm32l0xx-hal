@@ -216,8 +216,9 @@ impl Adc<Ready> {
 
         let continous = trigger.is_none();
 
-        self.power_up();
         self.configure(channels, continous, trigger);
+        self.power_up();
+        self.start_conversion();
 
         Adc {
             rb: self.rb,
@@ -272,6 +273,10 @@ impl<State> Adc<State> {
         while self.rb.cr.read().aden().bit_is_set() {}
     }
 
+    /// Configures the ADC
+    ///
+    /// Must be called while the ADC is disabled (`ADEN` cleared), as
+    /// `ADC_CFGR1` may only be written in that state (see RM0376).
     fn configure(&mut self, channels: impl Into<Channels>, cont: bool, trigger: Option<Trigger>) {
         self.rb.cfgr1.write(|w| {
             w.res().bits(self.precision as u8);
@@ -300,7 +305,12 @@ impl<State> Adc<State> {
             // Safe, as long as there are no `Channel` implementations that
             // define invalid values.
             unsafe { w.bits(channels.into().flags) });
+    }
 
+    /// Starts the conversion
+    ///
+    /// Must be called after the ADC has been enabled with `power_up`.
+    fn start_conversion(&mut self) {
         self.rb.isr.modify(|_, w| w.eos().set_bit());
         self.rb.cr.modify(|_, w| w.adstart().set_bit());
     }
@@ -314,7 +324,6 @@ where
     type Error = ();
 
     fn read(&mut self, _: &mut PIN) -> nb::Result<WORD, Self::Error> {
-        self.power_up();
         self.configure(
             Channels {
                 flags: 0x1 << PIN::channel(),
@@ -322,6 +331,8 @@ where
             false,
             None,
         );
+        self.power_up();
+        self.start_conversion();
 
         while self.rb.isr.read().eos().bit_is_clear() {}
 
